@@ -21,6 +21,7 @@ func postgresEnv(t *testing.T) vukemtest.Options {
 		"SESSION_DRIVER":   "database",
 		"QUEUE_CONNECTION": "database",
 		"CACHE_STORE":      "database",
+		"RATE_LIMIT_STORE": "cache",
 	}}
 }
 

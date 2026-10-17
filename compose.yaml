@@ -18,6 +18,7 @@ services:
       SESSION_DRIVER: database
       QUEUE_CONNECTION: database
       CACHE_STORE: database
+      RATE_LIMIT_STORE: cache
       MAIL_MAILER: smtp
       MAIL_FROM: Vukem Rifa <no-reply@rifa.vukem.com>
       SMTP_HOST: mailpit

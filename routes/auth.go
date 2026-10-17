@@ -27,9 +27,14 @@ func Auth(r *router.Router, app *vukem.App) error {
 	h := account.New(acc)
 	guest := auth.Guest(acc.Web)
 	required := auth.Required(acc.Web)
-	throttle := ratelimit.Middleware(ratelimit.NewMemory(5, time.Minute), account.LoginThrottleKey)
-	perAccount := ratelimit.Middleware(ratelimit.NewMemory(20, 10*time.Minute), account.LoginAccountThrottleKey)
-	mails := ratelimit.Middleware(ratelimit.NewMemory(3, time.Minute), ratelimit.ByIP)
+	limiters, err := app.RateLimiters()
+	if err != nil {
+		return err
+	}
+
+	throttle := ratelimit.Middleware(limiters("login", 5, time.Minute), account.LoginThrottleKey)
+	perAccount := ratelimit.Middleware(limiters("login-account", 20, 10*time.Minute), account.LoginAccountThrottleKey)
+	mails := ratelimit.Middleware(limiters("auth-mails", 3, time.Minute), ratelimit.ByIP)
 
 	r.Use(shareAuth(acc))
 

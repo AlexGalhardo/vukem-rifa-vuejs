@@ -20,7 +20,7 @@ See [PLAN.md](PLAN.md) for the full design, data model, roadmap and owner to-do 
 
 ```sh
 cp .env.example .env
-vukem key:generate                # or: echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
+go run ./cmd/app key:generate     # or: echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
 docker compose up -d --build      # app :3000, postgres :5432, mailpit :8025
 curl http://localhost:3000/up     # {"status":"ok"}
 ```

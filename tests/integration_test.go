@@ -20,6 +20,7 @@ func newPostgresApp(t *testing.T) *vukemtest.App {
 		"SESSION_DRIVER":   "database",
 		"QUEUE_CONNECTION": "database",
 		"CACHE_STORE":      "database",
+		"RATE_LIMIT_STORE": "cache",
 	}})
 }
 
@@ -73,5 +74,31 @@ func TestPostgres_RaffleNumbersAndConstraints(t *testing.T) {
 		if _, err := db.ExecContext(t.Context(), stmt, id); err == nil {
 			t.Errorf("%s: accepted, want a constraint error", stmt)
 		}
+	}
+}
+
+// RATE_LIMIT_STORE=cache counts attempts in the database cache, so every
+// Railway instance shares the login budget.
+func TestPostgres_LoginThrottleSharedInDatabase(t *testing.T) {
+	t.Parallel()
+
+	app := newPostgresApp(t)
+	register(t, app.Client(t).Inertia(""), "pgbob@example.com")
+
+	attacker := app.Client(t).Inertia("")
+	for range 5 {
+		attacker.PostJSON("/login", map[string]any{"email": "pgbob@example.com", "password": "guess"})
+	}
+
+	attacker.PostJSON("/login", map[string]any{"email": "pgbob@example.com", "password": "guess"}).AssertStatus(429)
+
+	db, err := app.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var n int
+	if err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM cache").Scan(&n); err != nil || n == 0 {
+		t.Fatalf("cache rows = %d, %v; want rate-limit counters", n, err)
 	}
 }

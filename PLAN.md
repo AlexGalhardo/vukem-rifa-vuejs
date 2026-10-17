@@ -19,7 +19,7 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | D2 | Frontend: Inertia **v3 (3.9.1, stable since 2026)** + Vue 3.5 + TypeScript + Tailwind v4, built by Vite 8, scaffolded with `vukem new --inertia vue`. | Inertia v3 has stable releases (3.0.0 → 3.9.1), so v3 is used. |
 | D3 | TypeScript **6.0.3**, not 7.0.2. | TS 7 is the native (Go) compiler without the JS language-service API `vue-tsc` 3.3 needs; 6.0.3 is the latest stable 6.x. Revisit when vue-tsc supports TS 7. |
 | D4 | PostgreSQL only (18.6). Sessions (`SESSION_DRIVER=database`), queue (`QUEUE_CONNECTION=database`, `FOR UPDATE SKIP LOCKED`), cache + scheduler locks (`CACHE_STORE=database`) all in Postgres. | Owner requirement; one managed service on Railway. |
-| D5 | Rate limiting: in-memory GCRA (`ratelimit.NewMemory`) on a single Railway instance until vukem ships a Postgres store (audit F1). | Workaround; documented in feedback. Postgres store is a stretch task in Phase 8 if vukem has not shipped it. |
+| D5 | Rate limiting through `app.RateLimiters()` with `RATE_LIMIT_STORE=cache` over `CACHE_STORE=database` (vukem v0.23.0): counters shared by every Railway instance; `memory` stays the default when unset. | Replaces the per-process GCRA workaround (audit F1). |
 | D6 | Email: SMTP transport only (`MAIL_MAILER=smtp`, `SMTP_*`). Local offline: **Mailpit** (compose). Dev/staging/e2e: **Mailtrap Email Sandbox** (`sandbox.smtp.mailtrap.io:2525`, STARTTLS). Tests assert delivered email through the Mailtrap Sandbox API. Production sender switchable by env (Mailtrap Sending `live.smtp.mailtrap.io` or any SMTP). Resend dropped. | Owner: Resend needs DNS first; Mailtrap Sandbox works today and is automatable. |
 | D7 | Payments: AbacatePay API v2, PIX via `POST /v2/transparents/create`; dev key (`abc_dev_…`) = sandbox, same base URL. No cancel endpoint: the PIX `expiresIn` equals the remaining reservation time, and expiry is enforced locally. | From docs.abacatepay.com (2026-10-17). |
 | D8 | Platform receives 100%; ledger records 90% owner share + 10% platform fee per paid number; payouts recorded manually by an admin (`users.is_admin`). | Owner decision. |
@@ -40,8 +40,8 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | Tool | Version | Where |
 | --- | --- | --- |
 | Go | 1.27.2 | `go.mod`, Docker `golang:1.27.2-alpine3.24` |
-| vukem | v0.22.0 (started on v0.21.1) | `go.mod` |
-| vukem drivers/postgres | v0.3.0 (pgx v5.11.0) | `go.mod` |
+| vukem | v0.23.0 (started on v0.21.1) | `go.mod` |
+| vukem drivers/postgres | v0.4.0 (pgx v5.11.0, `pgtest.Database`) | `go.mod` |
 | golangci-lint | v2.15.0 (CI), action v9.3.0 | `.golangci.yml` |
 | govulncheck | v1.9.0 (`go tool`) | `go.mod` tool directive |
 | Bun | 1.4.3 | CI, Docker `oven/bun:1.4.3-alpine` |
@@ -316,7 +316,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 ### Phase 8 — Security hardening and QA
 
 - [ ] OWASP abuse suite (Go + e2e): IDOR, CSRF, XSS payloads in title/description/buyer name, brute force rate limit, webhook forgery/replay, concurrent reserve race, expired link reuse → verify: `go test ./tests -run Security`, `bun run test:e2e -- security`.
-- [ ] Postgres rate-limit store if vukem has not shipped one (D5) → verify: integration test.
+- [x] Postgres rate-limit store (D5, vukem v0.23.0 `RATE_LIMIT_STORE=cache`) → verify: `TestPostgres_LoginThrottleSharedInDatabase`.
 - [ ] `docs/qa-checklist.md` exploratory checklist executed once with notes → verify: checklist filled.
 - [ ] ZAP rules tuned (promote relevant rules to FAIL) → verify: CI green.
 
