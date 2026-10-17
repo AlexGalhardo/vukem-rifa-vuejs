@@ -18,7 +18,7 @@ func Export(r *router.Router, app *vukem.App) error {
 		return err
 	}
 
-	ec := controllers.NewExportController(raffles.New(acc.DB, app.Now), export.New(acc.DB, app.Now))
+	ec := controllers.NewExportController(raffles.New(acc.DB, app.Now, app.Queue), export.New(acc.DB, app.Now))
 	owner := []router.Middleware{auth.Required(acc.Web), auth.Verified(acc.Web)}
 
 	r.Get("/raffles/{raffle}/export.json", ec.JSON).Name("raffles.export.json").Use(owner...)

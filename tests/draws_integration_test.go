@@ -1,0 +1,175 @@
+//go:build integration
+
+package tests
+
+import (
+	"context"
+	"sync"
+	"testing"
+	"time"
+
+	vukem "github.com/AlexGalhardo/vukem"
+	"github.com/AlexGalhardo/vukem/vukemtest"
+
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
+)
+
+// Twenty workers (job retries, sweeper, sold-out signal) racing to draw the
+// same raffle: exactly one draw.
+func TestPostgres_ConcurrentDrawRunsOnce(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t, postgresEnv(t))
+	for _, n := range []int{5, 50, 95} {
+		sell(t, f.app, f.svc, f.raffle, n, buyer)
+	}
+
+	f.moveDeadline(t, 0)
+
+	const workers = 20
+
+	var (
+		wg   sync.WaitGroup
+		mu   sync.Mutex
+		wins int
+	)
+
+	start := make(chan struct{})
+	svc := f.draws()
+
+	for range workers {
+		wg.Go(func() {
+			<-start
+
+			_, ok, err := svc.Run(t.Context(), f.raffle.ID, models.DrawDeadline)
+			if err != nil {
+				t.Errorf("Run: %v", err)
+			}
+
+			if ok {
+				mu.Lock()
+				wins++
+				mu.Unlock()
+			}
+		})
+	}
+
+	close(start)
+	wg.Wait()
+
+	if wins != 1 {
+		t.Fatalf("draws won = %d, want exactly 1", wins)
+	}
+
+	vukemtest.AssertDatabaseCount(t, f.app, "draws", 1)
+
+	if got := f.status(t); got != models.RaffleDrawn {
+		t.Fatalf("status = %q", got)
+	}
+}
+
+// PLAN Phase 3 (D15): "serve" runs the database queue worker in-process
+// (bootstrap.Background) and it processes the delayed ExpireReservation
+// and RunDraw jobs.
+func TestPostgres_BackgroundWorkerProcessesDelayedJobs(t *testing.T) {
+	t.Parallel()
+
+	env := postgresEnv(t)
+	env.AppOptions = []vukem.Option{vukem.WithKind(vukem.KindWeb)}
+	f := newNumbersFixture(t, env)
+	sell(t, f.app, f.svc, f.raffle, 1, buyer)
+	postLink(f.c, f.path, 2, buyerForm()).AssertCreated()
+
+	db := f.svc.DB
+	ctx := t.Context()
+
+	var queued int
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM jobs WHERE kind IN ('reservation.expire','raffle.draw')").
+		Scan(&queued); err != nil || queued != 3 { // 2 link expiries + the deadline draw
+		t.Fatalf("queued jobs = %d, %v; want 3", queued, err)
+	}
+
+	// The jobs are not due yet: the worker leaves them alone.
+	runCtx, stop := context.WithCancel(ctx)
+	done := make(chan error, 1)
+
+	go func() { done <- f.app.Run(runCtx) }()
+
+	t.Cleanup(func() {
+		stop()
+
+		if err := <-done; err != nil {
+			t.Errorf("app.Run: %v", err)
+		}
+	})
+
+	time.Sleep(1500 * time.Millisecond)
+	f.show(t).PropEquals("numbers.1.status", "reserved")
+
+	// Ten minutes later. workaround(vukem v0.22.0): queue.Delay and the
+	// database driver use the wall clock, not app.Now, so the test makes
+	// the jobs due by hand while the domain sees the fake clock.
+	f.clock.Advance(10 * time.Minute)
+	f.moveDeadline(t, 0)
+
+	if _, err := db.ExecContext(ctx, "UPDATE jobs SET available_at = $1", time.Now().UnixMilli()); err != nil {
+		t.Fatal(err)
+	}
+
+	waitFor(t, 15*time.Second, func() bool {
+		var draws, live int
+		_ = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM draws WHERE raffle_id = $1", f.raffle.ID).Scan(&draws)
+		_ = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM reservations WHERE raffle_id = $1 AND status = 'pending'", f.raffle.ID).Scan(&live)
+
+		return draws == 1 && live == 0
+	})
+
+	f.show(t).PropEquals("numbers.1.status", "available").PropEquals("draw.winning_number", float64(1)).
+		PropEquals("winner.buyer_name", buyer.Name)
+	vukemtest.AssertDatabaseHas(t, f.app, "reservations", map[string]any{"number": 2, "status": "expired"})
+}
+
+// The every-minute sweepers on Postgres: due links expire, overdue raffles
+// are drawn.
+func TestPostgres_SweepersExpireLinksAndDraw(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t, postgresEnv(t))
+	sell(t, f.app, f.svc, f.raffle, 7, buyer)
+	postLink(f.c, f.path, 8, buyerForm()).AssertCreated()
+
+	s, err := f.app.Schedule()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f.clock.Advance(10 * time.Minute)
+
+	if err := s.RunDue(t.Context(), f.clock.Now()); err != nil {
+		t.Fatal(err)
+	}
+
+	f.show(t).PropEquals("numbers.7.status", "available").PropEquals("raffle.status", "active")
+
+	f.moveDeadline(t, 0)
+	f.clock.Advance(time.Minute)
+
+	if err := s.RunDue(t.Context(), f.clock.Now()); err != nil {
+		t.Fatal(err)
+	}
+
+	f.show(t).PropEquals("raffle.status", "drawn").PropEquals("draw.winning_number", float64(7))
+}
+
+func waitFor(t *testing.T, timeout time.Duration, cond func() bool) {
+	t.Helper()
+
+	deadline := time.Now().Add(timeout)
+	for !cond() {
+		if time.Now().After(deadline) {
+			t.Fatal("condition not met in time")
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+}

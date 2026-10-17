@@ -6,6 +6,7 @@ import (
 	vukem "github.com/AlexGalhardo/vukem"
 	"github.com/AlexGalhardo/vukem/queue"
 
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/draws"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/jobs"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/reservations"
 )
@@ -27,10 +28,15 @@ func Jobs() vukem.Provider {
 		}
 
 		res := reservations.New(db, app.Now, app.Queue)
+		draw := draws.New(db, app.Now)
 
 		return q.Register(
 			queue.Handle(func(ctx context.Context, j jobs.ExpireReservation) error {
 				_, err := res.Expire(ctx, j.ReservationID)
+				return err
+			}),
+			queue.Handle(func(ctx context.Context, j jobs.RunDraw) error {
+				_, _, err := draw.Run(ctx, j.RaffleID, j.Trigger)
 				return err
 			}),
 		)

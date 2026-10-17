@@ -157,6 +157,8 @@ jobs:
         run: |
           echo "APP_KEY=base64:$(openssl rand -base64 32)" > .env
           docker compose up -d --build --wait
+          # Demo drawn raffle read by e2e/draw.spec.ts (docs/draw-algorithm.md).
+          docker compose exec -T app /app/rifa db:seed
       - name: Smoke
         run: |
           curl -fsS http://localhost:3000/up

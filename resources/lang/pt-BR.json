@@ -190,7 +190,7 @@
 			"empty": "Você ainda não criou nenhuma rifa.",
 			"counts": "{paid} pagos · {reserved} reservados · {available} disponíveis"
 		},
-		"price": "R$ {price} por número",
+		"price": "{price} por número",
 		"ends": "Termina em {date}",
 		"numbers": "Números",
 		"create_title": "Nova rifa",
@@ -203,7 +203,45 @@
 		"number_not_found": "Este número não existe na rifa.",
 		"number_unavailable": "Este número não está disponível.",
 		"not_found": "Link de pagamento não encontrado.",
-		"nothing_to_cancel": "Este número não tem link de pagamento ativo."
+		"nothing_to_cancel": "Este número não tem link de pagamento ativo.",
+		"cancelled": "Link cancelado. O número voltou a ficar disponível.",
+		"grid_hint": "Clique em um número disponível para gerar um link de pagamento, ou em um número reservado/pago para ver o comprador.",
+		"form": {
+			"title": "Link de pagamento — número {number}",
+			"buyer_name": "Nome do comprador",
+			"buyer_email": "E-mail do comprador",
+			"buyer_phone": "Celular do comprador (com DDD)",
+			"phone_hint": "Ex.: (11) 98765-4321. Usado para enviar o link pelo WhatsApp.",
+			"submit": "Gerar link",
+			"close": "Fechar",
+			"invalid_name": "Informe o nome (2 a 100 caracteres).",
+			"invalid_email": "Informe um e-mail válido.",
+			"invalid_phone": "Informe um telefone brasileiro com DDD.",
+			"error": "Não foi possível gerar o link. Tente novamente.",
+			"rate_limited": "Muitos links em pouco tempo. Aguarde um minuto e tente de novo."
+		},
+		"result": {
+			"title": "Link gerado para o número {number}",
+			"once": "Copie e envie agora: por segurança, este link não será exibido novamente.",
+			"copy": "Copiar link",
+			"copied": "Copiado!",
+			"whatsapp": "Enviar pelo WhatsApp",
+			"whatsapp_text": "Olá, {name}! Este é o seu link para pagar o número {number} da rifa \"{title}\" por PIX: {url} — ele vale por 10 minutos.",
+			"expires_in": "Expira em {time}",
+			"expired": "Este link expirou. Gere um novo se o comprador ainda quiser o número."
+		},
+		"details": {
+			"title": "Número {number}",
+			"expires_at": "Link válido até {date}",
+			"paid_at": "Pago em {date}",
+			"cancel": "Cancelar link",
+			"confirm_cancel": "Cancelar o link deste número? Ele volta a ficar disponível.",
+			"status": {
+				"pending": "Link enviado, aguardando o comprador",
+				"awaiting_payment": "PIX gerado, aguardando pagamento",
+				"paid": "Pago"
+			}
+		}
 	},
 	"apikeys": {
 		"nav": "API",
@@ -232,5 +270,36 @@
 	"export": {
 		"csv": "Exportar CSV",
 		"json": "Exportar JSON"
+	},
+	"draw": {
+		"title": "Resultado do sorteio",
+		"pending": "O sorteio acontece automaticamente no fim do prazo ou assim que todos os números forem pagos.",
+		"archived": "Esta rifa foi arquivada pelo organizador e não será sorteada.",
+		"winning_number": "Número sorteado",
+		"no_winner": "Nenhum número foi pago: a rifa foi encerrada sem sorteio.",
+		"drawn_at": "Data do sorteio",
+		"trigger_label": "Motivo",
+		"trigger": {
+			"deadline": "Fim do prazo",
+			"sold_out": "Todos os números vendidos"
+		},
+		"seed": "Semente (seed, 32 bytes em hex)",
+		"participants_count": "Números participantes (pagos)",
+		"participants_list": "Lista de participantes",
+		"participants_sha256": "SHA-256 da lista de participantes",
+		"algorithm": "Algoritmo",
+		"winner": "Ganhador",
+		"winner_missing": "Comprador do número sorteado não encontrado.",
+		"verify": {
+			"title": "Como conferir",
+			"intro": "Qualquer pessoa pode refazer o sorteio com os dados acima:",
+			"step1": "Escreva os números pagos em ordem crescente, separados por vírgula e sem espaços (ex.: 3,7,12). O SHA-256 desse texto deve ser igual ao publicado.",
+			"step2": "Para contador = 0, 1, 2…: calcule HMAC-SHA256 usando a semente (bytes do hex) como chave e o contador em 8 bytes big-endian como mensagem; os 8 primeiros bytes do resultado, lidos como inteiro sem sinal big-endian, são v.",
+			"step3": "Seja n a quantidade de participantes. Se v ≥ ⌊2^64 ÷ n⌋ × n, descarte v e use o próximo contador; senão, o ganhador é o número na posição v mod n da lista (começando em 0).",
+			"docs": "Código de referência em Python e Go: docs/draw-algorithm.md no repositório do projeto.",
+			"run": "Conferir no navegador",
+			"ok": "Conferido: o hash da lista e o número sorteado batem.",
+			"fail": "Não confere com os dados publicados."
+		}
 	}
 }

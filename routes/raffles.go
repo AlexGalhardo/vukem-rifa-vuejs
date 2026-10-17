@@ -7,6 +7,7 @@ import (
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/accounts"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/controllers"
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/draws"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/raffles"
 )
 
@@ -18,7 +19,7 @@ func Raffles(r *router.Router, app *vukem.App) error {
 		return err
 	}
 
-	rc := controllers.NewRaffleController(raffles.New(acc.DB, app.Now))
+	rc := controllers.NewRaffleController(raffles.New(acc.DB, app.Now, app.Queue), draws.New(acc.DB, app.Now))
 	owner := []router.Middleware{auth.Required(acc.Web), auth.Verified(acc.Web)}
 
 	r.Get("/dashboard", rc.Index).Name("dashboard").Use(owner...)

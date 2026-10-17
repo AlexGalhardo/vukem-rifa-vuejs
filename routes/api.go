@@ -54,7 +54,7 @@ func API(r *router.Router, app *vukem.App) error {
 
 	h := &apiv1.Handlers{
 		DB:           acc.DB,
-		Raffles:      raffles.New(acc.DB, app.Now),
+		Raffles:      raffles.New(acc.DB, app.Now, app.Queue),
 		Reservations: reservations.New(acc.DB, app.Now, app.Queue),
 		Export:       export.New(acc.DB, app.Now),
 		URL:          acc.URL,

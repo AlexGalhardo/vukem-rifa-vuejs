@@ -2,7 +2,14 @@
 import { useI18n } from "../composables/useI18n";
 import type { NumberStatus } from "../types";
 
-defineProps<{ statuses: NumberStatus[] }>();
+// numbers[i] is number i+1. With interactive, every number is a button
+// that emits select (the owner's manage page); without it, a plain list
+// (the public page).
+withDefaults(defineProps<{ statuses: NumberStatus[]; interactive?: boolean; selected?: number | null }>(), {
+	interactive: false,
+	selected: null,
+});
+const emit = defineEmits<{ select: [number: number] }>();
 
 const { t } = useI18n();
 
@@ -11,6 +18,11 @@ const colors: Record<NumberStatus, string> = {
 	reserved:
 		"border-amber-400 bg-amber-100 text-amber-900 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-100",
 	paid: "border-brand-600 bg-brand-600 text-white dark:border-brand-500 dark:bg-brand-700",
+};
+const hover: Record<NumberStatus, string> = {
+	available: "hover:border-brand-500 hover:bg-brand-50 dark:hover:border-brand-500 dark:hover:bg-zinc-800",
+	reserved: "hover:bg-amber-200 dark:hover:bg-amber-900",
+	paid: "hover:bg-brand-700 dark:hover:bg-brand-600",
 };
 </script>
 
@@ -27,11 +39,25 @@ const colors: Record<NumberStatus, string> = {
 				v-for="(status, i) in statuses"
 				:key="i"
 				:data-status="status"
+				:data-number="i + 1"
 				:title="`${i + 1}: ${t(`raffle.number_status.${status}`)}`"
-				class="rounded-md border py-1 text-center text-sm tabular-nums"
-				:class="colors[status]"
+				class="text-center text-sm tabular-nums"
+				:class="interactive ? '' : ['rounded-md border py-1', colors[status]]"
 			>
-				<span class="sr-only">{{ t(`raffle.number_status.${status}`) }}: </span>{{ i + 1 }}
+				<button
+					v-if="interactive"
+					type="button"
+					class="w-full rounded-md border py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+					:class="[colors[status], hover[status], selected === i + 1 ? 'ring-2 ring-brand-500 dark:ring-brand-500' : '']"
+					:aria-pressed="selected === i + 1"
+					:data-testid="`number-${i + 1}`"
+					@click="emit('select', i + 1)"
+				>
+					<span class="sr-only">{{ t(`raffle.number_status.${status}`) }}: </span>{{ i + 1 }}
+				</button>
+				<template v-else>
+					<span class="sr-only">{{ t(`raffle.number_status.${status}`) }}: </span>{{ i + 1 }}
+				</template>
 			</li>
 		</ol>
 	</div>
