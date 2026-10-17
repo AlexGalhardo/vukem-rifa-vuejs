@@ -10,5 +10,6 @@ func All() []schema.Migration {
 		m20261017124834CreateAuthTables(),
 		m20261017124835CreateSocialAccountsTable(),
 		m20261017130000AddIsAdminToUsers(),
+		m20261017140000CreateRafflesTables(),
 	}
 }

@@ -120,7 +120,3 @@ func (h *Handlers) Logout(c *web.Ctx) error {
 
 	return c.Redirect("/")
 }
-
-// Dashboard is the first page after login; the user arrives as the shared
-// auth.user prop.
-func (*Handlers) Dashboard(c *web.Ctx) error { return inertia.Render(c, "Dashboard", nil) }

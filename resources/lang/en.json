@@ -118,7 +118,12 @@
 			"email": "email",
 			"password": "password",
 			"password_confirmation": "password confirmation",
-			"token": "token"
+			"token": "token",
+			"title": "title",
+			"description": "description",
+			"number_count": "number count",
+			"price_reais": "price",
+			"duration_days": "duration"
 		}
 	},
 	"mail": {
@@ -135,5 +140,62 @@
 			"action": "Reset password",
 			"expires": "The link expires in one hour and works once. If you did not ask, ignore this email."
 		}
+	},
+	"raffle": {
+		"not_found": "Raffle not found.",
+		"created": "Raffle created.",
+		"updated": "Raffle updated.",
+		"deleted": "Raffle deleted.",
+		"archived": "Raffle archived.",
+		"finished": "This raffle has ended and can no longer change.",
+		"locked_field": "Cannot change after a number was paid.",
+		"shrink_busy": "Some numbers above that total are reserved or paid.",
+		"delete_locked": "Raffles with paid numbers cannot be deleted; archive it instead.",
+		"fields": {
+			"title": "Title",
+			"description": "Description",
+			"number_count": "Number of numbers",
+			"price_reais": "Price per number (R$)",
+			"duration_days": "Duration (days)"
+		},
+		"hints": {
+			"number_count": "From {min} to {max} numbers (always 1 to N).",
+			"price_reais": "Whole reais, from R$ {min} to R$ {max}.",
+			"duration_days": "From {min} to {max} days.",
+			"locked": "Price, number count and duration are locked after the first paid number."
+		},
+		"status": {
+			"active": "Active",
+			"drawn": "Drawn",
+			"closed": "Closed",
+			"archived": "Archived"
+		},
+		"number_status": {
+			"available": "Available",
+			"reserved": "Reserved",
+			"paid": "Paid"
+		},
+		"actions": {
+			"new": "New raffle",
+			"create": "Create raffle",
+			"save": "Save",
+			"edit": "Edit",
+			"delete": "Delete",
+			"archive": "Archive",
+			"public_page": "Public page",
+			"confirm_delete": "Delete this raffle? This cannot be undone.",
+			"confirm_archive": "Archive this raffle?"
+		},
+		"list": {
+			"empty": "You have not created a raffle yet.",
+			"counts": "{paid} paid · {reserved} reserved · {available} available"
+		},
+		"price": "R$ {price} per number",
+		"ends": "Ends on {date}",
+		"numbers": "Numbers",
+		"create_title": "New raffle",
+		"edit_title": "Edit raffle",
+		"public_footer": "Buyer data is never shown publicly.",
+		"invalid_field": "Invalid value for this field."
 	}
 }

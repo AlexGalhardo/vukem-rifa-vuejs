@@ -18,3 +18,51 @@ export interface SharedProps {
 	auth?: { user: User | null };
 	[key: string]: unknown;
 }
+
+export type RaffleStatus = "active" | "drawn" | "closed" | "archived";
+export type NumberStatus = "available" | "reserved" | "paid";
+
+/** Fields anyone may see (public page). */
+export interface PublicRaffle {
+	slug: string;
+	title: string;
+	description: string;
+	number_count: number;
+	price_reais: number;
+	starts_at: string;
+	ends_at: string;
+	status: RaffleStatus;
+}
+
+/** The owner's view of a raffle. */
+export interface OwnedRaffle extends PublicRaffle {
+	id: number;
+	duration_days: number;
+	locked: boolean;
+	created_at: string;
+}
+
+export interface RaffleSummary extends PublicRaffle {
+	id: number;
+	duration_days: number;
+	locked_at: string | null;
+	available: number;
+	reserved: number;
+	paid: number;
+}
+
+export interface RaffleNumber {
+	id: number;
+	number: number;
+	status: NumberStatus;
+	paid_at: string | null;
+}
+
+export interface RaffleLimits {
+	min_numbers: number;
+	max_numbers: number;
+	min_price: number;
+	max_price: number;
+	min_duration: number;
+	max_duration: number;
+}

@@ -118,7 +118,12 @@
 			"email": "e-mail",
 			"password": "senha",
 			"password_confirmation": "confirmação de senha",
-			"token": "token"
+			"token": "token",
+			"title": "título",
+			"description": "descrição",
+			"number_count": "quantidade de números",
+			"price_reais": "preço",
+			"duration_days": "duração"
 		}
 	},
 	"mail": {
@@ -135,5 +140,62 @@
 			"action": "Redefinir senha",
 			"expires": "O link expira em uma hora e funciona uma única vez. Se não foi você, ignore este e-mail."
 		}
+	},
+	"raffle": {
+		"not_found": "Rifa não encontrada.",
+		"created": "Rifa criada.",
+		"updated": "Rifa atualizada.",
+		"deleted": "Rifa excluída.",
+		"archived": "Rifa arquivada.",
+		"finished": "Esta rifa foi encerrada e não pode mais ser alterada.",
+		"locked_field": "Não pode mudar depois que um número foi pago.",
+		"shrink_busy": "Há números reservados ou pagos acima desse total.",
+		"delete_locked": "Rifas com números pagos não podem ser excluídas; arquive-a.",
+		"fields": {
+			"title": "Título",
+			"description": "Descrição",
+			"number_count": "Quantidade de números",
+			"price_reais": "Preço por número (R$)",
+			"duration_days": "Duração (dias)"
+		},
+		"hints": {
+			"number_count": "De {min} a {max} números (sempre de 1 a N).",
+			"price_reais": "Valor inteiro em reais, de R$ {min} a R$ {max}.",
+			"duration_days": "De {min} a {max} dias.",
+			"locked": "Preço, quantidade e duração ficam travados depois do primeiro número pago."
+		},
+		"status": {
+			"active": "Ativa",
+			"drawn": "Sorteada",
+			"closed": "Encerrada",
+			"archived": "Arquivada"
+		},
+		"number_status": {
+			"available": "Disponível",
+			"reserved": "Reservado",
+			"paid": "Pago"
+		},
+		"actions": {
+			"new": "Nova rifa",
+			"create": "Criar rifa",
+			"save": "Salvar",
+			"edit": "Editar",
+			"delete": "Excluir",
+			"archive": "Arquivar",
+			"public_page": "Página pública",
+			"confirm_delete": "Excluir esta rifa? Esta ação não pode ser desfeita.",
+			"confirm_archive": "Arquivar esta rifa?"
+		},
+		"list": {
+			"empty": "Você ainda não criou nenhuma rifa.",
+			"counts": "{paid} pagos · {reserved} reservados · {available} disponíveis"
+		},
+		"price": "R$ {price} por número",
+		"ends": "Termina em {date}",
+		"numbers": "Números",
+		"create_title": "Nova rifa",
+		"edit_title": "Editar rifa",
+		"public_footer": "Os dados dos compradores nunca são exibidos publicamente.",
+		"invalid_field": "Valor inválido para este campo."
 	}
 }

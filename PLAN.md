@@ -3,7 +3,7 @@
 The onboarding file for every session and agent. Read it top to bottom once, then pick the first unchecked task of the current phase.
 
 - Repository: <https://github.com/AlexGalhardo/vukem-rifa-vuejs> (public). Production: <https://rifa.vukem.com> (Railway).
-- Current phase: **Phase 1 — Auth** (Phase 0 Foundation done).
+- Current phase: **Phase 3 — Numbers and payment links** (Phases 0–2 done; Phase 1 has two owner-blocked items).
 
 ## 1. Briefing
 
@@ -31,6 +31,8 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | D14 | Number rows are pre-created (`1..N`, N ≤ 1000) when a raffle is created. | Row-level locking per number, simple grid queries. |
 | D15 | Background work runs in the web process as vukem runners (queue worker + scheduler) on one Railway service; `queue:work`/`schedule:work` can be split out later. | One instance, low cost. |
 | D16 | JS tooling via Bun 1.4.3; Biome 2.5 for lint/format; Playwright 1.64 e2e; lefthook git hooks; commitlint; markdownlint-cli2. | Owner standards. |
+| D18 | Duration is locked together with price and number count after the first paid number; before that, shrinking the count is refused if a removed number is reserved or paid. | Changing the deadline after sales would be unfair to buyers. |
+| D19 | Tests: unit/HTTP tests run on SQLite via `vukemtest`, so domain SQL stays dialect-neutral (recursive CTE for numbers); Postgres-only parts (CHECKs, `FOR UPDATE`, partial indexes) are covered by `-tags=integration`. | vukem has no Postgres test helper yet. |
 | D17 | Local `.claude/settings.local.json` (`disableAllHooks: true`) is owner-managed and git-ignored. | Owner. |
 
 ## 3. Versions (verified 2026-10-17, exact pins)
@@ -259,14 +261,14 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 ### Phase 2 — Raffles
 
-- [ ] Migration `raffles` + `raffle_numbers` with CHECKs/uniques (D14) → verify: integration test inserting invalid rows fails.
-- [ ] `z` schema for create/update (title, description, number count 10..1000, price 1..100000, duration 7..60) + zod mirror → verify: table-driven validation tests.
-- [ ] Create raffle (pre-create numbers, slug, ends_at) → verify: HTTP test + numbers count = N.
-- [ ] Dashboard list + manage page (grid with status) → verify: Inertia prop tests.
-- [ ] Edit with lock rule (price/count immutable after first paid) → verify: test.
-- [ ] Delete only without paid numbers, else archive → verify: tests.
-- [ ] Public page `/r/{slug}` without personal data → verify: test asserts no buyer fields in props.
-- [ ] IDOR tests (another owner gets 404 on every raffle route) → verify: security test.
+- [x] Migration `raffles` + `raffle_numbers` with CHECKs/uniques (D14) → verify: `TestPostgres_RaffleNumbersAndConstraints`.
+- [x] `z` schema for create/update (title, description, number count 10..1000, price 1..100000, duration 7..60) + zod mirror → verify: `TestRaffle_Validation`, e2e client validation.
+- [x] Create raffle (pre-create numbers, slug, ends_at) → verify: `TestRaffle_CreateWithNumbers` (+1000 numbers on Postgres).
+- [x] Dashboard list + manage page (grid with status) → verify: Inertia prop tests + e2e `raffles.spec.ts`.
+- [x] Edit with lock rule (price/count/duration immutable after first paid, D18) + resize before lock → verify: `TestRaffle_LockedAfterFirstPaidNumber`, `TestRaffle_UpdateAndResize`.
+- [x] Delete only without paid numbers, else archive → verify: `TestRaffle_DeleteWithoutPaidNumbers`, 409 + archive in lock test.
+- [x] Public page `/r/{slug}` without personal data → verify: `TestRaffle_PublicPageHasNoPersonalData`, e2e (XSS payload rendered as text).
+- [x] IDOR tests (another owner gets 404 on every raffle route) → verify: `TestRaffle_OtherOwnersGet404`, `TestRaffle_GuestsAndUnverifiedCannotManage`.
 
 ### Phase 3 — Numbers and payment links
 

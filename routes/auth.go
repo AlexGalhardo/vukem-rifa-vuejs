@@ -49,8 +49,6 @@ func Auth(r *router.Router, app *vukem.App) error {
 	r.Get("/email/verify/{id}", h.Verify).Name("verification.verify").Use(required, acc.Signer.Middleware())
 	r.Post("/email/verification-notification", h.Resend).Name("verification.send").Use(required, mails)
 
-	r.Get("/dashboard", h.Dashboard).Name("dashboard").Use(required, verifiedOrNotice())
-
 	return nil
 }
 
