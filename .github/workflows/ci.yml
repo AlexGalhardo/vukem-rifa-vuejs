@@ -1,0 +1,151 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GOTOOLCHAIN: local
+
+jobs:
+  go-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v9.3.0
+        with:
+          version: v2.15.0
+
+  go-test:
+    name: go test (unit, race)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test -race -coverprofile=coverage.out ./...
+      - run: go build -trimpath -o /dev/null ./cmd/app
+
+  go-integration:
+    name: go test (integration, Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6-alpine3.24
+        env:
+          POSTGRES_USER: rifa
+          POSTGRES_PASSWORD: rifa
+          POSTGRES_DB: rifa
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rifa -d rifa"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgres://rifa:rifa@localhost:5432/rifa?sslmode=disable
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: go test -tags=integration -race ./...
+
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: go tool govulncheck ./...
+
+  frontend:
+    name: frontend (biome, typecheck, build, markdown)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun audit --audit-level=high
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run build
+      - run: bun run lint:md
+
+  commitlint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bunx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+
+  e2e:
+    name: e2e + smoke + DAST (docker compose)
+    needs: [go-test, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Start stack
+        run: |
+          echo "APP_KEY=base64:$(openssl rand -base64 32)" > .env
+          docker compose up -d --build --wait
+      - name: Smoke
+        run: |
+          curl -fsS http://localhost:3000/up
+          curl -fsS "http://localhost:3000/up?checks=1"
+          curl -fsS http://localhost:3000/ | grep -q 'data-page="app"'
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:e2e
+        env:
+          CI: "true"
+          BASE_URL: http://localhost:3000
+      - uses: actions/upload-artifact@v7.0.2
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+      - name: ZAP baseline
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: http://localhost:3000
+          rules_file_name: .zap/rules.tsv
+          allow_issue_writing: false
+          # -I: warnings do not fail; promote rules to FAIL in .zap/rules.tsv.
+          cmd_options: "-I"
+          fail_action: true
+      - name: Nuclei
+        uses: projectdiscovery/nuclei-action@v3.1.0
+        with:
+          target: http://localhost:3000
+          flags: "-severity medium,high,critical -exclude-tags dos,fuzz,intrusive"
+      - name: App logs
+        if: always()
+        run: docker compose logs app
