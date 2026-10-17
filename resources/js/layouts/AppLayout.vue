@@ -15,9 +15,14 @@ const link = "text-sm text-brand-700 hover:underline dark:text-brand-500";
 </script>
 
 <template>
-	<header class="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-		<Link href="/" class="font-bold text-brand-700 dark:text-brand-500">{{ page.props.appName }}</Link>
-		<nav class="flex items-center gap-3">
+	<!-- Same bar as the vukem docs site: sticky, 3.5rem high, max-w-[90rem] container with px-4/sm:px-6 gutters. -->
+	<header
+		class="sticky top-0 z-40 h-14 border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/80"
+		data-testid="navbar"
+	>
+		<div class="mx-auto flex h-full max-w-[90rem] items-center justify-between gap-3 px-4 sm:px-6" data-testid="navbar-container">
+			<Link href="/" class="font-bold text-brand-700 dark:text-brand-500">{{ page.props.appName }}</Link>
+			<nav class="flex items-center gap-3">
 			<template v-if="user">
 				<Link href="/dashboard" :class="link">{{ t("nav.dashboard") }}</Link>
 				<Link href="/settings/api-keys" :class="link" data-testid="nav-api-keys">{{ t("apikeys.nav") }}</Link>
@@ -34,7 +39,8 @@ const link = "text-sm text-brand-700 hover:underline dark:text-brand-500";
 			</template>
 			<LocaleSwitcher />
 			<ThemeToggle />
-		</nav>
+			</nav>
+		</div>
 	</header>
 	<main class="mx-auto max-w-4xl p-4">
 		<p
