@@ -17,7 +17,7 @@ Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go ba
 | Go tests | `go test -race ./...`; integration `TEST_DATABASE_URL=postgres://rifa:rifa@localhost:5432/rifa?sslmode=disable go test -tags=integration -race ./...` |
 | Go lint | `golangci-lint fmt` then `golangci-lint run ./...` |
 | Frontend | `bun run lint`, `bun run typecheck`, `bun run build` |
-| E2E | `bun run test:e2e` (stack running, `BASE_URL` default `http://localhost:3000`) |
+| E2E | `go run ./cmd/app db:seed` once (demo drawn raffle `/r/demodraw01` for `e2e/draw.spec.ts`), then `bun run test:e2e` (stack running, `BASE_URL` default `http://localhost:3000`) |
 | Docs | `bun run lint:md` |
 | CI status | `gh run list --limit 5`, `gh run view <id> --log-failed` |
 
@@ -42,5 +42,6 @@ Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go ba
 | `resources/js/` | Vue pages, layouts, components, composables |
 | `resources/lang/` | `pt-BR.json`, `en.json` shared by Go and Vue |
 | `tests/` | Go tests; `tests/pgtest` gives each integration test its own database |
+| `docs/` | specs such as `draw-algorithm.md` (how a published draw is recomputed) |
 | `e2e/` | Playwright specs |
 | `.claude/skills/`, `.claude/rules/` | agent skills and path-scoped rules |
