@@ -130,14 +130,20 @@ func TestReservation_RefusesUnavailableNumbers(t *testing.T) {
 		wantStatus(t, err, http.StatusNotFound)
 	}
 
-	ended := f.raffle
-	ended.EndsAt = f.clock.Now()
-	_, err = f.svc.Reserve(t.Context(), ended, 2, buyer)
+	// The database row decides (the caller's copy may be stale).
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET ends_at = ? WHERE id = ?", f.clock.Now(), f.raffle.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.svc.Reserve(t.Context(), f.raffle, 2, buyer)
 	wantStatus(t, err, http.StatusConflict)
 
-	archived := f.raffle
-	archived.Status = models.RaffleArchived
-	_, err = f.svc.Reserve(t.Context(), archived, 2, buyer)
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET ends_at = ?, status = ? WHERE id = ?",
+		f.clock.Now().Add(time.Hour), models.RaffleArchived, f.raffle.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.svc.Reserve(t.Context(), f.raffle, 2, buyer)
 	wantStatus(t, err, http.StatusConflict)
 }
 
@@ -298,4 +304,46 @@ func TestLedger_Split(t *testing.T) {
 			t.Errorf("Split(%d) = %d, %d; want %d, %d", tc.amount, owner, fee, tc.owner, tc.fee)
 		}
 	}
+}
+
+// Security review fix: Reserve uses the raffle as it is in the database
+// (read under lock), never the copy the caller loaded earlier.
+func TestReservation_UsesTheCurrentRaffleNotTheCallersCopy(t *testing.T) {
+	t.Parallel()
+
+	f := newReservationFixture(t)
+	stale := f.raffle
+
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET price_reais = 25 WHERE id = ?", f.raffle.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	link, err := f.svc.Reserve(t.Context(), stale, 1, buyer)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if link.Reservation.AmountCents != 2500 {
+		t.Fatalf("amount = %d, want the current price 2500", link.Reservation.AmountCents)
+	}
+
+	// The raffle shrank to 50 numbers since the caller loaded it: 404, not 500.
+	if _, err := f.svc.DB.ExecContext(t.Context(), "DELETE FROM raffle_numbers WHERE raffle_id = ? AND number > 50", f.raffle.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET number_count = 50 WHERE id = ?", f.raffle.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.svc.Reserve(t.Context(), stale, 80, buyer)
+	wantStatus(t, err, http.StatusNotFound)
+
+	// Archived meanwhile: refused although the copy says active.
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET status = 'archived' WHERE id = ?", f.raffle.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = f.svc.Reserve(t.Context(), stale, 2, buyer)
+	wantStatus(t, err, http.StatusConflict)
 }

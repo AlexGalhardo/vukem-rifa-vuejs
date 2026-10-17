@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -97,11 +98,8 @@ func (s *Service) ReserveWith(ctx context.Context, r models.Raffle, number int, 
 	}
 
 	now := s.Now().UTC()
-	if r.Status != models.RaffleActive || !now.Before(r.EndsAt) {
-		return Link{}, errs.New(http.StatusConflict, i18n.T(ctx, "link.not_on_sale"))
-	}
-
-	if number < 1 || number > r.NumberCount {
+	// Status, deadline, size and price are checked on the locked row below.
+	if number < 1 {
 		return Link{}, errs.New(http.StatusNotFound, i18n.T(ctx, "link.number_not_found"))
 	}
 
@@ -116,7 +114,6 @@ func (s *Service) ReserveWith(ctx context.Context, r models.Raffle, number int, 
 		TokenSealed: orm.Encrypted[string]{V: token},
 		Status:      models.ReservationPending,
 		ExpiresAt:   now.Add(models.ReservationTTL),
-		AmountCents: r.PriceReais * 100,
 		Origin:      o.Origin,
 		BuyerUserID: o.BuyerUserID,
 	}
@@ -132,13 +129,25 @@ func (s *Service) ReserveWith(ctx context.Context, r models.Raffle, number int, 
 	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
 		p := tx.Dialect().Placeholder
 
-		if o.MaxLivePerEmail > 0 {
-			// Serializes this raffle's capped reserves so two concurrent
-			// requests cannot both pass the count (no-op on SQLite).
-			if _, err := orm.QueryOf[models.Raffle](tx).Where("id", r.ID).LockForUpdate().First(ctx); err != nil {
-				return fmt.Errorf("lock raffle %d: %w", r.ID, err)
-			}
+		// The raffle as it is now, locked (same order as edits, payments and
+		// the draw): r may be stale, so status, deadline, size and price all
+		// come from this row, and capped counts below cannot race.
+		cur, err := orm.QueryOf[models.Raffle](tx).Where("id", r.ID).LockForUpdate().First(ctx)
+		if err != nil {
+			return fmt.Errorf("lock raffle %d: %w", r.ID, err)
+		}
 
+		if cur.Status != models.RaffleActive || !now.Before(cur.EndsAt) {
+			return errs.New(http.StatusConflict, i18n.T(ctx, "link.not_on_sale"))
+		}
+
+		if number > cur.NumberCount {
+			return errs.New(http.StatusNotFound, i18n.T(ctx, "link.number_not_found"))
+		}
+
+		res.AmountCents = cur.PriceReais * 100
+
+		if o.MaxLivePerEmail > 0 {
 			var live int
 			if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM reservations WHERE raffle_id = "+p(1)+" AND buyer_email = "+p(2)+
 				" AND status IN ('"+models.ReservationPending+"','"+models.ReservationAwaitingPayment+"') AND expires_at > "+p(3),
@@ -153,7 +162,9 @@ func (s *Service) ReserveWith(ctx context.Context, r models.Raffle, number int, 
 
 		var numberID int64
 		if err := tx.QueryRowContext(ctx, "SELECT id FROM raffle_numbers WHERE raffle_id = "+p(1)+" AND number = "+p(2),
-			r.ID, number).Scan(&numberID); err != nil {
+			r.ID, number).Scan(&numberID); errors.Is(err, sql.ErrNoRows) {
+			return errs.New(http.StatusNotFound, i18n.T(ctx, "link.number_not_found"))
+		} else if err != nil {
 			return fmt.Errorf("find number %d: %w", number, err)
 		}
 
