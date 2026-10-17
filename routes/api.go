@@ -40,7 +40,12 @@ func API(r *router.Router, app *vukem.App) error {
 		return err
 	}
 
-	// workaround(vukem v0.22.0): OPENAPI_PREFIX can only come from the environment; the app pins it in code.
+	limiters, err := app.RateLimiters()
+	if err != nil {
+		return err
+	}
+
+	// workaround(vukem v0.23.0): OPENAPI_PREFIX can only come from the environment; the app pins it in code.
 	if app.Config.OpenAPIPrefix == "" {
 		app.Config.OpenAPIPrefix = APIPrefix
 	}
@@ -58,7 +63,7 @@ func API(r *router.Router, app *vukem.App) error {
 	mw := apiv1.Middleware{
 		Read:         auth.Ability(acc.API, requests.AbilityRafflesRead),
 		Write:        auth.Ability(acc.API, requests.AbilityRafflesWrite),
-		LinkThrottle: ratelimit.Middleware(ratelimit.NewMemory(30, time.Minute), byAPIKey),
+		LinkThrottle: ratelimit.Middleware(limiters("api-payment-links", 30, time.Minute), byAPIKey),
 		Idempotency: api.Idempotency(store.Store(), api.IdempotencyOptions{
 			// The response holds a payment link: keep it no longer than the
 			// link could matter.
@@ -71,9 +76,9 @@ func API(r *router.Router, app *vukem.App) error {
 		h.Register(g, mw)
 	}).Name("api.v1.").Use(
 		// Bounds made-up tokens before they are checked, then each key.
-		ratelimit.Middleware(ratelimit.NewMemory(300, time.Minute), ratelimit.ByIP),
+		ratelimit.Middleware(limiters("api-ip", 300, time.Minute), ratelimit.ByIP),
 		tokenOnly(acc.API),
-		ratelimit.Middleware(ratelimit.NewMemory(120, time.Minute), byAPIKey),
+		ratelimit.Middleware(limiters("api-key", 120, time.Minute), byAPIKey),
 	)
 
 	// Public by design (PLAN.md §5): the API surface is documented for owners.

@@ -20,7 +20,7 @@ var paramRe = regexp.MustCompile(`\{([A-Za-z_][A-Za-z0-9_]*)\}`)
 // In is read from the query string (GET, DELETE) or the JSON body, plus
 // the path parameters, and validated with z.For[In].
 //
-// workaround(vukem v0.22.0): api.Register writes c.JSON, so responses are not checked like web.JSONWith.
+// workaround(vukem v0.23.0): api.Register writes c.JSON, so responses are not checked like web.JSONWith.
 func handle[In, Out any](g *router.Group, method, path string, op api.Op, fn func(*web.Ctx, In) (Out, error)) *router.Route {
 	inType, outType := reflect.TypeFor[In](), reflect.TypeFor[Out]()
 	noInput := inType.NumField() == 0

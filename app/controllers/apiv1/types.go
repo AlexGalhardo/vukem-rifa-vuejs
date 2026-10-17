@@ -87,7 +87,7 @@ type Raffle struct {
 
 // RafflePage is one page of raffles.
 //
-// workaround(vukem v0.22.0): z "required" on a slice also means "at least one item", so data lists have no required tag.
+// workaround(vukem v0.23.0): z "required" on a slice also means "at least one item", so data lists have no required tag.
 type RafflePage struct {
 	Data  []Raffle  `json:"data"`
 	Meta  PageMeta  `json:"meta"  validate:"required"`

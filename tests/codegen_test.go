@@ -18,7 +18,7 @@ var generatedTypes = filepath.Join("..", "resources", "js", "generated", "api.ts
 // generatedTS returns what `vukem codegen:types -zod` emits for the API,
 // made to compile against the app's zod 4.
 //
-// workaround(vukem v0.22.0): codegen:types -zod emits zod 3 code (z.ZodTypeDef), so it imports zod's bundled zod/v3.
+// workaround(vukem v0.23.0): codegen:types -zod emits zod 3 code (z.ZodTypeDef), so it imports zod's bundled zod/v3.
 func generatedTS(t *testing.T) []byte {
 	t.Helper()
 
