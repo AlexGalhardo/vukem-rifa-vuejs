@@ -1,7 +1,9 @@
 package tests
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -12,9 +14,12 @@ import (
 	"testing"
 	"time"
 
+	vukem "github.com/AlexGalhardo/vukem"
 	"github.com/AlexGalhardo/vukem/orm"
+	"github.com/AlexGalhardo/vukem/queue"
 	"github.com/AlexGalhardo/vukem/vukemtest"
 
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/jobs"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/payments/abacatepay"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/requests"
@@ -503,5 +508,50 @@ func TestWebhook_SecondEventForAPaidChargeIsANoOp(t *testing.T) {
 
 	if n, _ := ledgerSum(t, f, models.LedgerSaleOwnerShare); n != 1 {
 		t.Fatalf("owner share rows = %d, want 1", n)
+	}
+}
+
+func TestWebhook_LastPaidNumberDispatchesTheDraw(t *testing.T) {
+	t.Parallel()
+
+	fake := queue.NewFake()
+	opts := payEnv()
+	opts.AppOptions = []vukem.Option{vukem.WithQueueDriver(fake)}
+	f := newReservationFixture(t, opts)
+
+	q, err := f.app.Queue()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The raffles stream registers the real draw handler; until then the
+	// test needs one so the job can be dispatched.
+	if err := q.Register(queue.Handle(func(context.Context, jobs.RunDraw) error { return nil })); err != nil &&
+		!errors.Is(err, queue.ErrDuplicateKind) {
+		t.Fatal(err)
+	}
+
+	_, res := f.confirmed(t, 100)
+	deliverSigned(t, f.app, paidEvent("log_almost", *res.ChargeID, res.ID, 1000)).AssertOK()
+
+	if got := queue.Dispatched[jobs.RunDraw](fake); len(got) != 0 {
+		t.Fatalf("draw dispatched with numbers left: %+v", got)
+	}
+
+	if mails := queue.Dispatched[jobs.SendPaymentEmails](fake); len(mails) != 1 || mails[0].ReservationID != res.ID {
+		t.Fatalf("payment emails jobs = %+v", mails)
+	}
+
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffle_numbers SET status = 'paid' WHERE raffle_id = ? AND number < 99",
+		f.raffle.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	_, last := f.confirmed(t, 99)
+	deliverSigned(t, f.app, paidEvent("log_last", *last.ChargeID, last.ID, 1000)).AssertOK()
+
+	got := queue.Dispatched[jobs.RunDraw](fake)
+	if len(got) != 1 || got[0].RaffleID != f.raffle.ID || got[0].Trigger != models.DrawSoldOut {
+		t.Fatalf("draw jobs = %+v", got)
 	}
 }
