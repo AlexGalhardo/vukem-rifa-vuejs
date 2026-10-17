@@ -24,6 +24,9 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
       SMTP_INSECURE: "true"
+      # Fake AbacatePay gateway for local runs and CI e2e (refused in production).
+      ABACATEPAY_FAKE: "true"
+      ABACATEPAY_WEBHOOK_SECRET: local-webhook-secret
     ports:
       - "3000:3000"
     depends_on:
