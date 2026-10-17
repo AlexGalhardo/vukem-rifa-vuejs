@@ -2,6 +2,7 @@
 import { Head, Link, router } from "@inertiajs/vue3";
 import { computed } from "vue";
 
+import ExportLinks from "../../components/ExportLinks.vue";
 import NumberGrid from "../../components/NumberGrid.vue";
 import { useI18n } from "../../composables/useI18n";
 import { formatDateTime, formatReais } from "../../lib/format";
@@ -37,6 +38,7 @@ function archive(): void {
 		</div>
 		<div class="flex flex-wrap gap-2">
 			<a :href="`/r/${raffle.slug}`" :class="button" data-testid="public-link">{{ t("raffle.actions.public_page") }}</a>
+			<ExportLinks :raffle-id="raffle.id" />
 			<Link v-if="!finished" :href="`/raffles/${raffle.id}/edit`" :class="button">{{ t("raffle.actions.edit") }}</Link>
 			<button v-if="!raffle.locked" type="button" :class="button" data-testid="raffle-delete" @click="destroy">
 				{{ t("raffle.actions.delete") }}

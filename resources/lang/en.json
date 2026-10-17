@@ -204,5 +204,33 @@
 		"number_unavailable": "This number is not available.",
 		"not_found": "Payment link not found.",
 		"nothing_to_cancel": "This number has no active payment link."
+	},
+	"apikeys": {
+		"nav": "API",
+		"title": "API keys",
+		"lead": "Connect your raffles to other systems through the REST API. Each key has its own permissions and can be revoked at any time.",
+		"docs": "API documentation",
+		"name": "Key name",
+		"abilities": "Permissions",
+		"ability": {
+			"raffles_read": "Read raffles",
+			"raffles_write": "Create and change raffles"
+		},
+		"create": "Create key",
+		"created": "Copy the key now: for your security it will not be shown again.",
+		"copy": "Copy",
+		"copied": "Copied!",
+		"empty": "You have not created any key yet.",
+		"last_used": "Last used: {date}",
+		"never_used": "Never used",
+		"revoke": "Revoke",
+		"confirm_revoke": "Revoke the key \"{name}\"? Integrations using it will stop working.",
+		"revoked": "Key revoked.",
+		"not_found": "Key not found.",
+		"invalid_field": "Invalid value for this field."
+	},
+	"export": {
+		"csv": "Export CSV",
+		"json": "Export JSON"
 	}
 }

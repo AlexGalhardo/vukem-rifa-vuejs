@@ -204,5 +204,33 @@
 		"number_unavailable": "Este número não está disponível.",
 		"not_found": "Link de pagamento não encontrado.",
 		"nothing_to_cancel": "Este número não tem link de pagamento ativo."
+	},
+	"apikeys": {
+		"nav": "API",
+		"title": "Chaves de API",
+		"lead": "Integre suas rifas com outros sistemas pela API REST. Cada chave tem permissões próprias e pode ser revogada a qualquer momento.",
+		"docs": "Documentação da API",
+		"name": "Nome da chave",
+		"abilities": "Permissões",
+		"ability": {
+			"raffles_read": "Ler rifas",
+			"raffles_write": "Criar e alterar rifas"
+		},
+		"create": "Criar chave",
+		"created": "Copie a chave agora: por segurança, ela não será mostrada de novo.",
+		"copy": "Copiar",
+		"copied": "Copiada!",
+		"empty": "Você ainda não criou nenhuma chave.",
+		"last_used": "Último uso: {date}",
+		"never_used": "Nunca usada",
+		"revoke": "Revogar",
+		"confirm_revoke": "Revogar a chave \"{name}\"? Integrações que a usam deixarão de funcionar.",
+		"revoked": "Chave revogada.",
+		"not_found": "Chave não encontrada.",
+		"invalid_field": "Valor inválido para este campo."
+	},
+	"export": {
+		"csv": "Exportar CSV",
+		"json": "Exportar JSON"
 	}
 }

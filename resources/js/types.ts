@@ -60,6 +60,16 @@ export interface RaffleNumber {
 	paid_at: string | null;
 }
 
+export type ApiAbility = "raffles:read" | "raffles:write";
+
+/** An API key as listed on the settings page (never its secret). */
+export interface ApiKey {
+	id: string;
+	name: string;
+	abilities: ApiAbility[];
+	last_used_at: string | null;
+}
+
 export interface RaffleLimits {
 	min_numbers: number;
 	max_numbers: number;
