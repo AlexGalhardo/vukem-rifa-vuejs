@@ -2,22 +2,15 @@ package routes
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/AlexGalhardo/vukem"
-	"github.com/AlexGalhardo/vukem/auth"
 	"github.com/AlexGalhardo/vukem/ratelimit"
 	"github.com/AlexGalhardo/vukem/router"
-	"github.com/AlexGalhardo/vukem/web"
 
-	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/accounts"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/controllers"
-	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/payments"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/payments/abacatepay"
-	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/raffles"
-	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/requests"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/reservations"
 )
 
@@ -55,7 +48,7 @@ func Payments(r *router.Router, app *vukem.App) error {
 	if fake, ok := gw.(*abacatepay.Fake); ok {
 		app.Log.Warn("payments: AbacatePay fake gateway enabled (ABACATEPAY_FAKE=true); /dev/* helpers are on")
 
-		return devRoutes(r, app, pay, fake)
+		devRoutes(r, pay, fake)
 	}
 
 	return nil
@@ -78,54 +71,7 @@ func byTokenAndIP(r *http.Request) string {
 }
 
 // devRoutes are the fake-gateway helpers for development and e2e: pay a
-// link's fake PIX, and reserve a number for a verified owner.
-//
-// The reserve helper stands in for POST /raffles/{id}/numbers/{n}/link
-// (raffles stream) until that route lands; e2e uses it.
-func devRoutes(r *router.Router, app *vukem.App, pay *payments.Service, fake *abacatepay.Fake) error {
-	acc, err := accounts.New(app)
-	if err != nil {
-		return err
-	}
-
-	dev := controllers.NewDevPay(pay, fake)
-	rs := raffles.New(pay.DB, app.Now, app.Queue)
-	res := reservations.New(pay.DB, app.Now, app.Queue)
-
-	r.Post("/dev/pay/{token}/simulate", dev.Simulate).Name("dev.pay.simulate")
-	r.Post("/dev/raffles/{raffle}/numbers/{number}/reserve", func(c *web.Ctx) error {
-		u, err := auth.User[models.User](c, "web")
-		if err != nil {
-			return err
-		}
-
-		id, err := c.ParamInt("raffle")
-		if err != nil {
-			return err
-		}
-
-		n, err := strconv.Atoi(c.Param("number"))
-		if err != nil {
-			return err
-		}
-
-		raffle, err := rs.ForOwner(c.Context(), u.ID, id)
-		if err != nil {
-			return err
-		}
-
-		in, err := web.Parse(c, requests.BuyerSchema)
-		if err != nil {
-			return err
-		}
-
-		link, err := res.Reserve(c.Context(), raffle, n, in)
-		if err != nil {
-			return err
-		}
-
-		return c.JSON(http.StatusCreated, map[string]string{"token": link.Token, "url": "/pay/" + link.Token})
-	}).Name("dev.reserve").Use(auth.Required(acc.Web), auth.Verified(acc.Web))
-
-	return nil
+// link's fake PIX as AbacatePay's dev-mode simulate-payment would.
+func devRoutes(r *router.Router, pay *payments.Service, fake *abacatepay.Fake) {
+	r.Post("/dev/pay/{token}/simulate", controllers.NewDevPay(pay, fake).Simulate).Name("dev.pay.simulate")
 }

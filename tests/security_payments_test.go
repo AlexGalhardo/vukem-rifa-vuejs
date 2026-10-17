@@ -158,5 +158,4 @@ func TestSecurity_DevPaymentHelpersOffByDefault(t *testing.T) {
 	link := f.reserve(t, 25)
 
 	f.app.Client(t).PostJSON("/dev/pay/"+link.Token+"/simulate", map[string]any{}).AssertNotFound()
-	f.app.Client(t).PostJSON("/dev/raffles/1/numbers/1/reserve", map[string]any{}).AssertNotFound()
 }

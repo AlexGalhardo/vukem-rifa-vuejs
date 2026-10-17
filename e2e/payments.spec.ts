@@ -4,16 +4,16 @@ import { z } from "zod";
 import { registerVerifiedOwner, uniqueEmail } from "./helpers/owner";
 
 // Runs against an app started with ABACATEPAY_FAKE=true (compose.yaml): the
-// fake gateway serves deterministic PIX charges and the /dev helpers below.
+// fake gateway serves deterministic PIX charges and POST /dev/pay/{token}/simulate
+// stands in for AbacatePay's dev-mode "simulate payment".
 
 const EXPIRED = "Link expirado. Peça ao dono da rifa para gerar um novo link e te enviar novamente para pagar";
 const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://localhost:8025";
 
-const linkSchema = z.object({ token: z.string().min(43), url: z.string().startsWith("/pay/") });
 const outcomeSchema = z.object({ outcome: z.string() });
 const mailSearchSchema = z.object({ messages: z.array(z.object({ ID: z.string(), Subject: z.string() })) });
 
-async function createRaffle(page: Page): Promise<number> {
+async function createRaffle(page: Page): Promise<void> {
 	await page.getByTestId("new-raffle").click();
 	await page.getByTestId("raffle-title").fill("Rifa do PIX");
 	await page.getByTestId("raffle-description").fill("Teste de pagamento");
@@ -22,18 +22,19 @@ async function createRaffle(page: Page): Promise<number> {
 	await page.getByTestId("raffle-duration").fill("7");
 	await page.getByTestId("raffle-submit").click();
 	await expect(page).toHaveURL(/\/raffles\/\d+$/);
-	return Number(new URL(page.url()).pathname.split("/").pop());
 }
 
-// Stands in for the owner's "generate link" action (POST
-// /raffles/{id}/numbers/{n}/link, raffles stream) through the fake-gateway
-// helper, with the owner's session.
-async function reserve(page: Page, raffleId: number, number: number, buyerEmail: string) {
-	const res = await page.request.post(`/dev/raffles/${raffleId}/numbers/${number}/reserve`, {
-		data: { buyer_name: "Maria Compradora", buyer_email: buyerEmail, buyer_phone: "(11) 98765-4321" },
-	});
-	expect(res.status()).toBe(201);
-	return linkSchema.parse(await res.json());
+// The owner generates the buyer's link from the raffle page.
+async function generateLink(page: Page, number: number, buyerEmail: string): Promise<string> {
+	await page.getByTestId(`number-${number}`).click();
+	await page.getByTestId("buyer-name").fill("Maria Compradora");
+	await page.getByTestId("buyer-email").fill(buyerEmail);
+	await page.getByTestId("buyer-phone").fill("11987654321");
+	await page.getByTestId("link-submit").click();
+	const url = page.getByTestId("link-url");
+	await expect(url).toHaveValue(/\/pay\/[A-Za-z0-9_-]{43}$/);
+	// The app builds links from APP_URL; keep the path for the test origin.
+	return new URL(await url.inputValue()).pathname;
 }
 
 async function subjectsTo(to: string): Promise<string[]> {
@@ -46,13 +47,13 @@ test("buyer confirms a payment link, sees the PIX QR code and the confirmation",
 	const owner = uniqueEmail("pay-owner");
 	const buyerEmail = uniqueEmail("pay-buyer");
 	await registerVerifiedOwner(page, owner);
-	const raffleId = await createRaffle(page);
-	const link = await reserve(page, raffleId, 7, buyerEmail);
+	await createRaffle(page);
+	const linkPath = await generateLink(page, 7, buyerEmail);
 
 	// The buyer has no account: a fresh browser context with only the link.
 	const buyerCtx = await browser.newContext();
 	const buyer = await buyerCtx.newPage();
-	const opened = await buyer.goto(link.url);
+	const opened = await buyer.goto(linkPath);
 	expect(opened?.status()).toBe(200);
 	expect(opened?.headers()["cache-control"]).toBe("no-store");
 	expect(opened?.headers()["referrer-policy"]).toBe("no-referrer");
@@ -78,7 +79,7 @@ test("buyer confirms a payment link, sees the PIX QR code and the confirmation",
 	await expect(buyer.getByTestId("pix-code")).toHaveValue(code);
 
 	// AbacatePay dev mode "simulate payment" → transparent.completed.
-	const paid = await buyer.request.post(`/dev${new URL(link.url, "http://x").pathname}/simulate`);
+	const paid = await buyer.request.post(`/dev${linkPath}/simulate`);
 	expect(paid.status()).toBe(200);
 	expect(outcomeSchema.parse(await paid.json()).outcome).toBe("paid");
 
