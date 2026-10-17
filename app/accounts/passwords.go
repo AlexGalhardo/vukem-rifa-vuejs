@@ -101,8 +101,12 @@ func (a *Accounts) ResetPassword(ctx context.Context, email, token, password str
 
 		return a.updatePassword(ctx, tx, u.ID, password)
 	})
+	if err != nil {
+		return u, err
+	}
 
-	return u, err
+	// After the commit: a new password also ends every browser session.
+	return u, a.RevokeOtherSessions(ctx, u.ID, "")
 }
 
 func digest(token string) string {

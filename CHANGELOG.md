@@ -31,6 +31,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Bumped vukem to v0.24.0: the scheduler runs in `serve` by vukem itself (`SCHEDULE_IN_SERVE`; `bootstrap.Background` keeps only the database queue worker), job handlers are registered with `WithJobsFunc`, `DispatchTx` replaces the after-commit fallbacks (delayed jobs on the sync driver fall back to the sweepers), the buyer phone uses `z.Preprocess`, payment locks use `orm.LockForUpdate`.
 - Bumped vukem to v0.23.0 and drivers/postgres to v0.4.0: rate limits go through `app.RateLimiters()` with `RATE_LIMIT_STORE=cache` (counters shared in the database cache), `tests/pgtest` delegates to the driver's `pgtest.Database`, `key:generate` runs from the app binary.
 - The Mailtrap sandbox is never cleaned by tests (shared free sandbox); CI runs the Mailtrap and AbacatePay sandbox jobs when their secrets exist.
 - Bumped vukem to v0.22.0: `auth.Verified` replaces the local redirect middleware, `inertia.I18n` shares the catalogs (the Vue composable no longer bundles the JSON), tests use `Inertia("")`.
@@ -38,5 +39,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- A password reset now signs the account out of every other browser session (database sessions).
+- The password-confirmation mismatch message is translated (pt-BR/en).
 - Accessibility: brand buttons and secondary text meet WCAG AA contrast in light and dark, the theme toggle's accessible name includes its visible text, the generated payment link field has a label.
 - Raffle price no longer shows "R$" twice; closed raffles cannot be edited.

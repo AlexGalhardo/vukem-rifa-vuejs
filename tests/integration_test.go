@@ -4,6 +4,8 @@ package tests
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/AlexGalhardo/vukem/vukemtest"
@@ -101,4 +103,30 @@ func TestPostgres_LoginThrottleSharedInDatabase(t *testing.T) {
 	if err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM cache").Scan(&n); err != nil || n == 0 {
 		t.Fatalf("cache rows = %d, %v; want rate-limit counters", n, err)
 	}
+}
+
+// A password reset signs the account out of every other browser (database
+// sessions hold the user id since vukem v0.24.0).
+func TestPostgres_PasswordResetEndsOtherSessions(t *testing.T) {
+	t.Parallel()
+
+	app := newPostgresApp(t)
+	victim := owner(t, app, "reset-pg@example.com")
+	victim.Get("/dashboard").AssertOK()
+
+	c := app.Client(t).Inertia("")
+	c.PostJSON("/forgot-password", map[string]any{"email": "reset-pg@example.com"}).AssertRedirect("/forgot-password")
+
+	reset := link(t, app, "reset-pg@example.com")
+	u, err := url.Parse(reset)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c.PostJSON("/reset-password", map[string]any{
+		"token": strings.TrimPrefix(u.Path, "/reset-password/"), "email": "reset-pg@example.com",
+		"password": "a brand new password", "password_confirmation": "a brand new password",
+	}).AssertRedirect("/login")
+
+	victim.Get("/dashboard").AssertRedirect("/login")
 }

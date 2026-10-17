@@ -91,7 +91,6 @@ func (s *Service) Reserve(ctx context.Context, r models.Raffle, number int, in r
 	}
 
 	q, queued := s.queue()
-	afterCommit := false
 
 	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
 		p := tx.Dialect().Placeholder
@@ -126,9 +125,10 @@ func (s *Service) Reserve(ctx context.Context, r models.Raffle, number int, in r
 			return nil
 		}
 
+		// The sync driver cannot delay jobs: the every-minute sweeper expires
+		// the reservation instead.
 		err = q.DispatchTx(ctx, tx, jobs.ExpireReservation{ReservationID: res.ID}, queue.Delay(models.ReservationTTL))
-		if errors.Is(err, queue.ErrNoTx) {
-			afterCommit = true
+		if errors.Is(err, queue.ErrInlineDelay) {
 			return nil
 		}
 
@@ -136,12 +136,6 @@ func (s *Service) Reserve(ctx context.Context, r models.Raffle, number int, in r
 	})
 	if err != nil {
 		return Link{}, err
-	}
-
-	// Drivers without transactional push (sync, memory): best effort, the
-	// sweeper still expires the reservation if this fails.
-	if afterCommit {
-		_ = q.Dispatch(ctx, jobs.ExpireReservation{ReservationID: res.ID}, queue.Delay(models.ReservationTTL))
 	}
 
 	return Link{Reservation: res, Token: token}, nil

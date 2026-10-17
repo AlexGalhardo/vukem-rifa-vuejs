@@ -124,7 +124,8 @@
 			"number_count": "quantidade de números",
 			"price_reais": "preço",
 			"duration_days": "duração"
-		}
+		},
+		"password_mismatch": "A confirmação da senha não confere."
 	},
 	"mail": {
 		"greeting": "Olá, {name}!",

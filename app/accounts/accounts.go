@@ -4,6 +4,9 @@
 package accounts
 
 import (
+	"context"
+	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +15,7 @@ import (
 	"github.com/AlexGalhardo/vukem/auth/hash"
 	"github.com/AlexGalhardo/vukem/database"
 	"github.com/AlexGalhardo/vukem/mail"
+	"github.com/AlexGalhardo/vukem/session"
 	"github.com/AlexGalhardo/vukem/signed"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
@@ -34,6 +38,25 @@ type Accounts struct {
 	// VerifyTTL is how long email verification links work.
 	VerifyTTL time.Duration
 	now       func() time.Time
+	sessions  func() (*session.Manager, error)
+}
+
+// RevokeOtherSessions signs userID out of every browser session except
+// keep (the current session id, "" for all). Call it whenever the
+// credentials change. Cookie sessions have no server-side record and are
+// left alone; production uses SESSION_DRIVER=database.
+func (a *Accounts) RevokeOtherSessions(ctx context.Context, userID int64, keep string) error {
+	m, err := a.sessions()
+	if err != nil {
+		return err
+	}
+
+	err = m.RevokeOthers(ctx, a.Web.SessionUserID(strconv.FormatInt(userID, 10)), keep)
+	if errors.Is(err, session.ErrRevokeUnsupported) {
+		return nil
+	}
+
+	return err
 }
 
 // New builds Accounts from the app.
@@ -67,5 +90,6 @@ func New(app *vukem.App) (*Accounts, error) {
 		ResetTTL:  time.Hour,
 		VerifyTTL: time.Hour,
 		now:       time.Now,
+		sessions:  app.Sessions,
 	}, nil
 }

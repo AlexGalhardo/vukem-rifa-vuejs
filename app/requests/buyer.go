@@ -15,15 +15,13 @@ type Buyer struct {
 	Phone string `json:"buyer_phone" form:"buyer_phone"`
 }
 
-// brPhone accepts the usual ways to write a Brazilian number: optional +55,
-// a two-digit area code (11..99, optional parentheses) and 8 (landline) or
-// 9 (mobile, starting with 9) digits, with optional spaces, dots or dashes.
-//
-// workaround(vukem v0.22.0): z Transform runs after the checks, so the raw input is validated and then normalized.
-var brPhone = regexp.MustCompile(`^(\+?55[\s.-]?)?\(?[1-9][1-9]\)?[\s.-]?(9\d{4}|[2-8]\d{3})[\s.-]?\d{4}$`)
+// brPhone is a Brazilian number in E.164: +55, a two-digit area code
+// (11..99) and 8 (landline) or 9 (mobile, starting with 9) digits.
+var brPhone = regexp.MustCompile(`^\+55[1-9][1-9](9\d{8}|[2-8]\d{7})$`)
 
-// NormalizePhone turns a number accepted by brPhone ("(11) 98765-4321",
-// "11987654321", "+55 11 98765 4321") into E.164 ("+5511987654321").
+// NormalizePhone turns the usual ways to write a Brazilian number
+// ("(11) 98765-4321", "11987654321", "+55 11 98765 4321") into E.164
+// ("+5511987654321"); anything else keeps its digits and fails brPhone.
 func NormalizePhone(s string) string {
 	var b strings.Builder
 
@@ -45,5 +43,5 @@ func NormalizePhone(s string) string {
 var BuyerSchema = z.Struct[Buyer](z.Shape{
 	"buyer_name":  z.String().Trim().Min(2).Max(100),
 	"buyer_email": z.String().Trim().ToLower().Max(255).Email(),
-	"buyer_phone": z.String().Trim().Regex(brPhone).Transform(NormalizePhone),
+	"buyer_phone": z.String().Preprocess(NormalizePhone).Regex(brPhone),
 })

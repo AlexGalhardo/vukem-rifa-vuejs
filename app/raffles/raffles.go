@@ -63,8 +63,6 @@ func (s *Service) Create(ctx context.Context, userID int64, in requests.Raffle) 
 		Status:       models.RaffleActive,
 	}
 
-	var afterCommit bool
-
 	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
 		if err := orm.Create(ctx, tx, &r); err != nil {
 			return err
@@ -74,42 +72,27 @@ func (s *Service) Create(ctx context.Context, userID int64, in requests.Raffle) 
 			return err
 		}
 
-		var err error
-		afterCommit, err = s.scheduleDraw(ctx, tx, r)
-
-		return err
+		return s.scheduleDraw(ctx, tx, r)
 	})
-	if err == nil && afterCommit {
-		s.scheduleDrawAfterCommit(ctx, r)
-	}
 
 	return r, err
 }
 
-// scheduleDraw enqueues the deadline draw in tx; it reports whether the
-// driver needs a dispatch after commit instead.
-func (s *Service) scheduleDraw(ctx context.Context, tx *database.Tx, r models.Raffle) (bool, error) {
+// scheduleDraw enqueues the deadline draw with tx. The sync driver (tests,
+// simple dev setups) cannot delay jobs: the every-minute sweeper draws the
+// raffle instead.
+func (s *Service) scheduleDraw(ctx context.Context, tx *database.Tx, r models.Raffle) error {
 	q, ok := s.queue()
 	if !ok {
-		return false, nil
+		return nil
 	}
 
 	err := q.DispatchTx(ctx, tx, drawJob(r), queue.Delay(r.EndsAt.Sub(s.Now())))
-	if errors.Is(err, queue.ErrNoTx) {
-		return true, nil
+	if errors.Is(err, queue.ErrInlineDelay) {
+		return nil
 	}
 
-	return false, err
-}
-
-// scheduleDrawAfterCommit is the best effort for drivers without a
-// transactional push (sync, memory): the every-minute sweeper still draws
-// the raffle if this fails. On the sync driver the job runs now and finds
-// the deadline not due, a no-op.
-func (s *Service) scheduleDrawAfterCommit(ctx context.Context, r models.Raffle) {
-	if q, ok := s.queue(); ok {
-		_ = q.Dispatch(ctx, drawJob(r), queue.Delay(r.EndsAt.Sub(s.Now())))
-	}
+	return err
 }
 
 func drawJob(r models.Raffle) jobs.RunDraw {
@@ -251,9 +234,7 @@ func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raff
 		}
 	}
 
-	var afterCommit bool
-
-	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
+	return s.DB.Tx(ctx, func(tx *database.Tx) error {
 		if err := s.resize(ctx, tx, r, in.NumberCount); err != nil {
 			return err
 		}
@@ -273,16 +254,8 @@ func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raff
 			return nil
 		}
 
-		var err error
-		afterCommit, err = s.scheduleDraw(ctx, tx, *r)
-
-		return err
+		return s.scheduleDraw(ctx, tx, *r)
 	})
-	if err == nil && afterCommit {
-		s.scheduleDrawAfterCommit(ctx, *r)
-	}
-
-	return err
 }
 
 // resize adds or removes trailing numbers; removing is refused when one of

@@ -14,38 +14,33 @@ import (
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/reservations"
 )
 
-// Jobs registers the queue handlers that need app services (database,
-// clock).
-//
-// workaround(vukem v0.22.0): jobs.All() / WithJobs get no *App, so handlers needing the database are registered here.
-func Jobs() vukem.Provider {
-	return vukem.ProviderFunc(func(app *vukem.App) error {
-		q, err := app.Queue()
-		if err != nil {
+// Jobs lists the queue handlers that need app services (database, clock),
+// passed to vukem.WithJobsFunc. It lives in bootstrap because app/jobs only
+// holds the job types the services import. It must not touch app.Queue
+// while building (the services receive it as a func and call it later).
+func Jobs(app *vukem.App) []queue.Registration {
+	db, err := app.DB()
+	if err != nil {
+		// vukem.New fails earlier without a database; keep the app booting.
+		app.Log.Error("jobs: no database", "err", err)
+		return nil
+	}
+
+	res := reservations.New(db, app.Now, app.Queue)
+	draw := draws.New(db, app.Now)
+	pay := payments.New(db, app.Now, nil, app.Queue, app.Log)
+
+	return []queue.Registration{
+		queue.Handle(func(ctx context.Context, j jobs.ExpireReservation) error {
+			_, err := res.Expire(ctx, j.ReservationID)
 			return err
-		}
-
-		db, err := app.DB()
-		if err != nil {
+		}),
+		queue.Handle(func(ctx context.Context, j jobs.RunDraw) error {
+			_, _, err := draw.Run(ctx, j.RaffleID, j.Trigger)
 			return err
-		}
-
-		res := reservations.New(db, app.Now, app.Queue)
-		draw := draws.New(db, app.Now)
-		pay := payments.New(db, app.Now, nil, app.Queue, app.Log)
-
-		return q.Register(
-			queue.Handle(func(ctx context.Context, j jobs.ExpireReservation) error {
-				_, err := res.Expire(ctx, j.ReservationID)
-				return err
-			}),
-			queue.Handle(func(ctx context.Context, j jobs.RunDraw) error {
-				_, _, err := draw.Run(ctx, j.RaffleID, j.Trigger)
-				return err
-			}),
-			queue.Handle(func(ctx context.Context, j jobs.SendPaymentEmails) error {
-				return payments.SendEmails(i18n.WithBundle(ctx, app.I18n), pay, j.ReservationID, app.Config.URL, app.I18n.Default(), func(ctx context.Context, m mail.Mailable) error { return app.MailLater(ctx, m) })
-			}),
-		)
-	})
+		}),
+		queue.Handle(func(ctx context.Context, j jobs.SendPaymentEmails) error {
+			return payments.SendEmails(i18n.WithBundle(ctx, app.I18n), pay, j.ReservationID, app.Config.URL, app.I18n.Default(), func(ctx context.Context, m mail.Mailable) error { return app.MailLater(ctx, m) })
+		}),
+	}
 }

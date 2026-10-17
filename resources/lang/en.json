@@ -124,7 +124,8 @@
 			"number_count": "number count",
 			"price_reais": "price",
 			"duration_days": "duration"
-		}
+		},
+		"password_mismatch": "The password confirmation does not match."
 	},
 	"mail": {
 		"greeting": "Hello {name},",

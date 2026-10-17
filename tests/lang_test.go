@@ -103,6 +103,21 @@ func TestRegister_ValidationIsLocalized(t *testing.T) {
 		PropEquals("errors.password", "O campo senha deve ter pelo menos 12 caracteres.")
 }
 
+func TestRegister_PasswordMismatchIsLocalized(t *testing.T) {
+	t.Parallel()
+
+	app := vukemtest.New(t, bootstrap.New)
+	c := app.Client(t).Inertia("").WithCookie("lang", "pt-BR").WithHeader("Referer", "/register")
+
+	c.PostJSON("/register", map[string]any{
+		"name": "Ana", "email": "ana@example.com",
+		"password": "correct horse battery", "password_confirmation": "another long password",
+	}).AssertRedirect("/register")
+
+	c.Get("/register").AssertInertia("Auth/Register").
+		PropEquals("errors.password_confirmation", "A confirmação da senha não confere.")
+}
+
 func TestVerificationEmail_IsLocalized(t *testing.T) {
 	t.Parallel()
 

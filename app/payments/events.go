@@ -41,21 +41,16 @@ const (
 // commit together or not at all. Call it only after the webhook secret and
 // signature were checked.
 func (s *Service) Handle(ctx context.Context, ev abacatepay.Event, payload []byte) (Outcome, error) {
-	var (
-		outcome Outcome
-		after   []queue.Job
-	)
+	var outcome Outcome
 
 	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
-		after = nil
-
 		recorded, err := s.record(ctx, tx, ev, payload)
 		if err != nil || !recorded {
 			outcome = OutcomeDuplicate
 			return err
 		}
 
-		outcome, after, err = s.apply(ctx, tx, ev)
+		outcome, err = s.apply(ctx, tx, ev)
 		if err != nil {
 			return err
 		}
@@ -68,12 +63,6 @@ func (s *Service) Handle(ctx context.Context, ev abacatepay.Event, payload []byt
 	})
 	if err != nil {
 		return "", fmt.Errorf("handle %s event %s: %w", ev.Type, ev.ID, err)
-	}
-
-	for _, j := range after {
-		if err := s.dispatch(ctx, nil, j); err != nil {
-			s.Log.ErrorContext(ctx, "payments: dispatch after commit", "job", j.Kind(), "err", err)
-		}
 	}
 
 	return outcome, nil
@@ -96,32 +85,32 @@ func (s *Service) record(ctx context.Context, tx *database.Tx, ev abacatepay.Eve
 	return n == 1, err
 }
 
-func (s *Service) apply(ctx context.Context, tx *database.Tx, ev abacatepay.Event) (Outcome, []queue.Job, error) {
+func (s *Service) apply(ctx context.Context, tx *database.Tx, ev abacatepay.Event) (Outcome, error) {
 	if ev.Type != abacatepay.EventTransparentCompleted || ev.ChargeStatus != abacatepay.StatusPaid {
-		return OutcomeIgnored, nil, nil
+		return OutcomeIgnored, nil
 	}
 
 	res, raffle, byCharge, found, err := s.lockReservation(ctx, tx, ev)
 	if err != nil || !found {
 		if found || err != nil {
-			return "", nil, err
+			return "", err
 		}
 
 		s.Log.WarnContext(ctx, "payments: paid charge without reservation", "charge_id", ev.ChargeID, "event_id", ev.ID)
 
-		return OutcomeUnknownCharge, nil, nil
+		return OutcomeUnknownCharge, nil
 	}
 
 	p := tx.Dialect().Placeholder
 	if _, err := tx.ExecContext(ctx, "UPDATE payment_events SET reservation_id = "+p(1)+" WHERE event_id = "+p(2), res.ID, ev.ID); err != nil {
-		return "", nil, err
+		return "", err
 	}
 
 	now := s.Now().UTC()
 
 	switch {
 	case res.Status == models.ReservationPaid && byCharge:
-		return OutcomeAlreadyPaid, nil, nil
+		return OutcomeAlreadyPaid, nil
 	case !byCharge:
 		return s.refundDue(ctx, tx, raffle, res, ev, "charge does not match the reservation")
 	case ev.AmountCents != int64(res.AmountCents):
@@ -138,39 +127,32 @@ func (s *Service) apply(ctx context.Context, tx *database.Tx, ev abacatepay.Even
 
 	paid, err := s.markPaid(ctx, tx, raffle, res, now)
 	if err != nil {
-		return "", nil, err
+		return "", err
 	}
 
 	if !paid {
 		return s.refundDue(ctx, tx, raffle, res, ev, "number no longer held by the reservation")
 	}
 
-	var after []queue.Job
-
-	if j, err := s.dispatchTx(ctx, tx, jobs.SendPaymentEmails{ReservationID: res.ID}); err != nil {
-		return "", nil, err
-	} else if j != nil {
-		after = append(after, j)
+	if err := s.dispatch(ctx, tx, jobs.SendPaymentEmails{ReservationID: res.ID}); err != nil {
+		return "", err
 	}
 
 	var left int
 	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM raffle_numbers WHERE raffle_id = "+p(1)+
 		" AND status <> '"+models.NumberPaid+"'", raffle.ID).Scan(&left); err != nil {
-		return "", nil, fmt.Errorf("count unpaid numbers: %w", err)
+		return "", fmt.Errorf("count unpaid numbers: %w", err)
 	}
 
 	if left == 0 {
-		j, err := s.dispatchTx(ctx, tx, jobs.RunDraw{RaffleID: raffle.ID, Trigger: models.DrawSoldOut})
-		if err != nil {
+		if err := s.dispatch(ctx, tx, jobs.RunDraw{RaffleID: raffle.ID, Trigger: models.DrawSoldOut}); err != nil {
 			// A payment must never roll back because of the draw job; the
 			// deadline sweeper still draws the raffle.
 			s.Log.ErrorContext(ctx, "payments: dispatch sold-out draw", "raffle_id", raffle.ID, "err", err)
-		} else if j != nil {
-			after = append(after, j)
 		}
 	}
 
-	return OutcomePaid, after, nil
+	return OutcomePaid, nil
 }
 
 // lockReservation finds the reservation of the paid charge and its raffle
@@ -179,15 +161,8 @@ func (s *Service) apply(ctx context.Context, tx *database.Tx, ev abacatepay.Even
 // expires its live links), so a payment and a draw never interleave.
 // byCharge is false when the reservation was found only through externalId
 // (the stored charge differs).
-//
-// workaround(vukem v0.23.0): orm.Query has no ForUpdate(), the locks are raw SELECT … FOR UPDATE.
 func (s *Service) lockReservation(ctx context.Context, tx *database.Tx, ev abacatepay.Event) (models.Reservation, models.Raffle, bool, bool, error) {
 	p := tx.Dialect().Placeholder
-
-	lock := ""
-	if tx.Dialect().Name() == "postgres" {
-		lock = " FOR UPDATE"
-	}
 
 	byCharge := true
 
@@ -212,22 +187,14 @@ func (s *Service) lockReservation(ctx context.Context, tx *database.Tx, ev abaca
 		return models.Reservation{}, models.Raffle{}, false, false, fmt.Errorf("find reservation: %w", err)
 	}
 
-	if _, err := tx.ExecContext(ctx, "SELECT id FROM raffles WHERE id = "+p(1)+lock, raffleID); err != nil {
-		return models.Reservation{}, models.Raffle{}, false, false, fmt.Errorf("lock raffle %d: %w", raffleID, err)
-	}
-
-	if _, err := tx.ExecContext(ctx, "SELECT id FROM reservations WHERE id = "+p(1)+lock, id); err != nil {
-		return models.Reservation{}, models.Raffle{}, false, false, fmt.Errorf("lock reservation %d: %w", id, err)
-	}
-
-	raffle, err := orm.QueryOf[models.Raffle](tx).Find(ctx, raffleID)
+	raffle, err := orm.QueryOf[models.Raffle](tx).Where("id", raffleID).LockForUpdate().First(ctx)
 	if err != nil {
-		return models.Reservation{}, raffle, false, false, fmt.Errorf("load raffle %d: %w", raffleID, err)
+		return models.Reservation{}, raffle, false, false, fmt.Errorf("lock raffle %d: %w", raffleID, err)
 	}
 
-	res, err := orm.QueryOf[models.Reservation](tx).Find(ctx, id)
+	res, err := orm.QueryOf[models.Reservation](tx).Where("id", id).LockForUpdate().First(ctx)
 	if err != nil {
-		return res, raffle, false, false, fmt.Errorf("load reservation %d: %w", id, err)
+		return res, raffle, false, false, fmt.Errorf("lock reservation %d: %w", id, err)
 	}
 
 	return res, raffle, byCharge, true, nil
@@ -287,18 +254,18 @@ var errReservationChanged = errors.New("payments: reservation changed while payi
 // refundDue records money that bought nothing: the platform owes it back
 // to the buyer (positive refund_due under the raffle owner, outside the
 // owner's balance). The number is never assigned.
-func (s *Service) refundDue(ctx context.Context, tx *database.Tx, raffle models.Raffle, res models.Reservation, ev abacatepay.Event, why string) (Outcome, []queue.Job, error) {
+func (s *Service) refundDue(ctx context.Context, tx *database.Tx, raffle models.Raffle, res models.Reservation, ev abacatepay.Event, why string) (Outcome, error) {
 	e := models.LedgerEntry{
 		UserID: raffle.UserID, RaffleID: &raffle.ID, ReservationID: &res.ID, Kind: models.LedgerRefundDue,
 		AmountCents: ev.AmountCents, Note: truncateNote(fmt.Sprintf("charge %s: %s", ev.ChargeID, why)),
 	}
 	if err := orm.Create(ctx, tx, &e); err != nil {
-		return "", nil, fmt.Errorf("ledger refund_due: %w", err)
+		return "", fmt.Errorf("ledger refund_due: %w", err)
 	}
 
 	s.Log.WarnContext(ctx, "payments: refund due", "reservation_id", res.ID, "event_id", ev.ID, "reason", why)
 
-	return OutcomeRefundDue, nil, nil
+	return OutcomeRefundDue, nil
 }
 
 func truncateNote(s string) string {
@@ -309,17 +276,8 @@ func truncateNote(s string) string {
 	return s
 }
 
-// dispatchTx enqueues j in tx. Drivers without transactional push (sync,
-// memory) return the job to dispatch after commit instead.
-func (s *Service) dispatchTx(ctx context.Context, tx *database.Tx, j queue.Job) (queue.Job, error) {
-	err := s.dispatch(ctx, tx, j)
-	if errors.Is(err, queue.ErrNoTx) {
-		return j, nil
-	}
-
-	return nil, err
-}
-
+// dispatch enqueues j with tx (inserted in it on the database driver, sent
+// right after the commit on the others).
 func (s *Service) dispatch(ctx context.Context, tx *database.Tx, j queue.Job) error {
 	if s.Queue == nil {
 		return nil

@@ -29,7 +29,7 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | D12 | Draw: `crypto/rand` 32-byte seed at draw time, winner by rejection sampling over the sorted paid numbers; store seed, timestamp, participant count, SHA-256 of the participant list, algorithm version. Public result page shows all of it so anyone can recompute. | Auditable. Commit-reveal (publish `sha256(seed)` at creation) is a possible later enhancement. |
 | D13 | Locks: price and number count become immutable after the first paid number; title/description stay editable. Raffles with paid numbers are archived, never deleted. | Owner rules. |
 | D14 | Number rows are pre-created (`1..N`, N ≤ 1000) when a raffle is created. | Row-level locking per number, simple grid queries. |
-| D15 | Background work runs in the web process: `bootstrap.Background()` adds the database queue worker and the scheduler (incl. vukem's hourly `session:prune`) as runners of `serve`; `BACKGROUND_IN_SERVE=false` when `queue:work`/`schedule:work` run as separate services. | One Railway instance, low cost. |
+| D15 | Background work runs in the web process: vukem v0.24.0 runs the scheduler in `serve` (`SCHEDULE_IN_SERVE`, default true; `session:prune`, `cache:prune`, `reservations:expire`, `draws:due`) and `bootstrap.Background()` adds the database queue worker (`BACKGROUND_IN_SERVE=false` when `queue:work` runs separately). | One Railway instance, low cost. |
 | D16 | JS tooling via Bun 1.4.3; Biome 2.5 for lint/format; Playwright 1.64 e2e; lefthook git hooks; commitlint; markdownlint-cli2. | Owner standards. |
 | D18 | Duration is locked together with price and number count after the first paid number; before that, shrinking the count is refused if a removed number is reserved or paid. | Changing the deadline after sales would be unfair to buyers. |
 | D19 | Tests: unit/HTTP tests run on SQLite via `vukemtest`, so domain SQL stays dialect-neutral (recursive CTE for numbers); Postgres-only parts (CHECKs, `FOR UPDATE`, partial indexes) are covered by `-tags=integration`. | vukem has no Postgres test helper yet. |
@@ -42,7 +42,7 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | Tool | Version | Where |
 | --- | --- | --- |
 | Go | 1.27.2 | `go.mod`, Docker `golang:1.27.2-alpine3.24` |
-| vukem | v0.23.0 (started on v0.21.1) | `go.mod` |
+| vukem | v0.24.0 (started on v0.21.1) | `go.mod` |
 | vukem drivers/postgres | v0.4.0 (pgx v5.11.0, `pgtest.Database`) | `go.mod` |
 | golangci-lint | v2.15.0 (CI), action v9.3.0 | `.golangci.yml` |
 | govulncheck | v1.9.0 (`go tool`) | `go.mod` tool directive |
@@ -241,7 +241,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 - [x] Translate auth pages, flashes and auth errors (pt-BR/en) + Google button + nav → verify: `TestLangCatalogs_SameKeys`, `TestForgotPassword_FlashIsLocalized`.
 - [x] Translate validation messages (`validation.*` + `validation.attributes.*` catalogs) → verify: `TestRegister_ValidationIsLocalized`.
 - [x] Translate auth emails (subject + views via `t`) → verify: `TestVerificationEmail_IsLocalized`.
-- [ ] Localize the custom password-confirmation message (blocked: vukem `z.FieldError` has no key; feedback logged) → verify: pt-BR error text test.
+- [x] Localize the custom password-confirmation message (vukem v0.24.0 `z.FieldErrorKey`) → verify: `TestRegister_PasswordMismatchIsLocalized`.
 
 #### 1.2 Email (Mailtrap / Mailpit)
 

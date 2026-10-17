@@ -24,6 +24,7 @@ func New(opts ...vukem.Option) (*vukem.App, error) {
 		vukem.WithSeeders(seeders.All()...),
 		vukem.WithListeners(listeners.All()...),
 		vukem.WithJobs(jobs.All()...),
+		vukem.WithJobsFunc(Jobs),
 		vukem.WithSchedule(routes.Schedule),
 		vukem.WithViews(resources.Views()),
 		vukem.WithTranslations(resources.Lang()),
