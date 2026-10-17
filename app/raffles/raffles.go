@@ -214,33 +214,24 @@ func (s *Service) Numbers(ctx context.Context, raffleID int64) ([]models.RaffleN
 // so no buyer pays on the old terms; a PIX paid after that is a late
 // payment (refund_due). It returns how many links it cancelled.
 func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raffle) (int, error) {
-	if r.Status != models.RaffleActive {
-		return 0, errs.New(http.StatusConflict, i18n.T(ctx, "raffle.finished"))
-	}
-
-	if r.Locked() {
-		v := errs.NewValidation()
-		if in.NumberCount != r.NumberCount {
-			v = v.Add("number_count", i18n.T(ctx, "raffle.locked_field"))
-		}
-
-		if in.PriceReais != r.PriceReais {
-			v = v.Add("price_reais", i18n.T(ctx, "raffle.locked_field"))
-		}
-
-		if in.DurationDays != r.DurationDays {
-			v = v.Add("duration_days", i18n.T(ctx, "raffle.locked_field"))
-		}
-
-		if !v.Empty() {
-			return 0, v
-		}
-	}
-
 	cancelled := 0
 
 	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
-		var err error
+		// The raffle row first, in the same order as the payment webhook and
+		// the draw (raffle, then reservations): no deadlock, and the lock
+		// and status are read from the locked row, not from r, which a
+		// payment may have outdated since the request loaded it.
+		locked, err := orm.QueryOf[models.Raffle](tx).Where("id", r.ID).LockForUpdate().First(ctx)
+		if err != nil {
+			return fmt.Errorf("lock raffle %d: %w", r.ID, err)
+		}
+
+		*r = locked
+
+		if err := checkEditable(ctx, *r, in); err != nil {
+			return err
+		}
+
 		if cancelled, err = s.cancelLiveLinks(ctx, tx, r.ID); err != nil {
 			return err
 		}
@@ -271,6 +262,37 @@ func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raff
 	}
 
 	return cancelled, nil
+}
+
+// checkEditable refuses edits of finished raffles and changes to price,
+// size or duration once a number is paid.
+func checkEditable(ctx context.Context, r models.Raffle, in requests.Raffle) error {
+	if r.Status != models.RaffleActive {
+		return errs.New(http.StatusConflict, i18n.T(ctx, "raffle.finished"))
+	}
+
+	if !r.Locked() {
+		return nil
+	}
+
+	v := errs.NewValidation()
+	if in.NumberCount != r.NumberCount {
+		v = v.Add("number_count", i18n.T(ctx, "raffle.locked_field"))
+	}
+
+	if in.PriceReais != r.PriceReais {
+		v = v.Add("price_reais", i18n.T(ctx, "raffle.locked_field"))
+	}
+
+	if in.DurationDays != r.DurationDays {
+		v = v.Add("duration_days", i18n.T(ctx, "raffle.locked_field"))
+	}
+
+	if !v.Empty() {
+		return v
+	}
+
+	return nil
 }
 
 // cancelLiveLinks cancels every pending or awaiting-payment reservation of
