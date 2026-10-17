@@ -197,5 +197,12 @@
 		"edit_title": "Editar rifa",
 		"public_footer": "Os dados dos compradores nunca são exibidos publicamente.",
 		"invalid_field": "Valor inválido para este campo."
+	},
+	"link": {
+		"not_on_sale": "Esta rifa não está vendendo números.",
+		"number_not_found": "Este número não existe na rifa.",
+		"number_unavailable": "Este número não está disponível.",
+		"not_found": "Link de pagamento não encontrado.",
+		"nothing_to_cancel": "Este número não tem link de pagamento ativo."
 	}
 }

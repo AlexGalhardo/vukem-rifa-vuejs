@@ -197,5 +197,12 @@
 		"edit_title": "Edit raffle",
 		"public_footer": "Buyer data is never shown publicly.",
 		"invalid_field": "Invalid value for this field."
+	},
+	"link": {
+		"not_on_sale": "This raffle is not selling numbers.",
+		"number_not_found": "This number does not exist in the raffle.",
+		"number_unavailable": "This number is not available.",
+		"not_found": "Payment link not found.",
+		"nothing_to_cancel": "This number has no active payment link."
 	}
 }

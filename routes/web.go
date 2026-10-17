@@ -29,7 +29,7 @@ func Web(r *router.Router, app *vukem.App) error {
 }
 
 // clientMessagePrefixes are the translation keys shared with the pages.
-var clientMessagePrefixes = []string{"app.", "home.", "theme.", "locale.", "nav.", "auth.", "dashboard.", "raffle."}
+var clientMessagePrefixes = []string{"app.", "home.", "theme.", "locale.", "nav.", "auth.", "dashboard.", "raffle.", "link.", "pay.", "draw.", "ledger.", "admin.", "apikeys.", "export."}
 
 // shareProps adds the props every page receives (usePage().props).
 func shareProps(app *vukem.App) func(http.Handler) http.Handler {
