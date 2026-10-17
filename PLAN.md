@@ -225,8 +225,8 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 #### 0.4 Docker and CI/CD
 
 - [x] Multi-stage Dockerfile (bun → go → alpine, non-root, healthcheck) + compose (app, postgres, mailpit) → verify: `docker compose up -d --build` healthy, `curl /up` 200.
-- [ ] CI: golangci-lint, unit+race, integration (Postgres service), govulncheck, Biome/typecheck/build/markdownlint, commitlint (PRs), e2e Playwright + smoke + ZAP baseline + nuclei; release on tag (GHCR image + GitHub release); Dependabot → verify: `gh run list` green.
-- [ ] First push to `main` → verify: CI green.
+- [x] CI: golangci-lint, unit+race, integration (Postgres service), govulncheck, Biome/typecheck/build/markdownlint, commitlint (PRs), e2e Playwright + smoke + ZAP baseline + nuclei; release on tag (GHCR image + GitHub release); Dependabot → verify: `gh run list` green.
+- [x] First push to `main` → verify: CI green (run 39034343255: all jobs incl. e2e, ZAP, nuclei).
 
 ### Phase 1 — Auth
 
