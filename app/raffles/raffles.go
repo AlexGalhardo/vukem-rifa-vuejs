@@ -17,7 +17,9 @@ import (
 	"github.com/AlexGalhardo/vukem/errs"
 	"github.com/AlexGalhardo/vukem/i18n"
 	"github.com/AlexGalhardo/vukem/orm"
+	"github.com/AlexGalhardo/vukem/queue"
 
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/jobs"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/requests"
 )
@@ -26,10 +28,15 @@ import (
 type Service struct {
 	DB  *database.DB
 	Now func() time.Time
+	// Queue returns the app queue (app.Queue) for the deadline draw job;
+	// nil leaves the draw to the every-minute sweeper.
+	Queue func() (*queue.Queue, error)
 }
 
 // New returns a Service; now is the app clock (fake in tests).
-func New(db *database.DB, now func() time.Time) *Service { return &Service{DB: db, Now: now} }
+func New(db *database.DB, now func() time.Time, q func() (*queue.Queue, error)) *Service {
+	return &Service{DB: db, Now: now, Queue: q}
+}
 
 // Summary is a raffle with its number counts, for the dashboard.
 type Summary struct {
@@ -56,15 +63,67 @@ func (s *Service) Create(ctx context.Context, userID int64, in requests.Raffle) 
 		Status:       models.RaffleActive,
 	}
 
+	var afterCommit bool
+
 	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
 		if err := orm.Create(ctx, tx, &r); err != nil {
 			return err
 		}
 
-		return s.insertNumbers(ctx, tx, r.ID, 1, r.NumberCount)
+		if err := s.insertNumbers(ctx, tx, r.ID, 1, r.NumberCount); err != nil {
+			return err
+		}
+
+		var err error
+		afterCommit, err = s.scheduleDraw(ctx, tx, r)
+
+		return err
 	})
+	if err == nil && afterCommit {
+		s.scheduleDrawAfterCommit(ctx, r)
+	}
 
 	return r, err
+}
+
+// scheduleDraw enqueues the deadline draw in tx; it reports whether the
+// driver needs a dispatch after commit instead.
+func (s *Service) scheduleDraw(ctx context.Context, tx *database.Tx, r models.Raffle) (bool, error) {
+	q, ok := s.queue()
+	if !ok {
+		return false, nil
+	}
+
+	err := q.DispatchTx(ctx, tx, drawJob(r), queue.Delay(r.EndsAt.Sub(s.Now())))
+	if errors.Is(err, queue.ErrNoTx) {
+		return true, nil
+	}
+
+	return false, err
+}
+
+// scheduleDrawAfterCommit is the best effort for drivers without a
+// transactional push (sync, memory): the every-minute sweeper still draws
+// the raffle if this fails. On the sync driver the job runs now and finds
+// the deadline not due, a no-op.
+func (s *Service) scheduleDrawAfterCommit(ctx context.Context, r models.Raffle) {
+	if q, ok := s.queue(); ok {
+		_ = q.Dispatch(ctx, drawJob(r), queue.Delay(r.EndsAt.Sub(s.Now())))
+	}
+}
+
+func drawJob(r models.Raffle) jobs.RunDraw {
+	return jobs.RunDraw{RaffleID: r.ID, Trigger: models.DrawDeadline}
+}
+
+func (s *Service) queue() (*queue.Queue, bool) {
+	if s.Queue == nil {
+		return nil, false
+	}
+
+	q, err := s.Queue()
+
+	return q, err == nil && q != nil
 }
 
 // insertNumbers creates numbers from..to (inclusive) as available, in one
@@ -192,17 +251,38 @@ func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raff
 		}
 	}
 
-	return s.DB.Tx(ctx, func(tx *database.Tx) error {
+	var afterCommit bool
+
+	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
 		if err := s.resize(ctx, tx, r, in.NumberCount); err != nil {
 			return err
 		}
 
+		moved := in.DurationDays != r.DurationDays
 		r.Title, r.Description = in.Title, in.Description
 		r.NumberCount, r.PriceReais, r.DurationDays = in.NumberCount, in.PriceReais, in.DurationDays
 		r.EndsAt = r.StartsAt.AddDate(0, 0, in.DurationDays)
 
-		return orm.Update(ctx, tx, r)
+		if err := orm.Update(ctx, tx, r); err != nil {
+			return err
+		}
+
+		// The job for the old deadline stays queued: the draw re-reads
+		// ends_at and does nothing when it runs early.
+		if !moved || r.Status != models.RaffleActive {
+			return nil
+		}
+
+		var err error
+		afterCommit, err = s.scheduleDraw(ctx, tx, *r)
+
+		return err
 	})
+	if err == nil && afterCommit {
+		s.scheduleDrawAfterCommit(ctx, *r)
+	}
+
+	return err
 }
 
 // resize adds or removes trailing numbers; removing is refused when one of

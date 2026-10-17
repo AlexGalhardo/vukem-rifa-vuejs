@@ -6,6 +6,7 @@ import (
 	"github.com/AlexGalhardo/vukem"
 	"github.com/AlexGalhardo/vukem/schedule"
 
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/draws"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/reservations"
 )
 
@@ -20,6 +21,18 @@ func Schedule(s *schedule.Schedule, app *vukem.App) {
 		}
 
 		_, err = reservations.New(db, app.Now, app.Queue).ExpireDue(ctx)
+
+		return err
+	}).EveryMinute().WithoutOverlapping()
+
+	// Draws raffles whose delayed RunDraw job was lost or never queued.
+	s.Func("draws:due", func(ctx context.Context) error {
+		db, err := app.DB()
+		if err != nil {
+			return err
+		}
+
+		_, err = draws.New(db, app.Now).RunDue(ctx)
 
 		return err
 	}).EveryMinute().WithoutOverlapping()
