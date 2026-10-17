@@ -87,6 +87,7 @@ CI: `govulncheck`, `bun audit --audit-level=high`, Dependabot (Go, npm, Actions,
 | Unverified email cannot use the dashboard; Google cannot take over unverified accounts | `TestDashboard_RequiresVerifiedEmail`, `TestSocialDoesNotTakeOverUnverifiedEmails` |
 | CSRF on login and every browser mutation | `TestSecurity_CrossSiteLoginBlocked`, `TestSecurity_NumbersCrossSitePostBlocked`, `TestSecurity_CrossSiteConfirmBlocked` |
 | Cookie session is not ambient authority on the API | `TestSecurityAPI_CookieSessionIsNotAmbientAuthority` |
+| Spoofed `X-Forwarded-For` / `X-Real-IP` from untrusted peers ignored; trusted proxy header honoured; IPv6 limited by /64 | `TestOWASP_A07_SpoofedClientIPHeadersAreIgnored`, `TestOWASP_A07_TrustedProxyHeaderSeparatesClients`, `TestLimitKeys_IPv6GroupsBySlash64` |
 
 ## A08 Software and data integrity failures
 

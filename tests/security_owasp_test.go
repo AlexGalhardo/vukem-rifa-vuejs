@@ -367,3 +367,55 @@ func TestOWASP_A09_PayoutIsLogged(t *testing.T) {
 		t.Fatal("payout log leaks the reference")
 	}
 }
+
+// Security review fix: client-IP headers from a peer that is not a trusted
+// proxy are ignored, so rotating X-Forwarded-For / X-Real-IP never escapes
+// the per-IP limits (with and without TRUSTED_PROXIES configured).
+func TestOWASP_A07_SpoofedClientIPHeadersAreIgnored(t *testing.T) {
+	t.Parallel()
+
+	for name, env := range map[string]map[string]string{
+		"no trusted proxies": {},
+		"proxy range that excludes the peer": {
+			"TRUSTED_PROXIES": "100.64.0.0/24", "CLIENT_IP_HEADER": "X-Real-IP",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			f := newNumbersFixture(t, vukemtest.Options{Env: env})
+			limited := false
+
+			for n := 1; n <= 12; n++ {
+				spoofed := fmt.Sprintf("198.51.100.%d", n)
+				c := f.app.Client(t).Inertia("").WithHeader("X-Real-IP", spoofed).WithHeader("X-Forwarded-For", spoofed)
+
+				if f.publicReserve(c, n, publicBuyer(fmt.Sprintf("spoof%d@example.com", n))).Status() == http.StatusTooManyRequests {
+					limited = true
+					break
+				}
+			}
+
+			if !limited {
+				t.Fatal("rotating client-IP headers escaped the per-IP limit")
+			}
+		})
+	}
+}
+
+// The other side: behind a trusted proxy (the httptest peer 192.0.2.1),
+// X-Real-IP is the client, so different clients get their own budgets.
+func TestOWASP_A07_TrustedProxyHeaderSeparatesClients(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t, vukemtest.Options{Env: map[string]string{
+		"TRUSTED_PROXIES": "192.0.2.0/24", "CLIENT_IP_HEADER": "X-Real-IP",
+	}})
+
+	for n := 1; n <= 12; n++ {
+		c := f.app.Client(t).Inertia("").WithHeader("X-Real-IP", fmt.Sprintf("198.51.100.%d", n))
+		if f.publicReserve(c, n, publicBuyer(fmt.Sprintf("client%d@example.com", n))).Status() == http.StatusTooManyRequests {
+			t.Fatalf("client %d was limited although each request came from a different client behind the proxy", n)
+		}
+	}
+}
