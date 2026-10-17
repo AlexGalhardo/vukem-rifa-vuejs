@@ -223,7 +223,7 @@ func (h *Handlers) update(c *web.Ctx, in UpdateRaffle) (Raffle, error) {
 	}
 
 	if cancelled > 0 {
-		web.SecurityEvent(c.Request(), "raffle.links_cancelled", "raffle_id", r.ID, "count", cancelled, "reason", "edit")
+		web.AuditEvent(c.Request(), "raffle.links_cancelled", "raffle_id", r.ID, "count", cancelled, "reason", "edit")
 	}
 
 	return h.present(c, r)

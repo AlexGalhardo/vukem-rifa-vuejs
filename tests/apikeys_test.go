@@ -105,6 +105,10 @@ func TestAPIKeys_RevokeIsOwnerChecked(t *testing.T) {
 	// A revoked key is rejected.
 	app.Client(t).WithToken(token).Get("/api/v1/me/balance").AssertUnauthorized()
 	ana.Delete("/settings/api-keys/" + keyID(token)).AssertNotFound()
+
+	// Soft revoke (vukem v0.26.0): the row stays for the audit trail.
+	vukemtest.AssertDatabaseHas(t, app, "access_tokens", map[string]any{"id": keyID(token)})
+	vukemtest.AssertDatabaseMissing(t, app, "access_tokens", map[string]any{"id": keyID(token), "revoked_at": nil})
 }
 
 func TestAPIKeys_RequireVerifiedOwner(t *testing.T) {

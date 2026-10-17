@@ -32,8 +32,9 @@ New tests written for the consolidated suite live in `tests/security_owasp_test.
 | Passwords hashed with salted argon2id (m=64 MiB, t=1, p=4) outside tests | `TestOWASP_A02_PasswordsAreArgon2id` |
 | Production refuses an http `APP_URL`; HSTS over HTTPS | `TestOWASP_A05_ProductionRefusesHTTPAppURL`, `TestOWASP_A05_ProductionSendsHSTS` |
 | API key revoked/invalid tokens refused | `TestSecurityAPI_RejectsMissingInvalidAndRevokedTokens` |
+| `APP_KEY` rotation: sealed data opens with the old key in `APP_PREVIOUS_KEYS`, fails closed without it | `TestPostgres_OWASP_A04_AppKeyRotationKeepsSealedData` |
 
-Not automated: `APP_KEY` rotation through `APP_PREVIOUS_KEYS` (vukem feature, not exercised by the app's tests). On Railway HSTS needs `TRUST_FORWARDED_PROTO` behind a verified `TRUSTED_PROXIES` range (README "Deploy notes").
+On Railway HSTS is sent by `HSTS_FORCE` (README "Deploy notes").
 
 ## A03 Injection
 

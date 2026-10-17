@@ -6,6 +6,7 @@ package accounts
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -41,6 +42,7 @@ type Accounts struct {
 	now       func() time.Time
 	sessions  func() (*session.Manager, error)
 	cache     func() (*cache.Cache, error)
+	log       *slog.Logger
 }
 
 // RevokeOtherSessions signs userID out of every browser session except
@@ -102,5 +104,6 @@ func New(app *vukem.App) (*Accounts, error) {
 		now:       time.Now,
 		sessions:  app.Sessions,
 		cache:     app.Cache,
+		log:       app.Log,
 	}, nil
 }

@@ -8,8 +8,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/AlexGalhardo/vukem/config"
 	"github.com/AlexGalhardo/vukem/vukemtest"
 
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/raffles"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/bootstrap"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/tests/pgtest"
 )
@@ -87,12 +89,22 @@ func TestPostgres_LoginThrottleSharedInDatabase(t *testing.T) {
 	app := newPostgresApp(t)
 	register(t, app.Client(t).Inertia(""), "pgbob@example.com")
 
+	// Fixed windows (RATE_LIMIT_STORE=cache): a slow run can straddle a
+	// window boundary, so allow up to two windows' worth before the 429.
 	attacker := app.Client(t).Inertia("")
-	for range 5 {
-		attacker.PostJSON("/login", map[string]any{"email": "pgbob@example.com", "password": "guess"})
+	throttled := false
+
+	for range 11 {
+		res := attacker.PostJSON("/login", map[string]any{"email": "pgbob@example.com", "password": "guess"})
+		if res.Status() == 429 {
+			throttled = true
+			break
+		}
 	}
 
-	attacker.PostJSON("/login", map[string]any{"email": "pgbob@example.com", "password": "guess"}).AssertStatus(429)
+	if !throttled {
+		t.Fatal("eleven failed logins were never throttled (429)")
+	}
 
 	db, err := app.DB()
 	if err != nil {
@@ -254,5 +266,47 @@ func TestPostgres_OWASP_A07_SignupIsEnumerationSafe(t *testing.T) {
 
 	if got := len(app.Mails().Sent()); got != sentBefore {
 		t.Fatalf("mails sent inline during sign-up: %d → %d", sentBefore, got)
+	}
+}
+
+// A04: APP_KEY rotation. Data sealed with the old key (payment-link tokens
+// shown to the owner) still opens after a rotation that keeps the old key
+// in APP_PREVIOUS_KEYS, and fails closed once the old key is dropped.
+func TestPostgres_OWASP_A04_AppKeyRotationKeepsSealedData(t *testing.T) {
+	t.Parallel()
+
+	dbURL := pgtest.NewDatabase(t)
+	oldKey, newKey := config.GenerateKey(), config.GenerateKey()
+	env := func(key, previous string) vukemtest.Options {
+		return vukemtest.Options{Env: map[string]string{
+			"DATABASE_URL": dbURL, "APP_KEY": key, "APP_PREVIOUS_KEYS": previous,
+			"SESSION_DRIVER": "database", "QUEUE_CONNECTION": "database", "CACHE_STORE": "database",
+		}}
+	}
+
+	before := newReservationFixture(t, env(oldKey, ""))
+	link, err := before.svc.Reserve(t.Context(), before.raffle, 5, buyer)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	links := func(o vukemtest.Options) ([]raffles.ActiveLink, error) {
+		app := vukemtest.New(t, bootstrap.New, o)
+
+		db, err := app.DB()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return raffles.New(db, app.Now, nil).ActiveLinks(t.Context(), before.raffle.ID)
+	}
+
+	rotated, err := links(env(newKey, oldKey))
+	if err != nil || len(rotated) != 1 || rotated[0].Token != link.Token {
+		t.Fatalf("after rotation: %v, %v; want the sealed token back", rotated, err)
+	}
+
+	if _, err := links(env(newKey, "")); err == nil {
+		t.Fatal("old ciphertext opened without the previous key")
 	}
 }

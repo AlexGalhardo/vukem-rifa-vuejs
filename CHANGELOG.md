@@ -36,6 +36,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Bumped vukem to v0.26.0: API keys are soft revoked (`access_tokens.revoked_at`, revoked keys hidden from the settings page), payouts and edit-cancelled links are audit events (`web.AuditEvent`), the sign-up notice path never answers differently when the cache fails, `MAIL_MAILER=mailtrap` (Mailtrap Email API) is documented for production; new tests for APP_KEY rotation and Mailtrap HTTP delivery.
 - Editing a raffle cancels its live payment links in the same transaction (numbers released, audit event `raffle.links_cancelled`, flash with the count); paid numbers still lock price, size and duration.
 - Production moved to <https://rifa.vukem.dev> (docs: <https://vukem.dev>); every repository reference to the Railway and `rifa.vukem.com` URLs now points there.
 - Production on Railway sends HSTS (`HSTS_FORCE`) and sees real client IPs (`TRUSTED_PROXIES=100.64.0.0/24`, `CLIENT_IP_HEADER=X-Real-IP`), so per-IP rate limits no longer share one bucket.

@@ -51,7 +51,7 @@ func (ac *AdminController) StorePayout(c *web.Ctx) error {
 		return err
 	}
 
-	web.SecurityEvent(c.Request(), "payout.recorded", "payout_id", payout.ID, "owner_id", payout.UserID,
+	web.AuditEvent(c.Request(), "payout.recorded", "payout_id", payout.ID, "owner_id", payout.UserID,
 		"amount_cents", payout.AmountCents, "admin_id", admin.ID)
 	inertia.Flash(c, "success", i18n.T(c.Context(), "admin.payouts.recorded"))
 

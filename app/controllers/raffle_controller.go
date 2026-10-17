@@ -160,7 +160,7 @@ func (rc *RaffleController) Update(c *web.Ctx) error {
 
 	msg := i18n.T(c.Context(), "raffle.updated")
 	if cancelled > 0 {
-		web.SecurityEvent(c.Request(), "raffle.links_cancelled", "raffle_id", r.ID, "count", cancelled, "reason", "edit")
+		web.AuditEvent(c.Request(), "raffle.links_cancelled", "raffle_id", r.ID, "count", cancelled, "reason", "edit")
 		msg = i18n.T(c.Context(), "raffle.updated_links_cancelled", "count", cancelled)
 	}
 

@@ -94,6 +94,12 @@ func (kc *APIKeyController) render(c *web.Ctx, plain string) error {
 
 	keys := make([]apiKey, 0, len(tokens))
 	for _, t := range tokens {
+		// Revoked keys stay in the table for the audit trail (vukem v0.26.0
+		// soft revoke); the page lists the usable ones.
+		if t.RevokedAt != nil {
+			continue
+		}
+
 		keys = append(keys, apiKey{ID: t.ID, Name: t.Name, Abilities: t.Abilities, LastUsedAt: t.LastUsedAt})
 	}
 

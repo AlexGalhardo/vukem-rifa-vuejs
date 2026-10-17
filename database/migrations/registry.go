@@ -16,5 +16,6 @@ func All() []schema.Migration {
 		m20261017170000CreateDrawsTable(),
 		m20261017190000AddLocaleToReservations(),
 		m20261017210000AddTokenSealedToReservations(),
+		m20261017230000AddRevokedAtToAccessTokens(),
 	}
 }

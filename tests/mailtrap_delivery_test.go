@@ -49,3 +49,26 @@ func TestMailtrap_VerificationEmailDelivered(t *testing.T) {
 
 	c.Get(u.RequestURI()).AssertRedirect("/dashboard")
 }
+
+// Delivery through the Mailtrap Email API (MAIL_MAILER=mailtrap, vukem
+// v0.26.0): the production transport, since Railway blocks outgoing SMTP.
+// Runs after the SMTP test (-p 1; the shared sandbox is rate limited).
+func TestMailtrap_HTTPTransportDelivers(t *testing.T) {
+	mt := mailtrap.FromEnv(t)
+
+	app := vukemtest.New(t, bootstrap.New, vukemtest.Options{Env: map[string]string{
+		"MAIL_MAILER":        "mailtrap",
+		"MAILTRAP_API_TOKEN": os.Getenv("MAILTRAP_API_TOKEN"),
+		"MAILTRAP_INBOX_ID":  os.Getenv("MAILTRAP_SANDBOX_ID"),
+		"APP_URL":            "http://localhost:3000",
+	}})
+
+	time.Sleep(10 * time.Second) // the free sandbox accepts about one message per 10 s
+
+	email := "rifa-ci-api-" + strings.ToLower(rand.Text()[:12]) + "@example.com"
+	register(t, app.Client(t).Inertia(""), email)
+
+	if _, err := mt.WaitLink(t.Context(), email, time.Minute); err != nil {
+		t.Fatal(err)
+	}
+}

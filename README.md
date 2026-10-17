@@ -52,7 +52,7 @@ go run ./cmd/app                  # Go app on http://localhost:3000
 
 ## Email
 
-SMTP only (`MAIL_MAILER=smtp`, `SMTP_*`). Local: Mailpit at <http://localhost:8025> (`SMTP_INSECURE=true`, local only). Dev/staging/e2e: [Mailtrap Email Sandbox](https://mailtrap.io) (`sandbox.smtp.mailtrap.io:2525`); tests read delivered emails through the Mailtrap Sandbox API when `MAILTRAP_API_TOKEN`, `MAILTRAP_ACCOUNT_ID` and `MAILTRAP_SANDBOX_ID` are set. Optional Mailtrap MCP for agents: `claude mcp add mailtrap -e MAILTRAP_API_TOKEN=… -e MAILTRAP_ACCOUNT_ID=… -- npx -y mcp-mailtrap`.
+Two transports. Production on Railway: `MAIL_MAILER=mailtrap` (Mailtrap Email API over HTTPS, vukem v0.26.0; `MAILTRAP_API_TOKEN`, `MAILTRAP_INBOX_ID` for the sandbox) because Railway blocks outgoing SMTP. Local and CI: SMTP (`MAIL_MAILER=smtp`, `SMTP_*`). Local: Mailpit at <http://localhost:8025> (`SMTP_INSECURE=true`, local only). Dev/staging/e2e: [Mailtrap Email Sandbox](https://mailtrap.io) (`sandbox.smtp.mailtrap.io:2525`); tests read delivered emails through the Mailtrap Sandbox API when `MAILTRAP_API_TOKEN`, `MAILTRAP_ACCOUNT_ID` and `MAILTRAP_SANDBOX_ID` are set. Optional Mailtrap MCP for agents: `claude mcp add mailtrap -e MAILTRAP_API_TOKEN=… -e MAILTRAP_ACCOUNT_ID=… -- npx -y mcp-mailtrap`.
 
 The free Mailtrap sandbox is shared with other projects: email tests use a unique random recipient, filter by it, run serially (`-p 1`, about one message per 10 s) and never clean the inbox.
 

@@ -55,17 +55,22 @@ func (a *Accounts) Register(ctx context.Context, in requests.Register) (bool, er
 
 // notifyExisting tells the owner of an existing account that someone tried
 // to sign up with it, at most once per hour per address (no mail bombing).
+// A cache error skips the notice and is logged: returning it would answer
+// differently from the new-email path and reveal the account (as in the
+// vukem v0.26.0 install:auth scaffold).
 func (a *Accounts) notifyExisting(ctx context.Context, u models.User) error {
 	c, err := a.cache()
 	if err != nil {
-		return err
+		a.log.ErrorContext(ctx, "register: account-exists notice skipped", "err", err)
+		return nil
 	}
 
 	sum := sha256.Sum256([]byte(u.Email))
 
 	n, err := c.Increment(ctx, "register:exists:"+hex.EncodeToString(sum[:]), 1, time.Hour)
 	if err != nil {
-		return err
+		a.log.ErrorContext(ctx, "register: account-exists notice skipped", "err", err)
+		return nil
 	}
 
 	if n > 1 {
