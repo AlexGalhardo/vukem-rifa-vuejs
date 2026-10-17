@@ -3,9 +3,10 @@
 package tests
 
 import (
+	"crypto/rand"
 	"net/url"
 	"os"
-	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,7 +17,10 @@ import (
 )
 
 // Real SMTP delivery to the Mailtrap Email Sandbox. Run with
-// go test -tags=mailtrap ./tests/ and SMTP_* + MAILTRAP_* set (see .env.example).
+// go test -tags=mailtrap -p 1 ./tests/ and SMTP_* + MAILTRAP_* set (see
+// .env.example). The free sandbox is shared with other projects and rate
+// limited: tests use a unique recipient, filter by it, run serially and
+// never clean the inbox.
 func TestMailtrap_VerificationEmailDelivered(t *testing.T) {
 	mt := mailtrap.FromEnv(t)
 
@@ -30,7 +34,7 @@ func TestMailtrap_VerificationEmailDelivered(t *testing.T) {
 	app := vukemtest.New(t, bootstrap.New, vukemtest.Options{Env: env})
 	c := app.Client(t).Inertia("")
 
-	email := "owner-" + strconv.FormatInt(time.Now().UnixNano(), 36) + "@example.com"
+	email := "rifa-ci-" + strings.ToLower(rand.Text()[:12]) + "@example.com"
 	register(t, c, email)
 
 	link, err := mt.WaitLink(t.Context(), email, time.Minute)

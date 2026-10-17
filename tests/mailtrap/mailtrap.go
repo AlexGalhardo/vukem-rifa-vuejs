@@ -114,12 +114,6 @@ func (c *Client) Text(ctx context.Context, m Message) (string, error) {
 	return body, c.do(ctx, http.MethodGet, path, &body)
 }
 
-// Clean deletes every message in the sandbox (run before a suite; the
-// sandbox is rate limited, so keep email tests serial).
-func (c *Client) Clean(ctx context.Context) error {
-	return c.do(ctx, http.MethodPatch, "/api/sandboxes/"+url.PathEscape(c.SandboxID)+"/clean", nil)
-}
-
 var linkRe = regexp.MustCompile(`https?://[^\s)"<>]+`)
 
 // ErrNoMail reports that no matching mail arrived before the deadline.

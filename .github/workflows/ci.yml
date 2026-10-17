@@ -87,6 +87,24 @@ jobs:
       - run: go test -tags=mailtrap -p 1 -run Mailtrap ./tests/
         if: env.MAILTRAP_API_TOKEN != ''
 
+  abacatepay:
+    name: PIX sandbox (AbacatePay dev mode)
+    # Runs only when the owner has set the AbacatePay dev-mode secrets.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      ABACATEPAY_API_KEY: ${{ secrets.ABACATEPAY_API_KEY }}
+      ABACATEPAY_WEBHOOK_SECRET: ${{ secrets.ABACATEPAY_WEBHOOK_SECRET }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        if: env.ABACATEPAY_API_KEY != ''
+      - uses: actions/setup-go@v7.0.0
+        if: env.ABACATEPAY_API_KEY != ''
+        with:
+          go-version-file: go.mod
+      - run: go test -tags=abacatepay -p 1 -run AbacatePaySandbox ./...
+        if: env.ABACATEPAY_API_KEY != ''
+
   govulncheck:
     runs-on: ubuntu-latest
     steps:
