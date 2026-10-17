@@ -247,13 +247,13 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 #### 1.3 Google login
 
-- [ ] Google provider via `social` with `SOCIAL_FAKE_*` in tests → verify: callback creates/links user (test).
-- [ ] Account linking by verified email only → verify: test with unverified Google email refused.
+- [x] Google provider via `social` with `SOCIAL_FAKE_*` in tests → verify: `TestSocialSignUpAndLogin`.
+- [x] Account linking by verified email only → verify: `TestSocialDoesNotTakeOverUnverifiedEmails` (409).
 
 #### 1.4 Abuse protections
 
-- [ ] Rate limits on login (per email+IP), forgot-password, verification resend → verify: 429 after N attempts (test).
-- [ ] Session rotation on login/logout, CSRF on all auth forms → verify: security tests.
+- [x] Rate limits on login (per email+IP), forgot-password, verification resend → verify: `TestLoginLogoutAndThrottle`, `TestSecurity_ForgotPasswordRateLimited` (429).
+- [x] Session rotation on login, cross-site POST blocked (CSRF) → verify: `TestSecurity_SessionRotatesOnLogin`, `TestSecurity_CrossSiteLoginBlocked`.
 
 ### Phase 2 — Raffles
 
