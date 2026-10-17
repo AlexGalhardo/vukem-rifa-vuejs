@@ -240,7 +240,8 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 #### 1.2 Email (Mailtrap / Mailpit)
 
 - [x] SMTP config documented and wired (`MAIL_MAILER=smtp`) → verify: e2e `auth.spec.ts` registers, reads the verification mail from Mailpit (`/api/v1/search`), verifies, logs out and in.
-- [ ] `tests/mailtrap` helper (net/http): list sandbox messages by recipient, read `body.html`/`body.txt`, extract links, clean sandbox; skip without `MAILTRAP_API_TOKEN` → verify: `go test -tags=mailtrap ./tests/...` with owner creds.
+- [x] `tests/mailtrap` helper (net/http): list sandbox messages by recipient, read `body.txt`, extract links, clean sandbox; skip without `MAILTRAP_API_TOKEN` → verify: `go test ./tests/mailtrap` (fake API server).
+- [ ] Real delivery test `go test -tags=mailtrap -run Mailtrap ./tests/` (CI job `mailtrap` runs when secrets exist) → verify: green with owner creds.
 - [x] Email verification required for the dashboard → verify: unverified user redirected (test `TestDashboard_RequiresVerifiedEmail`).
 - [ ] Password reset end-to-end → verify: integration test with array mailer + Mailtrap e2e.
 
@@ -330,7 +331,7 @@ When the coordinator announces a vukem release (CI green): `go get github.com/Al
 
 | What | Env / where | Needed by |
 | --- | --- | --- |
-| Mailtrap account: API token, account id, sandbox id, sandbox SMTP user/pass (`sandbox.smtp.mailtrap.io:2525`) | `MAILTRAP_API_TOKEN`, `MAILTRAP_ACCOUNT_ID`, `MAILTRAP_SANDBOX_ID`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` (local `.env` + GitHub Actions secrets for e2e) | Phase 1 |
+| Mailtrap account: API token, account id, sandbox id, sandbox SMTP user/pass (`sandbox.smtp.mailtrap.io:2525`) | `MAILTRAP_API_TOKEN`, `MAILTRAP_ACCOUNT_ID`, `MAILTRAP_SANDBOX_ID`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` (local `.env`; GitHub Actions secrets `MAILTRAP_API_TOKEN`, `MAILTRAP_SANDBOX_ID`, `MAILTRAP_SMTP_USERNAME`, `MAILTRAP_SMTP_PASSWORD`) | Phase 1 |
 | Google OAuth client (Web), redirect URIs `http://localhost:3000/auth/google/callback` and `https://rifa.vukem.com/auth/google/callback` | `SOCIAL_GOOGLE_CLIENT_ID`, `SOCIAL_GOOGLE_CLIENT_SECRET` | Phase 1 |
 | AbacatePay account in Dev mode: API key `abc_dev_…` with `TRANSPARENT:CREATE`, `TRANSPARENT:READ`, `WEBHOOK:CREATE`; webhook secret | `ABACATEPAY_API_KEY`, `ABACATEPAY_WEBHOOK_SECRET` (+ the HMAC key AbacatePay shows for `X-Webhook-Signature`, if different) | Phase 4 |
 | Production sender: Mailtrap Sending (verified domain `vukem.com`: SPF/DKIM/DMARC CNAMEs) or another SMTP | `SMTP_*`, `MAIL_FROM` | Phase 9 |
