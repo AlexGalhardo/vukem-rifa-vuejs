@@ -109,8 +109,8 @@ type PageLinks struct {
 	Prev *string `json:"prev"`
 }
 
-// Number is one raffle number.
-type Number struct {
+// RaffleNumber is one raffle number.
+type RaffleNumber struct {
 	Number int        `json:"number"  validate:"required"`
 	Status string     `json:"status"  validate:"required,oneof=available reserved paid"`
 	PaidAt *time.Time `json:"paid_at"`
@@ -118,7 +118,7 @@ type Number struct {
 
 // NumberList is every number of a raffle, in order.
 type NumberList struct {
-	Data []Number `json:"data"`
+	Data []RaffleNumber `json:"data"`
 }
 
 // PaymentLink is a new payment link: the buyer pays at URL until

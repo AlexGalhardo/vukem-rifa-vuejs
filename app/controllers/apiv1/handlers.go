@@ -263,9 +263,9 @@ func (h *Handlers) numbers(c *web.Ctx, in RaffleID) (NumberList, error) {
 		return NumberList{}, err
 	}
 
-	out := NumberList{Data: make([]Number, 0, len(list))}
+	out := NumberList{Data: make([]RaffleNumber, 0, len(list))}
 	for _, n := range list {
-		out.Data = append(out.Data, Number{Number: n.Number, Status: n.Status, PaidAt: ptrTime(n.PaidAt)})
+		out.Data = append(out.Data, RaffleNumber{Number: n.Number, Status: n.Status, PaidAt: ptrTime(n.PaidAt)})
 	}
 
 	return out, nil

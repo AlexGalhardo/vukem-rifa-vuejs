@@ -13,7 +13,8 @@
 			"!**/.claude/skills",
 			"!**/playwright-report",
 			"!**/test-results",
-			"!**/resources/views"
+			"!**/resources/views",
+			"!**/resources/js/generated"
 		]
 	},
 	"formatter": {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { RafflesStoreBody } from "../generated/api";
 import type { RaffleLimits } from "../types";
 
 /** Mirrors requests.RaffleSchema (Go); the server stays the authority. */
@@ -13,4 +14,8 @@ export function raffleSchema(l: RaffleLimits) {
 	});
 }
 
-export type RaffleForm = z.infer<ReturnType<typeof raffleSchema>>;
+// Fails to compile when the form drifts from the REST API create body
+// (resources/js/generated, generated from the Go types).
+type AssignableTo<T extends U, U> = T;
+
+export type RaffleForm = AssignableTo<z.infer<ReturnType<typeof raffleSchema>>, RafflesStoreBody>;

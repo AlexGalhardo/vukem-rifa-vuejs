@@ -29,10 +29,11 @@ type Service struct {
 // New returns a Service; now is the app clock.
 func New(db *database.DB, now func() time.Time) *Service { return &Service{DB: db, Now: now} }
 
-// Export is the whole audit document of one raffle.
+// Export is the whole audit document of one raffle. The validate tags
+// only describe it in the OpenAPI document (keys always present).
 type Export struct {
-	GeneratedAt  time.Time     `json:"generated_at"`
-	Raffle       Raffle        `json:"raffle"`
+	GeneratedAt  time.Time     `json:"generated_at" validate:"required"`
+	Raffle       Raffle        `json:"raffle" validate:"required"`
 	Numbers      []Number      `json:"numbers"`
 	Reservations []Reservation `json:"reservations"`
 	Ledger       []LedgerEntry `json:"ledger"`
@@ -42,74 +43,74 @@ type Export struct {
 // Raffle is the raffle summary with number counts and ledger totals in
 // centavos.
 type Raffle struct {
-	ID               int64      `json:"id"`
-	Slug             string     `json:"slug"`
-	Title            string     `json:"title"`
+	ID               int64      `json:"id" validate:"required"`
+	Slug             string     `json:"slug" validate:"required"`
+	Title            string     `json:"title" validate:"required"`
 	Description      string     `json:"description"`
-	Status           string     `json:"status"`
-	NumberCount      int        `json:"number_count"`
-	PriceReais       int        `json:"price_reais"`
-	PriceCents       int64      `json:"price_cents"`
-	DurationDays     int        `json:"duration_days"`
-	StartsAt         time.Time  `json:"starts_at"`
-	EndsAt           time.Time  `json:"ends_at"`
+	Status           string     `json:"status" validate:"required"`
+	NumberCount      int        `json:"number_count" validate:"required"`
+	PriceReais       int        `json:"price_reais" validate:"required"`
+	PriceCents       int64      `json:"price_cents" validate:"required"`
+	DurationDays     int        `json:"duration_days" validate:"required"`
+	StartsAt         time.Time  `json:"starts_at" validate:"required"`
+	EndsAt           time.Time  `json:"ends_at" validate:"required"`
 	LockedAt         *time.Time `json:"locked_at"`
 	ArchivedAt       *time.Time `json:"archived_at"`
-	CreatedAt        time.Time  `json:"created_at"`
-	Available        int        `json:"available"`
-	Reserved         int        `json:"reserved"`
-	Paid             int        `json:"paid"`
-	OwnerShareCents  int64      `json:"owner_share_cents"`
-	PlatformFeeCents int64      `json:"platform_fee_cents"`
-	RefundDueCents   int64      `json:"refund_due_cents"`
+	CreatedAt        time.Time  `json:"created_at" validate:"required"`
+	Available        int        `json:"available" validate:"required"`
+	Reserved         int        `json:"reserved" validate:"required"`
+	Paid             int        `json:"paid" validate:"required"`
+	OwnerShareCents  int64      `json:"owner_share_cents" validate:"required"`
+	PlatformFeeCents int64      `json:"platform_fee_cents" validate:"required"`
+	RefundDueCents   int64      `json:"refund_due_cents" validate:"required"`
 }
 
 // Number is one raffle number and its state.
 type Number struct {
-	Number        int        `json:"number"`
-	Status        string     `json:"status"`
+	Number        int        `json:"number" validate:"required"`
+	Status        string     `json:"status" validate:"required"`
 	PaidAt        *time.Time `json:"paid_at"`
 	ReservationID *int64     `json:"reservation_id"`
 }
 
 // Reservation is one payment link and its buyer.
 type Reservation struct {
-	ID          int64      `json:"id"`
-	Number      int        `json:"number"`
-	BuyerName   string     `json:"buyer_name"`
-	BuyerEmail  string     `json:"buyer_email"`
-	BuyerPhone  string     `json:"buyer_phone"`
-	Status      string     `json:"status"`
-	AmountCents int64      `json:"amount_cents"`
+	ID          int64      `json:"id" validate:"required"`
+	Number      int        `json:"number" validate:"required"`
+	BuyerName   string     `json:"buyer_name" validate:"required"`
+	BuyerEmail  string     `json:"buyer_email" validate:"required"`
+	BuyerPhone  string     `json:"buyer_phone" validate:"required"`
+	Status      string     `json:"status" validate:"required"`
+	AmountCents int64      `json:"amount_cents" validate:"required"`
 	ChargeID    *string    `json:"charge_id"`
-	ExpiresAt   time.Time  `json:"expires_at"`
+	ExpiresAt   time.Time  `json:"expires_at" validate:"required"`
 	PaidAt      *time.Time `json:"paid_at"`
-	CreatedAt   time.Time  `json:"created_at"`
+	CreatedAt   time.Time  `json:"created_at" validate:"required"`
 	// RefundDue marks a payment confirmed after the link expired: the
 	// platform owes the buyer a refund (PLAN.md §4.3).
-	RefundDue bool `json:"refund_due"`
+	RefundDue bool `json:"refund_due" validate:"required"`
 }
 
 // LedgerEntry is one append-only money movement of the raffle.
 type LedgerEntry struct {
-	ID            int64     `json:"id"`
-	Kind          string    `json:"kind"`
-	AmountCents   int64     `json:"amount_cents"`
+	ID            int64     `json:"id" validate:"required"`
+	Kind          string    `json:"kind" validate:"required"`
+	AmountCents   int64     `json:"amount_cents" validate:"required"`
 	ReservationID *int64    `json:"reservation_id"`
 	Note          string    `json:"note"`
-	RefundDue     bool      `json:"refund_due"`
-	CreatedAt     time.Time `json:"created_at"`
+	RefundDue     bool      `json:"refund_due" validate:"required"`
+	CreatedAt     time.Time `json:"created_at" validate:"required"`
 }
 
 // Draw is the auditable draw result; WinningNumber is nil when nothing was
 // paid.
 type Draw struct {
-	DrawnAt            time.Time `json:"drawn_at"`
-	Trigger            string    `json:"trigger"`
-	Algorithm          string    `json:"algorithm"`
-	Seed               string    `json:"seed"`
-	ParticipantsCount  int       `json:"participants_count"`
-	ParticipantsSHA256 string    `json:"participants_sha256"`
+	DrawnAt            time.Time `json:"drawn_at" validate:"required"`
+	Trigger            string    `json:"trigger" validate:"required"`
+	Algorithm          string    `json:"algorithm" validate:"required"`
+	Seed               string    `json:"seed" validate:"required"`
+	ParticipantsCount  int       `json:"participants_count" validate:"required"`
+	ParticipantsSHA256 string    `json:"participants_sha256" validate:"required"`
 	WinningNumber      *int      `json:"winning_number"`
 }
 
