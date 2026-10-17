@@ -50,7 +50,7 @@ func TestRegisterAndVerifyEmail(t *testing.T) {
 	t.Parallel()
 
 	app := vukemtest.New(t, bootstrap.New)
-	c := app.Client(t).Inertia(app.Inertia.Version())
+	c := app.Client(t).Inertia("")
 
 	c.Get("/dashboard").AssertRedirect("/login")
 	c.Get("/login").AssertInertia("Auth/Login").PropEquals("auth.user", nil)
@@ -70,7 +70,7 @@ func TestRegisterAndVerifyEmail(t *testing.T) {
 		HasProp("auth.user.email_verified_at")
 
 	// Duplicate emails are rejected.
-	other := app.Client(t).Inertia(app.Inertia.Version()).WithHeader("Referer", "/register")
+	other := app.Client(t).Inertia("").WithHeader("Referer", "/register")
 	other.PostJSON("/register", map[string]any{
 		"name": "Other", "email": "ANA@example.com",
 		"password": "another long password", "password_confirmation": "another long password",
@@ -82,9 +82,9 @@ func TestLoginLogoutAndThrottle(t *testing.T) {
 	t.Parallel()
 
 	app := vukemtest.New(t, bootstrap.New)
-	register(t, app.Client(t).Inertia(app.Inertia.Version()), "bob@example.com")
+	register(t, app.Client(t).Inertia(""), "bob@example.com")
 
-	c := app.Client(t).Inertia(app.Inertia.Version()).WithHeader("Referer", "/login")
+	c := app.Client(t).Inertia("").WithHeader("Referer", "/login")
 	c.PostJSON("/login", map[string]any{"email": "bob@example.com", "password": "wrong"}).AssertRedirect("/login")
 	c.Get("/login").AssertInertia("Auth/Login").HasProp("errors.email")
 
@@ -95,7 +95,7 @@ func TestLoginLogoutAndThrottle(t *testing.T) {
 	c.Get("/").AssertInertia("Home").PropEquals("auth.user", nil)
 	c.Get("/dashboard").AssertRedirect("/login")
 
-	attacker := app.Client(t).Inertia(app.Inertia.Version())
+	attacker := app.Client(t).Inertia("")
 	// Spaces and case do not open new buckets: they are the same account.
 	for _, email := range []string{"bob@example.com", " bob@example.com", "BOB@example.com ", "	bob@example.com"} {
 		attacker.PostJSON("/login", map[string]any{"email": email, "password": "guess"})
@@ -108,9 +108,9 @@ func TestPasswordReset(t *testing.T) {
 	t.Parallel()
 
 	app := vukemtest.New(t, bootstrap.New)
-	register(t, app.Client(t).Inertia(app.Inertia.Version()), "cid@example.com")
+	register(t, app.Client(t).Inertia(""), "cid@example.com")
 
-	c := app.Client(t).Inertia(app.Inertia.Version())
+	c := app.Client(t).Inertia("")
 
 	// Unknown emails get the same answer and no mail.
 	c.PostJSON("/forgot-password", map[string]any{"email": "nobody@example.com"}).AssertRedirect("/forgot-password")

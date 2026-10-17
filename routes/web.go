@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	vukem "github.com/AlexGalhardo/vukem"
-	"github.com/AlexGalhardo/vukem/i18n"
 	"github.com/AlexGalhardo/vukem/inertia"
 	"github.com/AlexGalhardo/vukem/middleware"
 	"github.com/AlexGalhardo/vukem/router"
@@ -21,26 +20,22 @@ func Web(r *router.Router, app *vukem.App) error {
 	}
 
 	r.UseServer(middleware.StaticFS(resources.Public(), middleware.StaticConfig{Prefix: "/"}))
-	r.Use(app.Inertia.Middleware, shareProps(app))
+	// Catalog prefixes the pages use; mail.* and validation.* stay server-side.
+	r.Use(app.Inertia.Middleware, inertia.I18n(clientMessagePrefixes...), shareProps(app))
 
 	r.Get("/", controllers.Home).Name("home")
 
 	return nil
 }
 
+// clientMessagePrefixes are the translation keys shared with the pages.
+var clientMessagePrefixes = []string{"app.", "home.", "theme.", "locale.", "nav.", "auth.", "dashboard.", "raffle."}
+
 // shareProps adds the props every page receives (usePage().props).
 func shareProps(app *vukem.App) func(http.Handler) http.Handler {
-	var locales []string
-	if app.I18n != nil {
-		locales = app.I18n.Locales()
-	}
-
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			inertia.Share(ctx, "appName", app.Config.Name)
-			inertia.Share(ctx, "locale", i18n.Locale(ctx))
-			inertia.Share(ctx, "locales", locales)
+			inertia.Share(r.Context(), "appName", app.Config.Name)
 			next.ServeHTTP(w, r)
 		})
 	}

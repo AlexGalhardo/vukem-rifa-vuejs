@@ -15,7 +15,7 @@ func TestHome(t *testing.T) {
 
 	// First visit: HTML with the page object; Inertia visits: JSON.
 	app.Client(t).Get("/").AssertOK().AssertInertia("Home").HasProp("appName").HasProp("locales")
-	app.Client(t).Inertia(app.Inertia.Version()).Get("/").AssertOK().AssertInertia("Home")
+	app.Client(t).Inertia("").Get("/").AssertOK().AssertInertia("Home")
 }
 
 func TestHealth(t *testing.T) {
@@ -54,5 +54,27 @@ func TestHome_Locale(t *testing.T) {
 
 			c.Get(tt.target).AssertOK().AssertInertia("Home").PropEquals("locale", tt.want)
 		})
+	}
+}
+
+func TestHome_SharesClientMessagesOnly(t *testing.T) {
+	t.Parallel()
+
+	app := vukemtest.New(t, bootstrap.New)
+
+	page := app.Client(t).WithCookie("lang", "en").Get("/").AssertInertia("Home").Page()
+
+	// Keys are flat and dotted, so read the map instead of a prop path.
+	props, _ := page["props"].(map[string]any)
+	messages, _ := props["messages"].(map[string]any)
+
+	if got := messages["home.title"]; got != "Online raffles with PIX" {
+		t.Errorf("messages[home.title] = %v", got)
+	}
+
+	for _, key := range []string{"mail.verify.subject", "validation.required"} {
+		if _, ok := messages[key]; ok {
+			t.Errorf("server-only key %q shared with the page", key)
+		}
 	}
 }

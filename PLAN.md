@@ -24,12 +24,12 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | D7 | Payments: AbacatePay API v2, PIX via `POST /v2/transparents/create`; dev key (`abc_dev_…`) = sandbox, same base URL. No cancel endpoint: the PIX `expiresIn` equals the remaining reservation time, and expiry is enforced locally. | From docs.abacatepay.com (2026-10-17). |
 | D8 | Platform receives 100%; ledger records 90% owner share + 10% platform fee per paid number; payouts recorded manually by an admin (`users.is_admin`). | Owner decision. |
 | D9 | Buyers have no account. Payment links are random tokens (≥128 bits), stored as SHA-256, valid only while the reservation lives. | Owner decision + IDOR safety. |
-| D10 | i18n: one JSON catalog per locale in `resources/lang/{pt-BR,en}.json`, loaded by vukem `i18n` (Go: emails, validation) and imported by the Vue `useI18n` composable. Locale from `?lang` → `lang` cookie → `Accept-Language` → `APP_LOCALE=pt-BR`. | No extra dependency (no vue-i18n); vukem lacks Inertia i18n sharing (audit F2). |
+| D10 | i18n: one JSON catalog per locale in `resources/lang/{pt-BR,en}.json`, loaded by vukem `i18n` (Go: emails, validation) and shared with Vue through `inertia.I18n(prefixes…)` (once prop per locale; `mail.*`/`validation.*` stay server-side), read by the `useI18n` composable. Locale from `?lang` → `lang` cookie → `Accept-Language` → `APP_LOCALE=pt-BR`. | No extra dependency (no vue-i18n). |
 | D11 | Theme: class-based dark mode (`html.dark`), pre-paint inline script with the CSP nonce, `localStorage.theme`, OS preference as default. | No flash of wrong theme; CSP-safe. |
 | D12 | Draw: `crypto/rand` 32-byte seed at draw time, winner by rejection sampling over the sorted paid numbers; store seed, timestamp, participant count, SHA-256 of the participant list, algorithm version. Public result page shows all of it so anyone can recompute. | Auditable. Commit-reveal (publish `sha256(seed)` at creation) is a possible later enhancement. |
 | D13 | Locks: price and number count become immutable after the first paid number; title/description stay editable. Raffles with paid numbers are archived, never deleted. | Owner rules. |
 | D14 | Number rows are pre-created (`1..N`, N ≤ 1000) when a raffle is created. | Row-level locking per number, simple grid queries. |
-| D15 | Background work runs in the web process as vukem runners (queue worker + scheduler) on one Railway service; `queue:work`/`schedule:work` can be split out later. | One instance, low cost. |
+| D15 | Background work runs in the web process: `bootstrap.Background()` adds the database queue worker and the scheduler (incl. vukem's hourly `session:prune`) as runners of `serve`; `BACKGROUND_IN_SERVE=false` when `queue:work`/`schedule:work` run as separate services. | One Railway instance, low cost. |
 | D16 | JS tooling via Bun 1.4.3; Biome 2.5 for lint/format; Playwright 1.64 e2e; lefthook git hooks; commitlint; markdownlint-cli2. | Owner standards. |
 | D18 | Duration is locked together with price and number count after the first paid number; before that, shrinking the count is refused if a removed number is reserved or paid. | Changing the deadline after sales would be unfair to buyers. |
 | D19 | Tests: unit/HTTP tests run on SQLite via `vukemtest`, so domain SQL stays dialect-neutral (recursive CTE for numbers); Postgres-only parts (CHECKs, `FOR UPDATE`, partial indexes) are covered by `-tags=integration`. | vukem has no Postgres test helper yet. |
@@ -40,7 +40,7 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | Tool | Version | Where |
 | --- | --- | --- |
 | Go | 1.27.2 | `go.mod`, Docker `golang:1.27.2-alpine3.24` |
-| vukem | v0.21.1 | `go.mod` |
+| vukem | v0.22.0 (started on v0.21.1) | `go.mod` |
 | vukem drivers/postgres | v0.3.0 (pgx v5.11.0) | `go.mod` |
 | golangci-lint | v2.15.0 (CI), action v9.3.0 | `.golangci.yml` |
 | govulncheck | v1.9.0 (`go tool`) | `go.mod` tool directive |

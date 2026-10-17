@@ -13,7 +13,7 @@ func TestRegister_IsNotAdmin(t *testing.T) {
 	t.Parallel()
 
 	app := vukemtest.New(t, bootstrap.New)
-	register(t, app.Client(t).Inertia(app.Inertia.Version()), "eva@example.com")
+	register(t, app.Client(t).Inertia(""), "eva@example.com")
 
 	vukemtest.AssertDatabaseHas(t, app, "users", map[string]any{"email": "eva@example.com", "is_admin": false})
 }

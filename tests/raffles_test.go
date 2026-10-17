@@ -14,7 +14,7 @@ import (
 func owner(t *testing.T, app *vukemtest.App, email string) *vukemtest.Client {
 	t.Helper()
 
-	c := app.Client(t).Inertia(app.Inertia.Version())
+	c := app.Client(t).Inertia("")
 	register(t, c, email)
 	c.Get(link(t, app, email)).AssertRedirect("/dashboard")
 
@@ -126,7 +126,7 @@ func TestRaffle_GuestsAndUnverifiedCannotManage(t *testing.T) {
 
 	app.Client(t).Get("/raffles/create").AssertRedirect("/login")
 
-	c := app.Client(t).Inertia(app.Inertia.Version())
+	c := app.Client(t).Inertia("")
 	register(t, c, "new@example.com")
 	c.Get("/raffles/create").AssertRedirect("/email/verify")
 	c.PostJSON("/raffles", validRaffle()).AssertRedirect("/email/verify")

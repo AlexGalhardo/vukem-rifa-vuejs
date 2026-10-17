@@ -19,7 +19,7 @@ func Raffles(r *router.Router, app *vukem.App) error {
 	}
 
 	rc := controllers.NewRaffleController(raffles.New(acc.DB, app.Now))
-	owner := []router.Middleware{auth.Required(acc.Web), verifiedOrNotice()}
+	owner := []router.Middleware{auth.Required(acc.Web), auth.Verified(acc.Web)}
 
 	r.Get("/dashboard", rc.Index).Name("dashboard").Use(owner...)
 	r.Get("/raffles/create", rc.Create).Name("raffles.create").Use(owner...)

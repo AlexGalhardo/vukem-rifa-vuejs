@@ -13,6 +13,8 @@ export interface SharedProps {
 	appName: string;
 	locale: Locale;
 	locales: Locale[];
+	// Shared by vukem inertia.I18n (flat dotted keys; plural entries are objects).
+	messages?: Record<string, string | Record<string, string>>;
 	errors: Record<string, string>;
 	// Present after vukem install:auth.
 	auth?: { user: User | null };

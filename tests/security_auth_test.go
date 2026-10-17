@@ -14,7 +14,7 @@ func TestSecurity_CrossSiteLoginBlocked(t *testing.T) {
 	t.Parallel()
 
 	app := vukemtest.New(t, bootstrap.New)
-	register(t, app.Client(t).Inertia(app.Inertia.Version()), "csrf@example.com")
+	register(t, app.Client(t).Inertia(""), "csrf@example.com")
 
 	tests := []struct {
 		name   string
@@ -40,7 +40,7 @@ func TestSecurity_ForgotPasswordRateLimited(t *testing.T) {
 	t.Parallel()
 
 	app := vukemtest.New(t, bootstrap.New)
-	c := app.Client(t).Inertia(app.Inertia.Version())
+	c := app.Client(t).Inertia("")
 
 	// 3 per minute per IP (routes/auth.go).
 	for range 3 {
@@ -55,10 +55,11 @@ func TestSecurity_SessionRotatesOnLogin(t *testing.T) {
 
 	// Server-side store: the cookie is the session id (encrypted cookies change on every write).
 	app := vukemtest.New(t, bootstrap.New, vukemtest.Options{Env: map[string]string{"SESSION_DRIVER": "memory"}})
-	register(t, app.Client(t).Inertia(app.Inertia.Version()), "fix@example.com")
+	register(t, app.Client(t).Inertia(""), "fix@example.com")
 
-	c := app.Client(t).Inertia(app.Inertia.Version())
-	c.Get("/login").AssertOK()
+	c := app.Client(t).Inertia("").WithHeader("Referer", "/login")
+	// Read-only visits carry no session (vukem v0.22); a failed attempt stores errors and starts one.
+	c.PostJSON("/login", map[string]any{"email": "fix@example.com", "password": "wrong"}).AssertRedirect("/login")
 
 	before := c.CookieValue("vukem_session")
 	if before == "" {

@@ -74,7 +74,7 @@ func TestForgotPassword_FlashIsLocalized(t *testing.T) {
 			t.Parallel()
 
 			app := vukemtest.New(t, bootstrap.New)
-			c := app.Client(t).Inertia(app.Inertia.Version()).WithCookie("lang", tt.lang)
+			c := app.Client(t).Inertia("").WithCookie("lang", tt.lang)
 
 			c.PostJSON("/forgot-password", map[string]any{"email": "nobody@example.com"}).AssertRedirect("/forgot-password")
 			page := c.Get("/forgot-password").AssertInertia("Auth/ForgotPassword").Page()
@@ -92,7 +92,7 @@ func TestRegister_ValidationIsLocalized(t *testing.T) {
 	t.Parallel()
 
 	app := vukemtest.New(t, bootstrap.New)
-	c := app.Client(t).Inertia(app.Inertia.Version()).WithCookie("lang", "pt-BR").WithHeader("Referer", "/register")
+	c := app.Client(t).Inertia("").WithCookie("lang", "pt-BR").WithHeader("Referer", "/register")
 
 	c.PostJSON("/register", map[string]any{
 		"name": "", "email": "not-an-email", "password": "short", "password_confirmation": "short",
@@ -118,7 +118,7 @@ func TestVerificationEmail_IsLocalized(t *testing.T) {
 			t.Parallel()
 
 			app := vukemtest.New(t, bootstrap.New)
-			register(t, app.Client(t).Inertia(app.Inertia.Version()).WithCookie("lang", tt.lang), "mail@example.com")
+			register(t, app.Client(t).Inertia("").WithCookie("lang", tt.lang), "mail@example.com")
 
 			sent := app.Mails().SentTo("mail@example.com")
 			if len(sent) != 1 {

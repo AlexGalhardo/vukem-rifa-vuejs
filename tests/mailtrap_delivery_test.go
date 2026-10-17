@@ -28,7 +28,7 @@ func TestMailtrap_VerificationEmailDelivered(t *testing.T) {
 	}
 
 	app := vukemtest.New(t, bootstrap.New, vukemtest.Options{Env: env})
-	c := app.Client(t).Inertia(app.Inertia.Version())
+	c := app.Client(t).Inertia("")
 
 	email := "owner-" + strconv.FormatInt(time.Now().UnixNano(), 36) + "@example.com"
 	register(t, c, email)

@@ -14,7 +14,7 @@ func TestDashboard_RequiresVerifiedEmail(t *testing.T) {
 	t.Parallel()
 
 	app := vukemtest.New(t, bootstrap.New)
-	c := app.Client(t).Inertia(app.Inertia.Version())
+	c := app.Client(t).Inertia("")
 
 	register(t, c, "dora@example.com")
 
