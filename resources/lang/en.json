@@ -203,6 +203,75 @@
 		"number_not_found": "This number does not exist in the raffle.",
 		"number_unavailable": "This number is not available.",
 		"not_found": "Payment link not found.",
-		"nothing_to_cancel": "This number has no active payment link."
+		"nothing_to_cancel": "This number has no active payment link.",
+		"cancelled": "Link cancelled. The number is available again.",
+		"grid_hint": "Click an available number to generate a payment link, or a reserved/paid number to see its buyer.",
+		"form": {
+			"title": "Payment link — number {number}",
+			"buyer_name": "Buyer name",
+			"buyer_email": "Buyer email",
+			"buyer_phone": "Buyer mobile (with area code)",
+			"phone_hint": "E.g. (11) 98765-4321. Used to send the link on WhatsApp.",
+			"submit": "Generate link",
+			"close": "Close",
+			"invalid_name": "Enter the name (2 to 100 characters).",
+			"invalid_email": "Enter a valid email.",
+			"invalid_phone": "Enter a Brazilian phone number with area code.",
+			"error": "Could not generate the link. Please try again.",
+			"rate_limited": "Too many links in a short time. Wait a minute and try again."
+		},
+		"result": {
+			"title": "Link generated for number {number}",
+			"once": "Copy and send it now: for security, this link will not be shown again.",
+			"copy": "Copy link",
+			"copied": "Copied!",
+			"whatsapp": "Send on WhatsApp",
+			"whatsapp_text": "Hi {name}! Here is your link to pay number {number} of the raffle \"{title}\" by PIX: {url} — it is valid for 10 minutes.",
+			"expires_in": "Expires in {time}",
+			"expired": "This link expired. Generate a new one if the buyer still wants the number."
+		},
+		"details": {
+			"title": "Number {number}",
+			"expires_at": "Link valid until {date}",
+			"paid_at": "Paid on {date}",
+			"cancel": "Cancel link",
+			"confirm_cancel": "Cancel this number's link? It becomes available again.",
+			"status": {
+				"pending": "Link sent, waiting for the buyer",
+				"awaiting_payment": "PIX created, waiting for payment",
+				"paid": "Paid"
+			}
+		}
+	},
+	"draw": {
+		"title": "Draw result",
+		"pending": "The draw runs automatically at the deadline or as soon as every number is paid.",
+		"archived": "This raffle was archived by its organizer and will not be drawn.",
+		"winning_number": "Winning number",
+		"no_winner": "No number was paid: the raffle closed without a draw.",
+		"drawn_at": "Drawn on",
+		"trigger_label": "Reason",
+		"trigger": {
+			"deadline": "Deadline reached",
+			"sold_out": "Every number sold"
+		},
+		"seed": "Seed (32 bytes, hex)",
+		"participants_count": "Participating (paid) numbers",
+		"participants_list": "Participants list",
+		"participants_sha256": "SHA-256 of the participants list",
+		"algorithm": "Algorithm",
+		"winner": "Winner",
+		"winner_missing": "Buyer of the winning number not found.",
+		"verify": {
+			"title": "How to verify",
+			"intro": "Anyone can redo the draw with the data above:",
+			"step1": "Write the paid numbers in ascending order, separated by commas with no spaces (e.g. 3,7,12). The SHA-256 of that text must equal the published one.",
+			"step2": "For counter = 0, 1, 2…: compute HMAC-SHA256 with the seed (hex-decoded bytes) as key and the counter as 8 big-endian bytes as message; the first 8 bytes of the result, read as a big-endian unsigned integer, are v.",
+			"step3": "Let n be the number of participants. If v ≥ ⌊2^64 ÷ n⌋ × n, discard v and use the next counter; otherwise the winner is the number at position v mod n of the list (starting at 0).",
+			"docs": "Reference code in Python and Go: docs/draw-algorithm.md in the project repository.",
+			"run": "Verify in the browser",
+			"ok": "Verified: the list hash and the winning number match.",
+			"fail": "Does not match the published data."
+		}
 	}
 }
