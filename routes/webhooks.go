@@ -38,6 +38,11 @@ func Webhooks(r *router.Router, app *vukem.App) error {
 		return err
 	}
 
+	limiters, err := app.RateLimiters()
+	if err != nil {
+		return err
+	}
+
 	key := app.Source.Get("ABACATEPAY_WEBHOOK_PUBLIC_KEY")
 	if key == "" {
 		key = abacatepay.WebhookPublicKey
@@ -47,7 +52,7 @@ func Webhooks(r *router.Router, app *vukem.App) error {
 	wc := controllers.NewWebhookController(pay)
 
 	r.Post("/webhooks/abacatepay", wc.AbacatePay).Name("webhooks.abacatepay").Use(
-		ratelimit.Middleware(ratelimit.NewMemory(120, time.Minute), ratelimit.ByIP),
+		ratelimit.Middleware(limiters("webhook-abacatepay", 120, time.Minute), ratelimit.ByIP),
 		webhookSecret(app.Source.Get("ABACATEPAY_WEBHOOK_SECRET")),
 		webhook.Middleware(abacatepay.SignatureHeader, []byte(key), 1<<20),
 		webhook.Dedupe(c.Store(), eventID, webhook.DedupeOptions{}),

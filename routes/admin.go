@@ -2,9 +2,11 @@ package routes
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/AlexGalhardo/vukem"
 	"github.com/AlexGalhardo/vukem/errs"
+	"github.com/AlexGalhardo/vukem/ratelimit"
 	"github.com/AlexGalhardo/vukem/router"
 	"github.com/AlexGalhardo/vukem/web"
 
@@ -41,10 +43,16 @@ func Admin(r *router.Router, app *vukem.App) error {
 		})
 	}
 
+	limiters, err := app.RateLimiters()
+	if err != nil {
+		return err
+	}
+
 	ac := controllers.NewAdminController(acc.DB, user)
+	throttle := ratelimit.Middleware(limiters("admin-payouts", 30, time.Minute), ratelimit.ByIP)
 
 	r.Get("/admin/payouts", ac.Payouts).Name("admin.payouts").Use(onlyAdmins)
-	r.Post("/admin/payouts", ac.StorePayout).Name("admin.payouts.store").Use(onlyAdmins)
+	r.Post("/admin/payouts", ac.StorePayout).Name("admin.payouts.store").Use(onlyAdmins, throttle)
 
 	return nil
 }

@@ -121,7 +121,7 @@ func checkoutProps(co payments.Checkout, errMsg string) inertia.Props {
 
 // renderStatus renders an Inertia page with a status other than 200.
 //
-// workaround(vukem v0.22.0): inertia.Render always answers 200 and c.Status writes the header before Render sets its own.
+// workaround(vukem v0.23.0): inertia.Render always answers 200 and c.Status writes the header before Render sets its own.
 func renderStatus(c *web.Ctx, status int, component string, props inertia.Props) error {
 	w := &statusWriter{ResponseWriter: c.Writer(), status: status}
 	return inertia.Render(web.NewCtx(w, c.Request(), c.Services()), component, props)

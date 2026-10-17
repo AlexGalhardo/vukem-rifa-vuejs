@@ -87,6 +87,11 @@ func (s *Service) Load(ctx context.Context, token string) (Checkout, error) {
 		co.SecondsLeft = int(res.ExpiresAt.Sub(now) / time.Second)
 	}
 
+	// The PIX must not outlive the raffle either.
+	if left := int(raffle.EndsAt.Sub(now) / time.Second); co.State == StateLive && left < co.SecondsLeft {
+		co.SecondsLeft = max(left, 0)
+	}
+
 	return co, nil
 }
 

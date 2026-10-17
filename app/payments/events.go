@@ -101,7 +101,7 @@ func (s *Service) apply(ctx context.Context, tx *database.Tx, ev abacatepay.Even
 		return OutcomeIgnored, nil, nil
 	}
 
-	res, byCharge, found, err := s.lockReservation(ctx, tx, ev)
+	res, raffle, byCharge, found, err := s.lockReservation(ctx, tx, ev)
 	if err != nil || !found {
 		if found || err != nil {
 			return "", nil, err
@@ -117,11 +117,6 @@ func (s *Service) apply(ctx context.Context, tx *database.Tx, ev abacatepay.Even
 		return "", nil, err
 	}
 
-	raffle, err := orm.QueryOf[models.Raffle](tx).Find(ctx, res.RaffleID)
-	if err != nil {
-		return "", nil, fmt.Errorf("load raffle %d: %w", res.RaffleID, err)
-	}
-
 	now := s.Now().UTC()
 
 	switch {
@@ -135,6 +130,10 @@ func (s *Service) apply(ctx context.Context, tx *database.Tx, ev abacatepay.Even
 		return s.refundDue(ctx, tx, raffle, res, ev, "late payment: reservation "+res.Status)
 	case reservations.Expired(res, now):
 		return s.refundDue(ctx, tx, raffle, res, ev, "late payment: reservation expired")
+	case raffle.Status != models.RaffleActive:
+		return s.refundDue(ctx, tx, raffle, res, ev, "late payment: raffle "+raffle.Status)
+	case !now.Before(raffle.EndsAt.Add(reservations.PaymentGrace)):
+		return s.refundDue(ctx, tx, raffle, res, ev, "late payment: raffle ended")
 	}
 
 	paid, err := s.markPaid(ctx, tx, raffle, res, now)
@@ -163,9 +162,8 @@ func (s *Service) apply(ctx context.Context, tx *database.Tx, ev abacatepay.Even
 	if left == 0 {
 		j, err := s.dispatchTx(ctx, tx, jobs.RunDraw{RaffleID: raffle.ID, Trigger: models.DrawSoldOut})
 		if err != nil {
-			// The draw handler lives in another module; a payment must
-			// never roll back because of it, the deadline sweeper still
-			// draws the raffle.
+			// A payment must never roll back because of the draw job; the
+			// deadline sweeper still draws the raffle.
 			s.Log.ErrorContext(ctx, "payments: dispatch sold-out draw", "raffle_id", raffle.ID, "err", err)
 		} else if j != nil {
 			after = append(after, j)
@@ -175,12 +173,15 @@ func (s *Service) apply(ctx context.Context, tx *database.Tx, ev abacatepay.Even
 	return OutcomePaid, after, nil
 }
 
-// lockReservation finds the reservation of the paid charge and, on
-// Postgres, locks its row until the transaction ends. byCharge is false
-// when it was found only through externalId (the stored charge differs).
+// lockReservation finds the reservation of the paid charge and its raffle
+// and, on Postgres, locks both rows until the transaction ends: the raffle
+// first, in the same order as the draw (which locks the raffle and then
+// expires its live links), so a payment and a draw never interleave.
+// byCharge is false when the reservation was found only through externalId
+// (the stored charge differs).
 //
-// workaround(vukem v0.22.0): orm.Query has no ForUpdate(), the lock is a raw SELECT … FOR UPDATE.
-func (s *Service) lockReservation(ctx context.Context, tx *database.Tx, ev abacatepay.Event) (models.Reservation, bool, bool, error) {
+// workaround(vukem v0.23.0): orm.Query has no ForUpdate(), the locks are raw SELECT … FOR UPDATE.
+func (s *Service) lockReservation(ctx context.Context, tx *database.Tx, ev abacatepay.Event) (models.Reservation, models.Raffle, bool, bool, error) {
 	p := tx.Dialect().Placeholder
 
 	lock := ""
@@ -190,33 +191,46 @@ func (s *Service) lockReservation(ctx context.Context, tx *database.Tx, ev abaca
 
 	byCharge := true
 
-	var id int64
+	var id, raffleID int64
 
-	err := tx.QueryRowContext(ctx, "SELECT id FROM reservations WHERE charge_id = "+p(1)+lock, ev.ChargeID).Scan(&id)
+	err := tx.QueryRowContext(ctx, "SELECT id, raffle_id FROM reservations WHERE charge_id = "+p(1), ev.ChargeID).Scan(&id, &raffleID)
 	if isNoRows(err) {
 		byCharge = false
 
 		ext, convErr := strconv.ParseInt(ev.ExternalID, 10, 64)
 		if convErr != nil || ext < 1 {
-			return models.Reservation{}, false, false, nil
+			return models.Reservation{}, models.Raffle{}, false, false, nil
 		}
 
-		err = tx.QueryRowContext(ctx, "SELECT id FROM reservations WHERE id = "+p(1)+lock, ext).Scan(&id)
+		err = tx.QueryRowContext(ctx, "SELECT id, raffle_id FROM reservations WHERE id = "+p(1), ext).Scan(&id, &raffleID)
 		if isNoRows(err) {
-			return models.Reservation{}, false, false, nil
+			return models.Reservation{}, models.Raffle{}, false, false, nil
 		}
 	}
 
 	if err != nil {
-		return models.Reservation{}, false, false, fmt.Errorf("lock reservation: %w", err)
+		return models.Reservation{}, models.Raffle{}, false, false, fmt.Errorf("find reservation: %w", err)
+	}
+
+	if _, err := tx.ExecContext(ctx, "SELECT id FROM raffles WHERE id = "+p(1)+lock, raffleID); err != nil {
+		return models.Reservation{}, models.Raffle{}, false, false, fmt.Errorf("lock raffle %d: %w", raffleID, err)
+	}
+
+	if _, err := tx.ExecContext(ctx, "SELECT id FROM reservations WHERE id = "+p(1)+lock, id); err != nil {
+		return models.Reservation{}, models.Raffle{}, false, false, fmt.Errorf("lock reservation %d: %w", id, err)
+	}
+
+	raffle, err := orm.QueryOf[models.Raffle](tx).Find(ctx, raffleID)
+	if err != nil {
+		return models.Reservation{}, raffle, false, false, fmt.Errorf("load raffle %d: %w", raffleID, err)
 	}
 
 	res, err := orm.QueryOf[models.Reservation](tx).Find(ctx, id)
 	if err != nil {
-		return res, false, false, fmt.Errorf("load reservation %d: %w", id, err)
+		return res, raffle, false, false, fmt.Errorf("load reservation %d: %w", id, err)
 	}
 
-	return res, byCharge, true, nil
+	return res, raffle, byCharge, true, nil
 }
 
 // markPaid moves the number reserved → paid and the reservation to paid,

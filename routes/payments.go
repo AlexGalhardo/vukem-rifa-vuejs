@@ -36,16 +36,21 @@ func Payments(r *router.Router, app *vukem.App) error {
 		return err
 	}
 
+	limiters, err := app.RateLimiters()
+	if err != nil {
+		return err
+	}
+
 	pay := payments.New(db, app.Now, gw, app.Queue, app.Log)
 	pc := controllers.NewPayController(pay)
 	buyer := []router.Middleware{privatePage}
 
 	r.Get("/pay/{token}", pc.Show).Name("pay.show").Use(append(buyer,
-		ratelimit.Middleware(ratelimit.NewMemory(60, time.Minute), ratelimit.ByIP))...)
+		ratelimit.Middleware(limiters("pay-show", 60, time.Minute), ratelimit.ByIP))...)
 	r.Post("/pay/{token}/confirm", pc.Confirm).Name("pay.confirm").Use(append(buyer,
-		ratelimit.Middleware(ratelimit.NewMemory(10, time.Minute), byTokenAndIP))...)
+		ratelimit.Middleware(limiters("pay-confirm", 10, time.Minute), byTokenAndIP))...)
 	r.Get("/pay/{token}/status", pc.Status).Name("pay.status").Use(append(buyer,
-		ratelimit.Middleware(ratelimit.NewMemory(60, time.Minute), byTokenAndIP))...)
+		ratelimit.Middleware(limiters("pay-status", 60, time.Minute), byTokenAndIP))...)
 
 	if fake, ok := gw.(*abacatepay.Fake); ok {
 		app.Log.Warn("payments: AbacatePay fake gateway enabled (ABACATEPAY_FAKE=true); /dev/* helpers are on")

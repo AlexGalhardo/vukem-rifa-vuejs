@@ -26,7 +26,7 @@ import (
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/reservations"
 )
 
-const webhookSecret = "whsec_test_secret"
+const webhookSecret = "whsec_test_secret" //nolint:gosec // test fixture, not a credential
 
 // payEnv runs the app on the fake gateway with a webhook secret.
 func payEnv(extra ...map[string]string) vukemtest.Options {
@@ -36,20 +36,6 @@ func payEnv(extra ...map[string]string) vukemtest.Options {
 	}
 
 	return vukemtest.Options{Env: env}
-}
-
-// mergeEnv adds payEnv's variables to opts (e.g. the Postgres options).
-func mergeEnv(opts vukemtest.Options, env map[string]string) vukemtest.Options {
-	o := opts
-	o.Env = maps.Clone(opts.Env)
-
-	if o.Env == nil {
-		o.Env = map[string]string{}
-	}
-
-	maps.Copy(o.Env, env)
-
-	return o
 }
 
 func (f reservationFixture) reserve(t *testing.T, number int) reservations.Link {
@@ -553,5 +539,58 @@ func TestWebhook_LastPaidNumberDispatchesTheDraw(t *testing.T) {
 	got := queue.Dispatched[jobs.RunDraw](fake)
 	if len(got) != 1 || got[0].RaffleID != f.raffle.ID || got[0].Trigger != models.DrawSoldOut {
 		t.Fatalf("draw jobs = %+v", got)
+	}
+}
+
+func TestPay_ConfirmNeverOutlivesTheRaffle(t *testing.T) {
+	t.Parallel()
+
+	srv, requests := abacatePayServer(t, http.StatusOK)
+	f := newReservationFixture(t, vukemtest.Options{Env: map[string]string{
+		"ABACATEPAY_API_KEY": "abc_dev_test", "ABACATEPAY_BASE_URL": srv.URL,
+	}})
+
+	link := f.reserve(t, 3)
+
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET ends_at = ? WHERE id = ?",
+		f.clock.Now().Add(2*time.Minute), f.raffle.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	f.confirm(t, link.Token).AssertRedirect("/pay/" + link.Token)
+
+	got := requests()
+	if data, _ := got[0]["data"].(map[string]any); len(got) != 1 || data["expiresIn"] != float64(120) {
+		t.Fatalf("pix requests = %v, want expiresIn 120", got)
+	}
+}
+
+// A payment landing after the draw (or archive) of the raffle is never
+// assigned, even if the link was still live.
+func TestWebhook_PaymentAfterTheRaffleClosedIsRefundDue(t *testing.T) {
+	t.Parallel()
+
+	for _, status := range []string{models.RaffleDrawn, models.RaffleArchived, models.RaffleClosed} {
+		t.Run(status, func(t *testing.T) {
+			t.Parallel()
+
+			f := newReservationFixture(t, payEnv())
+			_, res := f.confirmed(t, 15)
+
+			if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET status = ? WHERE id = ?", status, f.raffle.ID); err != nil {
+				t.Fatal(err)
+			}
+
+			deliverSigned(t, f.app, paidEvent("log_closed_"+status, *res.ChargeID, res.ID, 1000)).AssertOK().
+				AssertJSON(map[string]string{"outcome": "refund_due"})
+
+			if f.numberStatus(t, 15) == models.NumberPaid {
+				t.Fatal("number assigned after the raffle closed")
+			}
+
+			if n, _ := ledgerSum(t, f, models.LedgerSaleOwnerShare); n != 0 {
+				t.Fatal("owner credited after the raffle closed")
+			}
+		})
 	}
 }

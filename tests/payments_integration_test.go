@@ -4,9 +4,12 @@ package tests
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
 	"sync"
 	"testing"
+
+	"github.com/AlexGalhardo/vukem/vukemtest"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 )
@@ -127,4 +130,18 @@ func TestPostgres_ConcurrentPayoutsNeverExceedTheBalance(t *testing.T) {
 	if err := f.svc.DB.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM payouts").Scan(&payouts); err != nil || payouts != 1 {
 		t.Fatalf("payouts = %d, %v", payouts, err)
 	}
+}
+
+// mergeEnv adds payEnv's variables to opts (e.g. the Postgres options).
+func mergeEnv(opts vukemtest.Options, env map[string]string) vukemtest.Options {
+	o := opts
+	o.Env = maps.Clone(opts.Env)
+
+	if o.Env == nil {
+		o.Env = map[string]string{}
+	}
+
+	maps.Copy(o.Env, env)
+
+	return o
 }
