@@ -60,7 +60,7 @@ func DrawDemo() vukem.Seeder {
 
 		for _, n := range DrawDemoPaid {
 			link, err := res.Reserve(ctx, r, n, requests.Buyer{
-				Name: fmt.Sprintf("Comprador %d", n), Email: fmt.Sprintf("buyer%d@example.invalid", n), Phone: "+5511987654321",
+				Name: fmt.Sprintf("Pessoa Demo %d", n), Email: fmt.Sprintf("buyer%d@example.invalid", n), Phone: "+5511987654321",
 			})
 			if err != nil {
 				return err

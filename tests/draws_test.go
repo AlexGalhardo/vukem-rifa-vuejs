@@ -329,7 +329,7 @@ func TestDraw_DemoSeeder(t *testing.T) {
 
 	vukemtest.AssertDatabaseCount(t, app, "draws", 1)
 
-	page := app.Client(t).Get("/r/"+seeders.DrawDemoSlug).AssertOK().AssertDontSee("Comprador").
+	page := app.Client(t).Get("/r/"+seeders.DrawDemoSlug).AssertOK().AssertDontSee("Pessoa Demo").
 		AssertInertia("Raffles/Public").PropEquals("raffle.status", "drawn").
 		PropEquals("draw.participants_count", float64(3)).
 		PropEquals("draw.participants_sha256", draws.ParticipantsHash(seeders.DrawDemoPaid))
