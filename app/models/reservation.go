@@ -36,6 +36,8 @@ type Reservation struct {
 	BrCode       *string      `json:"-"`
 	BrCodeBase64 *string      `db:"br_code_base64" json:"-"`
 	PaidAt       orm.NullTime `json:"paid_at"`
+	// Locale is the buyer's page locale, set on confirm ("" = APP_LOCALE).
+	Locale string `json:"-"`
 }
 
 // Live reports whether the reservation still holds its number at now.

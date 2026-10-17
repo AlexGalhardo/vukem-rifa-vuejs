@@ -16,5 +16,7 @@ func All() []func(r *router.Router, app *vukem.App) error {
 		Export,
 		Settings,
 		API,
+		Payments,
+		Webhooks,
 	}
 }

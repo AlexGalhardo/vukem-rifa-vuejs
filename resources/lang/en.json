@@ -139,6 +139,17 @@
 			"intro": "Someone asked to reset your password. If it was you:",
 			"action": "Reset password",
 			"expires": "The link expires in one hour and works once. If you did not ask, ignore this email."
+		},
+		"payment_confirmed": {
+			"subject": "Payment confirmed: number {number}",
+			"intro": "We received your PIX of {amount}. Number {number} of the raffle \"{title}\" is yours.",
+			"action": "See the raffle",
+			"footer": "The draw runs automatically when the raffle ends or when every number is sold."
+		},
+		"payment_number_sold": {
+			"subject": "Number {number} sold",
+			"intro": "{buyer} paid {amount} for number {number} of the raffle \"{title}\".",
+			"action": "Open the raffle"
 		}
 	},
 	"raffle": {
@@ -300,6 +311,51 @@
 			"run": "Verify in the browser",
 			"ok": "Verified: the list hash and the winning number match.",
 			"fail": "Does not match the published data."
+		}
+	},
+	"pay": {
+		"title": "Raffle payment",
+		"number": "Number {number}",
+		"amount": "Amount",
+		"buyer": "Buyer",
+		"email": "Email",
+		"phone": "Phone",
+		"expires_in": "The link expires in {time}",
+		"confirm": "Confirm and pay with PIX",
+		"confirming": "Creating PIX…",
+		"qr_title": "Pay with PIX",
+		"qr_hint": "Open your bank app, choose PIX and scan the QR code or paste the code.",
+		"qr_alt": "PIX QR code",
+		"copy_label": "PIX copy and paste",
+		"copy": "Copy code",
+		"copied": "Code copied",
+		"waiting": "Waiting for the payment…",
+		"show_qr": "Show QR code",
+		"close": "Close",
+		"paid": "Payment confirmed",
+		"paid_detail": "Number {number} of the raffle {title} is yours. We sent the confirmation to your email.",
+		"view_raffle": "See the raffle",
+		"expired": "Link expired. Ask the raffle owner to generate a new link and send it to you again to pay",
+		"unavailable": "Payments are unavailable right now. Please try again later.",
+		"gateway_error": "We could not create the PIX right now. Please try again in a moment."
+	},
+	"ledger": {
+		"balance": "Balance to receive",
+		"balance_hint": "90% of every paid number, minus payouts already made."
+	},
+	"admin": {
+		"payouts": {
+			"title": "Owner payouts",
+			"intro": "Send the PIX to the owner outside the app, then record the amount and reference here.",
+			"owner": "Owner",
+			"balance": "Balance",
+			"amount": "Amount (R$)",
+			"reference": "Reference (PIX id)",
+			"submit": "Record payout",
+			"empty": "No owner has a balance to receive.",
+			"recorded": "Payout recorded.",
+			"exceeds_balance": "The amount is larger than the owner's balance.",
+			"owner_not_found": "Owner not found."
 		}
 	}
 }

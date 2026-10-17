@@ -1,0 +1,9 @@
+{{/* layout: none */}}
+<!doctype html>
+<html lang="{{locale}}">
+<body>
+	<p>{{t "mail.greeting" "name" .OwnerName}}</p>
+	<p>{{t "mail.payment_number_sold.intro" "title" .RaffleTitle "number" .Number "buyer" .BuyerName "amount" .Amount}}</p>
+	<p><a href="{{.ManageURL}}">{{t "mail.payment_number_sold.action"}}</a></p>
+</body>
+</html>

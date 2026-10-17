@@ -76,7 +76,14 @@ var envelopeSchema = z.Struct[envelopeDTO](z.Shape{
 	"id":      z.String().Min(1).Max(191),
 	"event":   z.String().Min(1).Max(64),
 	"devMode": z.Bool().Optional(),
-	"data":    z.Map(z.Custom(func(in any) (any, error) { return in, nil })).Optional(),
+	"data": z.Custom(func(in any) (map[string]any, error) {
+		m, ok := in.(map[string]any)
+		if !ok && in != nil {
+			return nil, errors.New("data must be an object")
+		}
+
+		return m, nil
+	}).Optional(),
 })
 
 var transparentSchema = z.Struct[transparentDTO](z.Shape{

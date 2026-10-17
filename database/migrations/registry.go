@@ -14,5 +14,6 @@ func All() []schema.Migration {
 		m20261017150000CreateReservationsTable(),
 		m20261017160000CreatePaymentsTables(),
 		m20261017170000CreateDrawsTable(),
+		m20261017190000AddLocaleToReservations(),
 	}
 }

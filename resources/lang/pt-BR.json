@@ -139,6 +139,17 @@
 			"intro": "Alguém pediu para redefinir sua senha. Se foi você:",
 			"action": "Redefinir senha",
 			"expires": "O link expira em uma hora e funciona uma única vez. Se não foi você, ignore este e-mail."
+		},
+		"payment_confirmed": {
+			"subject": "Pagamento confirmado: número {number}",
+			"intro": "Recebemos o seu PIX de {amount}. O número {number} da rifa \"{title}\" é seu.",
+			"action": "Ver a rifa",
+			"footer": "O sorteio acontece automaticamente no fim da rifa ou quando todos os números forem vendidos."
+		},
+		"payment_number_sold": {
+			"subject": "Número {number} vendido",
+			"intro": "{buyer} pagou {amount} pelo número {number} da rifa \"{title}\".",
+			"action": "Abrir a rifa"
 		}
 	},
 	"raffle": {
@@ -300,6 +311,51 @@
 			"run": "Conferir no navegador",
 			"ok": "Conferido: o hash da lista e o número sorteado batem.",
 			"fail": "Não confere com os dados publicados."
+		}
+	},
+	"pay": {
+		"title": "Pagamento da rifa",
+		"number": "Número {number}",
+		"amount": "Valor",
+		"buyer": "Comprador",
+		"email": "E-mail",
+		"phone": "Telefone",
+		"expires_in": "O link expira em {time}",
+		"confirm": "Confirmar e pagar com PIX",
+		"confirming": "Gerando PIX…",
+		"qr_title": "Pague com PIX",
+		"qr_hint": "Abra o app do seu banco, escolha PIX e leia o QR Code ou cole o código.",
+		"qr_alt": "QR Code PIX",
+		"copy_label": "PIX copia e cola",
+		"copy": "Copiar código",
+		"copied": "Código copiado",
+		"waiting": "Aguardando o pagamento…",
+		"show_qr": "Mostrar QR Code",
+		"close": "Fechar",
+		"paid": "Pagamento confirmado",
+		"paid_detail": "O número {number} da rifa {title} é seu. Enviamos a confirmação para o seu e-mail.",
+		"view_raffle": "Ver a rifa",
+		"expired": "Link expirado. Peça ao dono da rifa para gerar um novo link e te enviar novamente para pagar",
+		"unavailable": "Os pagamentos estão indisponíveis no momento. Tente novamente mais tarde.",
+		"gateway_error": "Não foi possível gerar o PIX agora. Tente novamente em instantes."
+	},
+	"ledger": {
+		"balance": "Saldo a receber",
+		"balance_hint": "90% de cada número pago, menos os repasses já feitos."
+	},
+	"admin": {
+		"payouts": {
+			"title": "Repasses aos donos",
+			"intro": "Faça o PIX ao dono fora do app e registre aqui o valor e a referência.",
+			"owner": "Dono",
+			"balance": "Saldo",
+			"amount": "Valor (R$)",
+			"reference": "Referência (ID do PIX)",
+			"submit": "Registrar repasse",
+			"empty": "Nenhum dono com saldo a receber.",
+			"recorded": "Repasse registrado.",
+			"exceeds_balance": "O valor é maior que o saldo do dono.",
+			"owner_not_found": "Dono não encontrado."
 		}
 	}
 }

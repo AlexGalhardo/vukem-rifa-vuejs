@@ -113,3 +113,17 @@ func TestFake_IsDeterministicAndPayable(t *testing.T) {
 		t.Fatalf("check = %+v, %v", st, err)
 	}
 }
+
+func TestParseEvent_NullNestedFields(t *testing.T) {
+	t.Parallel()
+
+	body := strings.Replace(completed, `"customer":{"id":"cust_aB3dE5fG7hJ9kL1mN3pQ5rS7","name":"Maria Santos",
+"email":"maria@exemplo.com","taxId":"529.***.247-**"}`, `"customer":null`, 1)
+	if !strings.Contains(body, `"customer":null`) {
+		t.Fatal("fixture not replaced")
+	}
+
+	if _, err := abacatepay.ParseEvent([]byte(body)); err != nil {
+		t.Fatal(err)
+	}
+}

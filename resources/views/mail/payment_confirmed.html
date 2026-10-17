@@ -1,0 +1,10 @@
+{{/* layout: none */}}
+<!doctype html>
+<html lang="{{locale}}">
+<body>
+	<p>{{t "mail.greeting" "name" .Name}}</p>
+	<p>{{t "mail.payment_confirmed.intro" "title" .RaffleTitle "number" .Number "amount" .Amount}}</p>
+	<p><a href="{{.PublicURL}}">{{t "mail.payment_confirmed.action"}}</a></p>
+	<p>{{t "mail.payment_confirmed.footer"}}</p>
+</body>
+</html>
