@@ -2,7 +2,7 @@
 
 The onboarding file for every session and agent. Read it top to bottom once, then pick the first unchecked task of the current phase.
 
-- Repository: <https://github.com/AlexGalhardo/vukem-rifa-vuejs> (public). Production: <https://rifa.vukem.com> (Railway).
+- Repository: <https://github.com/AlexGalhardo/vukem-rifa-vuejs> (public). Production: <https://rifa.vukem.dev> (Railway).
 - Current phase: **Phase 8 — Security hardening and QA** (Phases 0–7 done; Phase 1 has owner-blocked items).
 
 ## 1. Briefing
@@ -33,7 +33,7 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | D16 | JS tooling via Bun 1.4.3; Biome 2.5 for lint/format; Playwright 1.64 e2e; lefthook git hooks; commitlint; markdownlint-cli2. | Owner standards. |
 | D18 | Duration is locked together with price and number count after the first paid number; before that, shrinking the count is refused if a removed number is reserved or paid. | Changing the deadline after sales would be unfair to buyers. |
 | D19 | Tests: unit/HTTP tests run on SQLite via `vukemtest`, so domain SQL stays dialect-neutral (recursive CTE for numbers); Postgres-only parts (CHECKs, `FOR UPDATE`, partial indexes) are covered by `-tags=integration`. | vukem has no Postgres test helper yet. |
-| D20 | AbacatePay webhook authenticity = `webhookSecret` query parameter (constant-time); `X-Webhook-Signature` (HMAC with AbacatePay's published public key) only proves body integrity. Registered URL: `https://vukem-rifa.up.railway.app/webhooks/abacatepay?webhookSecret=…`. | docs.abacatepay.com/pages/webhooks (security). |
+| D20 | AbacatePay webhook authenticity = `webhookSecret` query parameter (constant-time); `X-Webhook-Signature` (HMAC with AbacatePay's published public key) only proves body integrity. Registered URL: `https://rifa.vukem.dev/webhooks/abacatepay?webhookSecret=…`. | docs.abacatepay.com/pages/webhooks (security). |
 | D21 | Archived raffles are never drawn; a draw expires every live link in its transaction; payments on non-active raffles become `refund_due`. | Raffles/payments stream decisions. |
 | D17 | Local `.claude/settings.local.json` (`disableAllHooks: true`) is owner-managed and git-ignored. | Owner. |
 
@@ -128,7 +128,7 @@ All timestamps `timestamptz`; money in integer **centavos** except `raffles.pric
 
 ### 4.5 Request flows
 
-- **Owner generates a link:** dashboard → `POST /raffles/{id}/numbers/{n}/link` (CSRF, owner scope, rate limit) → reservation + token → page shows the link `https://rifa.vukem.com/pay/{token}` (copy/share) and a 10-minute countdown.
+- **Owner generates a link:** dashboard → `POST /raffles/{id}/numbers/{n}/link` (CSRF, owner scope, rate limit) → reservation + token → page shows the link `https://rifa.vukem.dev/pay/{token}` (copy/share) and a 10-minute countdown.
 - **Buyer pays:** `GET /pay/{token}` → shows raffle, number, buyer data (masked email/phone) → `POST /pay/{token}/confirm` → create AbacatePay PIX (`expiresIn` = remaining seconds, `externalId` = reservation id) → modal with QR (`brCodeBase64`) + copy-paste `brCode` → page polls `GET /pay/{token}/status` (JSON) every 3 s → "Pagamento confirmado".
 - **Expired link:** any `/pay/{token}` on an expired/cancelled reservation renders "Link expirado. Peça ao dono da rifa para gerar um novo link e te enviar novamente para pagar".
 - **Webhook:** `POST /webhooks/abacatepay?webhookSecret=…` → verify secret + `X-Webhook-Signature` HMAC-SHA256 (base64, raw body) → insert `payment_events` (unique `event_id`; duplicate ⇒ 200 no-op) → handle `transparent.completed` → 200 only after commit.
@@ -325,7 +325,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 ### Phase 9 — Deploy and launch
 
 - [ ] Railway project: app service from Dockerfile + Postgres plugin; env vars from §10 → verify: `/up?checks=1` on Railway URL.
-- [ ] Custom domain `rifa.vukem.com` (CNAME) + HTTPS → verify: `curl -I https://rifa.vukem.com/up`.
+- [x] Custom domain `rifa.vukem.dev` (CNAME) + HTTPS → verify: `curl -I https://rifa.vukem.dev/up` (200, 2026-10-17).
 - [ ] AbacatePay webhook registered to production URL; production SMTP sender → verify: sandbox payment end-to-end on staging.
 - [ ] Tag `v1.0.0` → verify: release workflow publishes image and notes.
 
@@ -338,12 +338,12 @@ When the coordinator announces a vukem release (CI green): `go get github.com/Al
 | What | Env / where | Needed by |
 | --- | --- | --- |
 | Mailtrap account: API token, account id, sandbox id, sandbox SMTP user/pass (`sandbox.smtp.mailtrap.io:2525`) | `MAILTRAP_API_TOKEN`, `MAILTRAP_ACCOUNT_ID`, `MAILTRAP_SANDBOX_ID`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` (local `.env`; GitHub Actions secrets `MAILTRAP_API_TOKEN`, `MAILTRAP_SANDBOX_ID`, `MAILTRAP_SMTP_USERNAME`, `MAILTRAP_SMTP_PASSWORD`) | Phase 1 |
-| Google OAuth client (Web), redirect URIs `http://localhost:3000/auth/google/callback` and `https://rifa.vukem.com/auth/google/callback` | `SOCIAL_GOOGLE_CLIENT_ID`, `SOCIAL_GOOGLE_CLIENT_SECRET` | Phase 1 |
+| Google OAuth client (Web), redirect URIs `http://localhost:3000/auth/google/callback` and `https://rifa.vukem.dev/auth/google/callback` | `SOCIAL_GOOGLE_CLIENT_ID`, `SOCIAL_GOOGLE_CLIENT_SECRET` | Phase 1 |
 | AbacatePay account in Dev mode: API key `abc_dev_…` with `TRANSPARENT:CREATE`, `TRANSPARENT:READ`, `WEBHOOK:CREATE`; webhook secret | `ABACATEPAY_API_KEY`, `ABACATEPAY_WEBHOOK_SECRET` (+ the HMAC key AbacatePay shows for `X-Webhook-Signature`, if different) | Phase 4 |
-| Production sender: Mailtrap Sending (verified domain `vukem.com`: SPF/DKIM/DMARC CNAMEs) or another SMTP | `SMTP_*`, `MAIL_FROM` | Phase 9 |
-| Railway project + Postgres plugin; set `APP_KEY` (`vukem key:generate`), `APP_ENV=production`, `APP_URL=https://rifa.vukem.com`, all of the above | Railway variables | Phase 9 |
-| DNS: CNAME `rifa.vukem.com` → Railway domain | DNS provider | Phase 9 |
-| AbacatePay production key + webhook to `https://rifa.vukem.com/webhooks/abacatepay` | Railway variables | Launch |
+| Production sender: Mailtrap Sending (verified domain `vukem.dev`: SPF/DKIM/DMARC CNAMEs) or another SMTP | `SMTP_*`, `MAIL_FROM` | Phase 9 |
+| Railway project + Postgres plugin; set `APP_KEY` (`vukem key:generate`), `APP_ENV=production`, `APP_URL=https://rifa.vukem.dev`, all of the above | Railway variables | Phase 9 |
+| DNS: CNAME `rifa.vukem.dev` → Railway domain | DNS provider | Phase 9 |
+| AbacatePay production key + webhook to `https://rifa.vukem.dev/webhooks/abacatepay` | Railway variables | Launch |
 | First admin user: `UPDATE users SET is_admin = true WHERE email = …` (or `app make:admin` command, Phase 5) | DB | Phase 5 |
 
 Optional dev tool: Mailtrap MCP server — `claude mcp add mailtrap -e MAILTRAP_API_TOKEN=… -e MAILTRAP_ACCOUNT_ID=… -- npx -y mcp-mailtrap`.

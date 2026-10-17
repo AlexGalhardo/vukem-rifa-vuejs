@@ -11,7 +11,7 @@ This app battle-tests the vukem framework (`github.com/AlexGalhardo/vukem`) for 
 
 1. Confirm it against the pinned source: `git -C ../vukem show <tag>:<path>` (never edit `../vukem`).
 2. Check `../framework-feedback/audit.md` and `../framework-feedback/rifa.md`; do not duplicate.
-3. Append to `../framework-feedback/rifa.md` using its template (Severity, Package, Found while, Docs page with the <https://vukem.vercel.app/docs/...> URL for docs findings, Repro, Workaround, Suggested fix, `Status: open`).
+3. Append to `../framework-feedback/rifa.md` using its template (Severity, Package, Found while, Docs page with the <https://vukem.dev/docs/...> URL for docs findings, Repro, Workaround, Suggested fix, `Status: open`).
 4. Implement the smallest local workaround and mark it in code: `// workaround(vukem v0.21.1): <entry title>`.
 
 ## When a new vukem release is announced

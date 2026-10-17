@@ -1,8 +1,8 @@
 # Vukem Rifa
 
-Online raffles (rifas) with PIX payments for a Brazilian audience, running at <https://rifa.vukem.com>.
+Online raffles (rifas) with PIX payments for a Brazilian audience, running at <https://rifa.vukem.dev>.
 
-Built with [Vukem](https://vukem.vercel.app) (Go) + Inertia v3 + Vue 3 + TypeScript + Tailwind CSS v4, on PostgreSQL. It also serves as a real-world test bed for the Vukem framework.
+Built with [Vukem](https://vukem.dev) (Go) + Inertia v3 + Vue 3 + TypeScript + Tailwind CSS v4, on PostgreSQL. It also serves as a real-world test bed for the Vukem framework.
 
 - Owners sign up (email/password or Google), create raffles (10–1000 numbers, whole-real prices, 7–60 days) and generate a payment link per number that reserves it for 10 minutes.
 - Buyers (no account) pay by PIX through AbacatePay; a verified, idempotent webhook marks the number as paid.
@@ -14,7 +14,7 @@ See [PLAN.md](PLAN.md) for the full design, data model, roadmap and owner to-do 
 ## Requirements
 
 - Go 1.27.2, Bun 1.4.3, Docker (Compose v2)
-- Optional: [vukem CLI](https://vukem.vercel.app/docs/installation) v0.21.1 (`go install github.com/AlexGalhardo/vukem/cmd/vukem@v0.21.1`), golangci-lint v2.15
+- Optional: [vukem CLI](https://vukem.dev/docs/installation) v0.21.1 (`go install github.com/AlexGalhardo/vukem/cmd/vukem@v0.21.1`), golangci-lint v2.15
 
 ## Quick start (Docker)
 
@@ -58,7 +58,7 @@ The free Mailtrap sandbox is shared with other projects: email tests use a uniqu
 
 ### Production demo (no real delivery yet)
 
-Until the `vukem.com` sender domain is verified, production sends every email (verification, password reset, payment confirmations) to the Mailtrap **sandbox**, so nothing reaches the real inbox. Sign-up never logs in (it answers "check your email" for new and existing addresses alike) and the dashboard requires a verified email, so to try the demo either:
+Until the `vukem.dev` sender domain is verified, production sends every email (verification, password reset, payment confirmations) to the Mailtrap **sandbox**, so nothing reaches the real inbox. Sign-up never logs in (it answers "check your email" for new and existing addresses alike) and the dashboard requires a verified email, so to try the demo either:
 
 - open the verification link from the Mailtrap sandbox inbox (it is listed by recipient), then log in, or
 - verify the account by hand: `UPDATE users SET email_verified_at = now() WHERE email = '…';` (Railway Postgres console) and log in, or sign in with Google (Google accounts are verified).

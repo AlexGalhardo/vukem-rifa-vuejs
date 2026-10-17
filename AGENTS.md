@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go backend on the [vukem](https://vukem.vercel.app) framework, Inertia v3 + Vue 3 + TypeScript + Tailwind v4 frontend, PostgreSQL only.
+Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go backend on the [vukem](https://vukem.dev) framework, Inertia v3 + Vue 3 + TypeScript + Tailwind v4 frontend, PostgreSQL only.
 
 ## Start here
 
