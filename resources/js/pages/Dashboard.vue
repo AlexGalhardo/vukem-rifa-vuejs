@@ -2,11 +2,12 @@
 import { Head, Link, usePage } from "@inertiajs/vue3";
 import { computed } from "vue";
 
+import BalanceCard from "../components/BalanceCard.vue";
 import { useI18n } from "../composables/useI18n";
 import { formatDateTime, formatReais } from "../lib/format";
 import type { RaffleSummary, SharedProps } from "../types";
 
-defineProps<{ raffles: RaffleSummary[] }>();
+defineProps<{ raffles: RaffleSummary[]; balance_cents: number }>();
 
 const { t, locale } = useI18n();
 const page = usePage<SharedProps>();
@@ -25,6 +26,7 @@ const name = computed(() => page.props.auth?.user?.name ?? "");
 			{{ t("raffle.actions.new") }}
 		</Link>
 	</div>
+	<BalanceCard :balance-cents="balance_cents" />
 	<p v-if="raffles.length === 0" class="text-zinc-600 dark:text-zinc-400">{{ t("raffle.list.empty") }}</p>
 	<ul v-else class="divide-y divide-zinc-200 dark:divide-zinc-800" data-testid="raffle-list">
 		<li v-for="r in raffles" :key="r.id" class="py-3">

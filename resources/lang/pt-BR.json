@@ -355,7 +355,9 @@
 			"empty": "Nenhum dono com saldo a receber.",
 			"recorded": "Repasse registrado.",
 			"exceeds_balance": "O valor é maior que o saldo do dono.",
-			"owner_not_found": "Dono não encontrado."
+			"owner_not_found": "Dono não encontrado.",
+			"invalid": "Valor inválido para este campo.",
+			"nav": "Repasses"
 		}
 	}
 }

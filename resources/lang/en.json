@@ -355,7 +355,9 @@
 			"empty": "No owner has a balance to receive.",
 			"recorded": "Payout recorded.",
 			"exceeds_balance": "The amount is larger than the owner's balance.",
-			"owner_not_found": "Owner not found."
+			"owner_not_found": "Owner not found.",
+			"invalid": "Invalid value for this field.",
+			"nav": "Payouts"
 		}
 	}
 }

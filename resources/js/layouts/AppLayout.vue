@@ -21,6 +21,9 @@ const link = "text-sm text-brand-700 hover:underline dark:text-brand-500";
 			<template v-if="user">
 				<Link href="/dashboard" :class="link">{{ t("nav.dashboard") }}</Link>
 				<Link href="/settings/api-keys" :class="link" data-testid="nav-api-keys">{{ t("apikeys.nav") }}</Link>
+				<Link v-if="user.is_admin" href="/admin/payouts" :class="link" data-testid="nav-payouts">
+					{{ t("admin.payouts.nav") }}
+				</Link>
 				<Link href="/logout" method="post" as="button" :class="link" data-testid="logout">
 					{{ t("nav.logout") }}
 				</Link>

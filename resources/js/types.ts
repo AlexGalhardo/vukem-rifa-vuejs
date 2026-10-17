@@ -7,6 +7,7 @@ export interface User {
 	name: string;
 	email: string;
 	email_verified_at: string | null;
+	is_admin?: boolean;
 }
 
 export interface SharedProps {
@@ -112,4 +113,34 @@ export interface DrawResult {
 	winning_number: number | null;
 	algorithm: string;
 	trigger: DrawTrigger;
+}
+
+export type CheckoutState = "live" | "paid" | "expired";
+
+/** What the buyer sees on /pay/{token} (masked email and phone). */
+export interface Checkout {
+	raffle_title: string;
+	raffle_slug: string;
+	number: number;
+	amount_cents: number;
+	buyer_name: string;
+	buyer_email: string;
+	buyer_phone: string;
+	status: ReservationStatus;
+	seconds_left: number;
+}
+
+/** The PIX charge of a confirmed link. */
+export interface Pix {
+	br_code: string;
+	/** data:image/png;base64,… */
+	br_code_base64: string;
+}
+
+/** One owner's balance on the admin payouts page (centavos). */
+export interface OwnerBalance {
+	user_id: number;
+	name: string;
+	email: string;
+	balance_cents: number;
 }
