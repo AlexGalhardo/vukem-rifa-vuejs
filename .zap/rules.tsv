@@ -1,1 +1,18 @@
 # ZAP baseline rule overrides: <id>	<IGNORE|WARN|FAIL>	<reason>
+# Promoted to FAIL: headers and leaks the app guarantees (vukem SecureHeaders + CSP nonce).
+10020	FAIL	Anti-clickjacking: X-Frame-Options DENY and frame-ancestors 'none' are always sent
+10021	FAIL	X-Content-Type-Options nosniff is always sent
+10038	FAIL	Every HTML response carries a Content-Security-Policy
+10063	FAIL	Permissions-Policy is always sent
+10010	FAIL	Session and CSRF cookies are HttpOnly
+10054	FAIL	Cookies set SameSite
+10036	FAIL	No Server version header
+10037	FAIL	No X-Powered-By header
+10017	FAIL	No cross-domain script includes (assets are self-hosted)
+10098	FAIL	No permissive CORS on browser routes
+90022	FAIL	Errors never leak stack traces or internals
+10023	FAIL	No debug error messages (APP_DEBUG is off in the image)
+# Ignored with reason.
+10049	IGNORE	Non-storable content is intended: pages with personal data and payment links send Cache-Control no-store
+10109	IGNORE	Informational: the app is an Inertia SPA by design
+90004	IGNORE	COEP not needed: no SharedArrayBuffer or cross-origin isolation features; require-corp would add risk for no gain

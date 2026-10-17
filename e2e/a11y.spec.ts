@@ -149,5 +149,21 @@ for (const v of variants) {
 			await page.goto(publicHref ?? "/");
 			await expectAccessible(page, `public raffle (${name})`);
 		});
+
+		test("admin payouts", async ({ page }) => {
+			const email = process.env.E2E_ADMIN_EMAIL;
+			const password = process.env.E2E_ADMIN_PASSWORD;
+			test.skip(!email || !password, "set E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD and run db:seed (CI does)");
+
+			await page.goto("/login?lang=pt-BR");
+			await page.getByLabel("E-mail").fill(email ?? "");
+			await page.getByLabel("Senha", { exact: true }).fill(password ?? "");
+			await page.getByRole("button", { name: "Entrar" }).click();
+			await expect(page).toHaveURL(/\/dashboard$/);
+
+			await page.goto(lang("/admin/payouts", v));
+			await expect(page.getByTestId("nav-payouts")).toBeVisible();
+			await expectAccessible(page, `admin payouts (${name})`);
+		});
 	});
 }

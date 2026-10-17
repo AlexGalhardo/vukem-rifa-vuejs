@@ -319,8 +319,8 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 - [ ] OWASP abuse suite (Go + e2e): IDOR, CSRF, XSS payloads in title/description/buyer name, brute force rate limit, webhook forgery/replay, concurrent reserve race, expired link reuse → verify: `go test ./tests -run Security`, `bun run test:e2e -- security`.
 - [x] Postgres rate-limit store (D5, vukem v0.23.0 `RATE_LIMIT_STORE=cache`) → verify: `TestPostgres_LoginThrottleSharedInDatabase`.
-- [ ] `docs/qa-checklist.md` exploratory checklist executed once with notes → verify: checklist filled.
-- [ ] ZAP rules tuned (promote relevant rules to FAIL) → verify: CI green.
+- [x] `docs/qa-checklist.md` exploratory checklist executed once with notes → verify: checklist filled (run 1, 2026-10-17).
+- [x] ZAP rules tuned (promote relevant rules to FAIL) → verify: CI green (`.zap/rules.tsv`: 12 FAIL, 3 IGNORE with reasons).
 
 ### Phase 9 — Deploy and launch
 

@@ -147,6 +147,10 @@ jobs:
     name: e2e + smoke + DAST (docker compose)
     needs: [go-test, frontend]
     runs-on: ubuntu-latest
+    env:
+      # Throwaway admin for the axe scan of /admin/payouts (seeders/e2e_admin.go); CI-only stack.
+      E2E_ADMIN_EMAIL: admin@e2e.test
+      E2E_ADMIN_PASSWORD: e2e-admin-password-ci-only
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: oven-sh/setup-bun@v2.2.0
@@ -157,8 +161,8 @@ jobs:
         run: |
           echo "APP_KEY=base64:$(openssl rand -base64 32)" > .env
           docker compose up -d --build --wait
-          # Demo drawn raffle read by e2e/draw.spec.ts (docs/draw-algorithm.md).
-          docker compose exec -T app /app/rifa db:seed
+          # Demo drawn raffle (e2e/draw.spec.ts) and the e2e admin (e2e/a11y.spec.ts).
+          docker compose exec -T -e E2E_ADMIN_EMAIL -e E2E_ADMIN_PASSWORD app /app/rifa db:seed
       - name: Smoke
         run: |
           curl -fsS http://localhost:3000/up
