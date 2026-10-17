@@ -32,6 +32,6 @@ const paid = computed(() => props.statuses.flatMap((s, i) => (s === "paid" ? [i 
 		<p v-else class="mt-6 text-sm text-zinc-600 dark:text-zinc-400" data-testid="draw-pending">{{ t("draw.pending") }}</p>
 		<h2 class="mt-8 mb-2 text-lg font-semibold">{{ t("raffle.numbers") }}</h2>
 		<NumberGrid :statuses="statuses" />
-		<p class="mt-6 text-xs text-zinc-500">{{ t("raffle.public_footer") }}</p>
+		<p class="mt-6 text-xs text-zinc-600 dark:text-zinc-400">{{ t("raffle.public_footer") }}</p>
 	</article>
 </template>

@@ -16,6 +16,6 @@ const { t, locale } = useI18n();
 		<p class="mt-1 text-2xl font-semibold text-brand-700 dark:text-brand-500" data-testid="owner-balance">
 			{{ formatCents(balanceCents, locale) }}
 		</p>
-		<p class="mt-1 text-xs text-zinc-500">{{ t("ledger.balance_hint") }}</p>
+		<p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{{ t("ledger.balance_hint") }}</p>
 	</section>
 </template>

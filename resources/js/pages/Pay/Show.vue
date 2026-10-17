@@ -143,18 +143,18 @@ const card = "rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:bord
 		</div>
 
 		<div v-else :class="card">
-			<p class="text-sm text-zinc-500 dark:text-zinc-400">{{ t("pay.title") }}</p>
+			<p class="text-sm text-zinc-600 dark:text-zinc-400">{{ t("pay.title") }}</p>
 			<h1 class="mt-1 text-2xl font-semibold" data-testid="pay-raffle">{{ checkout.raffle_title }}</h1>
 			<p class="mt-1 text-lg" data-testid="pay-number">{{ t("pay.number", { number: checkout.number }) }}</p>
 
 			<dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-				<dt class="text-zinc-500 dark:text-zinc-400">{{ t("pay.amount") }}</dt>
+				<dt class="text-zinc-600 dark:text-zinc-400">{{ t("pay.amount") }}</dt>
 				<dd class="font-medium" data-testid="pay-amount">{{ formatCents(checkout.amount_cents, locale) }}</dd>
-				<dt class="text-zinc-500 dark:text-zinc-400">{{ t("pay.buyer") }}</dt>
+				<dt class="text-zinc-600 dark:text-zinc-400">{{ t("pay.buyer") }}</dt>
 				<dd>{{ checkout.buyer_name }}</dd>
-				<dt class="text-zinc-500 dark:text-zinc-400">{{ t("pay.email") }}</dt>
+				<dt class="text-zinc-600 dark:text-zinc-400">{{ t("pay.email") }}</dt>
 				<dd>{{ checkout.buyer_email }}</dd>
-				<dt class="text-zinc-500 dark:text-zinc-400">{{ t("pay.phone") }}</dt>
+				<dt class="text-zinc-600 dark:text-zinc-400">{{ t("pay.phone") }}</dt>
 				<dd>{{ checkout.buyer_phone }}</dd>
 			</dl>
 

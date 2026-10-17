@@ -68,7 +68,7 @@ function submit(): void {
 					:disabled="locked"
 					:class="input"
 				/>
-				<span class="mt-1 block text-xs text-zinc-500">
+				<span class="mt-1 block text-xs text-zinc-600 dark:text-zinc-400">
 					{{ t("raffle.hints.number_count", { min: limits.min_numbers, max: limits.max_numbers }) }}
 				</span>
 				<p v-if="form.errors.number_count" class="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -87,7 +87,7 @@ function submit(): void {
 					:disabled="locked"
 					:class="input"
 				/>
-				<span class="mt-1 block text-xs text-zinc-500">
+				<span class="mt-1 block text-xs text-zinc-600 dark:text-zinc-400">
 					{{ t("raffle.hints.price_reais", { min: limits.min_price, max: limits.max_price }) }}
 				</span>
 				<p v-if="form.errors.price_reais" class="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -106,7 +106,7 @@ function submit(): void {
 					:disabled="locked"
 					:class="input"
 				/>
-				<span class="mt-1 block text-xs text-zinc-500">
+				<span class="mt-1 block text-xs text-zinc-600 dark:text-zinc-400">
 					{{ t("raffle.hints.duration_days", { min: limits.min_duration, max: limits.max_duration }) }}
 				</span>
 				<p v-if="form.errors.duration_days" class="mt-1 text-sm text-red-600 dark:text-red-400">

@@ -21,7 +21,7 @@ async function verify(): Promise<void> {
 }
 
 const row = "grid gap-1 sm:grid-cols-[14rem_1fr]";
-const label = "text-sm text-zinc-500 dark:text-zinc-400";
+const label = "text-sm text-zinc-600 dark:text-zinc-400";
 </script>
 
 <template>
@@ -32,7 +32,7 @@ const label = "text-sm text-zinc-500 dark:text-zinc-400";
 	>
 		<h2 id="draw-title" class="mb-3 text-lg font-semibold">{{ t("draw.title") }}</h2>
 		<p v-if="draw.winning_number !== null" class="mb-4">
-			<span class="block text-sm text-zinc-500 dark:text-zinc-400">{{ t("draw.winning_number") }}</span>
+			<span class="block text-sm text-zinc-600 dark:text-zinc-400">{{ t("draw.winning_number") }}</span>
 			<span class="text-4xl font-bold tabular-nums text-brand-700 dark:text-brand-500" data-testid="draw-winner">
 				{{ draw.winning_number }}
 			</span>
@@ -78,7 +78,7 @@ const label = "text-sm text-zinc-500 dark:text-zinc-400";
 					<li>{{ t("draw.verify.step2") }}</li>
 					<li>{{ t("draw.verify.step3") }}</li>
 				</ol>
-				<p class="text-zinc-500 dark:text-zinc-400">{{ t("draw.verify.docs") }}</p>
+				<p class="text-zinc-600 dark:text-zinc-400">{{ t("draw.verify.docs") }}</p>
 				<div v-if="draw.winning_number !== null" class="flex flex-wrap items-center gap-3">
 					<button
 						type="button"

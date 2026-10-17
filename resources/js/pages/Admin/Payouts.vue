@@ -74,7 +74,7 @@ const input =
 			<div class="flex flex-wrap items-baseline justify-between gap-2">
 				<p>
 					<span class="font-medium">{{ o.name }}</span>
-					<span class="text-sm text-zinc-500"> · {{ o.email }}</span>
+					<span class="text-sm text-zinc-600 dark:text-zinc-400"> · {{ o.email }}</span>
 				</p>
 				<p class="text-sm">
 					{{ t("admin.payouts.balance") }}:

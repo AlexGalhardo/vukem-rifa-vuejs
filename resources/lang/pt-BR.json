@@ -239,7 +239,8 @@
 			"whatsapp": "Enviar pelo WhatsApp",
 			"whatsapp_text": "Olá, {name}! Este é o seu link para pagar o número {number} da rifa \"{title}\" por PIX: {url} — ele vale por 10 minutos.",
 			"expires_in": "Expira em {time}",
-			"expired": "Este link expirou. Gere um novo se o comprador ainda quiser o número."
+			"expired": "Este link expirou. Gere um novo se o comprador ainda quiser o número.",
+			"url": "Link de pagamento"
 		},
 		"details": {
 			"title": "Número {number}",

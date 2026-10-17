@@ -239,7 +239,8 @@
 			"whatsapp": "Send on WhatsApp",
 			"whatsapp_text": "Hi {name}! Here is your link to pay number {number} of the raffle \"{title}\" by PIX: {url} — it is valid for 10 minutes.",
 			"expires_in": "Expires in {time}",
-			"expired": "This link expired. Generate a new one if the buyer still wants the number."
+			"expired": "This link expired. Generate a new one if the buyer still wants the number.",
+			"url": "Payment link"
 		},
 		"details": {
 			"title": "Number {number}",

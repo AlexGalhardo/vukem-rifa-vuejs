@@ -19,7 +19,7 @@ function submit(): void {
 	<div class="mx-auto max-w-sm">
 		<h1 class="mb-4 text-2xl font-semibold">{{ t("auth.register.title") }}</h1>
 		<GoogleButton />
-		<p class="my-4 text-center text-sm text-zinc-500">{{ t("auth.or") }}</p>
+		<p class="my-4 text-center text-sm text-zinc-600 dark:text-zinc-400">{{ t("auth.or") }}</p>
 		<form class="space-y-4" @submit.prevent="submit">
 			<Field v-model="form.name" :label="t('auth.name')" autocomplete="name" required :error="form.errors.name" />
 			<Field

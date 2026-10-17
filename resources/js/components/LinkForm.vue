@@ -93,7 +93,7 @@ async function submit(): Promise<void> {
 			<h3 class="text-lg font-semibold">{{ t("link.form.title", { number }) }}</h3>
 			<button
 				type="button"
-				class="rounded-md px-2 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+				class="rounded-md px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
 				:aria-label="t('link.form.close')"
 				@click="emit('close')"
 			>
@@ -129,7 +129,7 @@ async function submit(): Promise<void> {
 				data-testid="buyer-phone"
 				@update:model-value="onPhone"
 			/>
-			<p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{{ t("link.form.phone_hint") }}</p>
+			<p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{{ t("link.form.phone_hint") }}</p>
 		</div>
 		<p v-if="failure" class="text-sm text-red-600 dark:text-red-400" role="alert" data-testid="link-error">{{ failure }}</p>
 		<PrimaryButton :disabled="busy" data-testid="link-submit">{{ t("link.form.submit") }}</PrimaryButton>

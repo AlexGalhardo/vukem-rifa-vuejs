@@ -9,8 +9,14 @@ export function uniqueEmail(prefix: string): string {
 }
 
 /** Registers an owner, verifies the email through Mailpit and lands on the dashboard. */
-export async function registerVerifiedOwner(page: Page, email: string, name = "Dona da Rifa"): Promise<void> {
-	await page.goto("/register");
+/** The labels are matched in pt-BR: pass "/register?lang=pt-BR" from an English context. */
+export async function registerVerifiedOwner(
+	page: Page,
+	email: string,
+	name = "Dona da Rifa",
+	registerPath = "/register",
+): Promise<void> {
+	await page.goto(registerPath);
 	await page.getByLabel("Nome").fill(name);
 	await page.getByLabel("E-mail").fill(email);
 	await page.getByLabel("Senha (mínimo de 12 caracteres)").fill(PASSWORD);

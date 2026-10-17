@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Accessibility e2e (`e2e/a11y.spec.ts`, `@axe-core/playwright` 4.14.0): every page and state (guest, owner, link form/result, buyer card, checkout, PIX modal, confirmation, expired and cancelled links, public and drawn raffles) in light/dark, pt-BR/en, desktop/mobile; fails on serious or critical violations.
 - Payment links: owners fill buyer name, email and BR phone (normalized to E.164) per number; a 256-bit link (stored as SHA-256) reserves the number for 10 minutes, shown once with copy, WhatsApp share and countdown; owner cancel; 30/min per owner. Expiry by a delayed job plus an every-minute sweeper; concurrent reservations of one number yield exactly one link.
 - Buyer checkout `/pay/{token}`: masked buyer data, countdown, PIX QR modal with copy-paste code, status polling, and the expired-link page ("Link expirado. Peça ao dono da rifa…", HTTP 410).
 - AbacatePay v2 PIX client (create, check, simulate; z-validated, timeouts) and a fake gateway for local/CI that production refuses.
@@ -37,4 +38,5 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Accessibility: brand buttons and secondary text meet WCAG AA contrast in light and dark, the theme toggle's accessible name includes its visible text, the generated payment link field has a label.
 - Raffle price no longer shows "R$" twice; closed raffles cannot be edited.

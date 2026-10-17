@@ -6,6 +6,7 @@
 @theme {
 	--color-brand-50: oklch(0.97 0.03 155);
 	--color-brand-500: oklch(0.65 0.17 155);
-	--color-brand-600: oklch(0.56 0.16 155);
-	--color-brand-700: oklch(0.48 0.14 155);
+	/* 600/700 keep white text above WCAG AA 4.5:1 (axe e2e). */
+	--color-brand-600: oklch(0.48 0.14 155);
+	--color-brand-700: oklch(0.42 0.12 155);
 }

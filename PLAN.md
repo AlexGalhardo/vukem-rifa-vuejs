@@ -247,7 +247,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 - [x] SMTP config documented and wired (`MAIL_MAILER=smtp`) → verify: e2e `auth.spec.ts` registers, reads the verification mail from Mailpit (`/api/v1/search`), verifies, logs out and in.
 - [x] `tests/mailtrap` helper (net/http): list sandbox messages by recipient, read `body.txt`, extract links, clean sandbox; skip without `MAILTRAP_API_TOKEN` → verify: `go test ./tests/mailtrap` (fake API server).
-- [ ] Real delivery test `go test -tags=mailtrap -run Mailtrap ./tests/` (CI job `mailtrap` runs when secrets exist) → verify: green with owner creds.
+- [x] Real delivery test `go test -tags=mailtrap -run Mailtrap ./tests/` (CI job `mailtrap` runs when secrets exist) → verify: green with owner creds (CI run 39045216068: `--- PASS: TestMailtrap_VerificationEmailDelivered`).
 - [x] Email verification required for the dashboard → verify: unverified user redirected (test `TestDashboard_RequiresVerifiedEmail`).
 - [ ] Password reset end-to-end → verify: integration test with array mailer + Mailtrap e2e.
 

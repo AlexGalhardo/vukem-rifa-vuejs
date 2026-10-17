@@ -53,7 +53,7 @@ function selectAll(e: Event): void {
 			<h3 class="text-lg font-semibold">{{ t("link.result.title", { number: link.number }) }}</h3>
 			<button
 				type="button"
-				class="rounded-md px-2 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+				class="rounded-md px-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
 				:aria-label="t('link.form.close')"
 				@click="emit('close')"
 			>
@@ -66,6 +66,7 @@ function selectAll(e: Event): void {
 		<input
 			:value="link.url"
 			readonly
+			:aria-label="t('link.result.url')"
 			class="block w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-900"
 			data-testid="link-url"
 			@focus="selectAll"
