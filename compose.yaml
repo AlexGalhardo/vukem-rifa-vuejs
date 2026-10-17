@@ -1,0 +1,57 @@
+# Local development stack: docker compose up --build
+# App: http://localhost:3000  Mailpit UI: http://localhost:8025
+name: vukem-rifa
+
+services:
+  app:
+    build: .
+    environment:
+      # development: production refuses non-Secure cookies over plain HTTP.
+      APP_ENV: development
+      APP_DEBUG: "false"
+      APP_URL: http://localhost:3000
+      APP_KEY: ${APP_KEY:?set APP_KEY in .env (vukem key:generate)}
+      APP_LOCALE: pt-BR
+      HOST: 0.0.0.0
+      PORT: "3000"
+      DATABASE_URL: postgres://rifa:rifa@postgres:5432/rifa?sslmode=disable
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      MAIL_MAILER: smtp
+      MAIL_FROM: Vukem Rifa <no-reply@rifa.vukem.com>
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_INSECURE: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  postgres:
+    image: postgres:18.6-alpine3.24
+    environment:
+      POSTGRES_USER: rifa
+      POSTGRES_PASSWORD: rifa
+      POSTGRES_DB: rifa
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rifa -d rifa"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  pgdata:

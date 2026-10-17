@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+node_modules
+resources/public/build
+resources/public/hot
+storage/*
+bin
+playwright-report
+test-results
+.env
+.env.*
+*.md
