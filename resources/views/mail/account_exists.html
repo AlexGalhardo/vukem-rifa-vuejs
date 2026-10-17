@@ -1,0 +1,11 @@
+{{/* layout: none */}}
+<!doctype html>
+<html lang="{{locale}}">
+<body>
+	<p>{{t "mail.greeting" "name" .User.Name}}</p>
+	<p>{{t "mail.account_exists.intro"}}</p>
+	<p><a href="{{.LoginLink}}">{{t "mail.account_exists.login"}}</a></p>
+	<p><a href="{{.ResetLink}}">{{t "mail.account_exists.reset"}}</a></p>
+	<p>{{t "mail.account_exists.ignore"}}</p>
+</body>
+</html>

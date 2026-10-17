@@ -58,10 +58,10 @@ The free Mailtrap sandbox is shared with other projects: email tests use a uniqu
 
 ### Production demo (no real delivery yet)
 
-Until the `vukem.com` sender domain is verified, production sends every email (verification, password reset, payment confirmations) to the Mailtrap **sandbox**, so nothing reaches the real inbox. The dashboard requires a verified email, so to try the demo either:
+Until the `vukem.com` sender domain is verified, production sends every email (verification, password reset, payment confirmations) to the Mailtrap **sandbox**, so nothing reaches the real inbox. Sign-up never logs in (it answers "check your email" for new and existing addresses alike) and the dashboard requires a verified email, so to try the demo either:
 
-- open the verification link from the Mailtrap sandbox inbox (it is listed by recipient), or
-- verify the account by hand: `UPDATE users SET email_verified_at = now() WHERE email = '…';` (Railway Postgres console), or sign in with Google (Google accounts are verified).
+- open the verification link from the Mailtrap sandbox inbox (it is listed by recipient), then log in, or
+- verify the account by hand: `UPDATE users SET email_verified_at = now() WHERE email = '…';` (Railway Postgres console) and log in, or sign in with Google (Google accounts are verified).
 
 Buyers receive no email in this mode either; owners share the payment link manually (copy or WhatsApp), which is the main flow anyway.
 

@@ -197,7 +197,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 - [x] A06 Insecure design: number state machine guarded in SQL; race test reserving the same number concurrently; expired link reuse test.
 - [x] A07 Auth failures: login/reset/verification rate limits (brute-force test), email verification required for dashboard, session rotation on login.
 - [x] A08 Integrity: webhook secret + HMAC verification, replay/duplicate event test, forged signature test.
-- [ ] A09 Logging: security events (login failures, webhook rejections, payout records) logged with request id, no PII/secrets.
+- [x] A09 Logging: security events (login failures, webhook rejections, payout records) logged with request id, no PII/secrets.
 - [ ] A10 Exceptional conditions: AbacatePay timeouts/5xx handled (retry job, user-facing error), fail closed on verification errors.
 - [x] CSRF on all browser mutations (test), CORS denied by default for `/api`.
 - [x] DAST: ZAP baseline + nuclei in CI against the running container.

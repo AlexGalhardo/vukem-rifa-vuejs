@@ -197,3 +197,62 @@ func TestPostgres_OWASP_A07_ResetMailIsQueuedNotSentInline(t *testing.T) {
 		t.Fatalf("reset mail sent inline (%d → %d)", sent, got)
 	}
 }
+
+// A07: sign-up never reveals an existing account: same status, redirect and
+// cookies for a new and an existing email, one queued mail each (the
+// verification or the "account exists" notice), nothing sent inline.
+func TestPostgres_OWASP_A07_SignupIsEnumerationSafe(t *testing.T) {
+	t.Parallel()
+
+	app := newPostgresApp(t)
+	register(t, app.Client(t).Inertia(""), "taken-pg@example.com")
+
+	if _, err := app.Queue(); err != nil {
+		t.Fatal(err)
+	}
+
+	db, err := app.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jobs := func() int {
+		var n int
+		if err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM jobs").Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+
+		return n
+	}
+
+	sentBefore := len(app.Mails().Sent())
+
+	signup := func(email string) (int, string, []string) {
+		res := app.Client(t).Inertia("").PostJSON("/register", map[string]any{
+			"name": "Eve", "email": email, "password": "a long enough password", "password_confirmation": "a long enough password",
+		})
+
+		var cookies []string
+		for _, c := range res.Recorder().Header().Values("Set-Cookie") {
+			cookies = append(cookies, strings.SplitN(c, "=", 2)[0])
+		}
+
+		return res.Status(), res.Header("Location"), cookies
+	}
+
+	before := jobs()
+	newStatus, newLoc, newCookies := signup("fresh-pg@example.com")
+	takenStatus, takenLoc, takenCookies := signup("taken-pg@example.com")
+
+	if newStatus != takenStatus || newLoc != takenLoc || fmt.Sprint(newCookies) != fmt.Sprint(takenCookies) {
+		t.Fatalf("responses differ: new %d %s %v, existing %d %s %v", newStatus, newLoc, newCookies, takenStatus, takenLoc, takenCookies)
+	}
+
+	if got := jobs(); got != before+2 {
+		t.Fatalf("queued jobs = %d, want %d (one mail per sign-up)", got, before+2)
+	}
+
+	if got := len(app.Mails().Sent()); got != sentBefore {
+		t.Fatalf("mails sent inline during sign-up: %d → %d", sentBefore, got)
+	}
+}

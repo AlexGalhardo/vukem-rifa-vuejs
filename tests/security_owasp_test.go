@@ -2,9 +2,12 @@ package tests
 
 import (
 	"bytes"
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
@@ -13,6 +16,7 @@ import (
 	"github.com/AlexGalhardo/vukem/orm"
 	"github.com/AlexGalhardo/vukem/vukemtest"
 
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/accounts"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/payments"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/bootstrap"
@@ -239,5 +243,127 @@ func TestOWASP_A10_GatewayURLIsHTTPSOnlyInProduction(t *testing.T) {
 				t.Fatalf("Gateway() error = %v, want %v", err, tc.wantErr)
 			}
 		})
+	}
+}
+
+// A02: production passwords are hashed with argon2id at vukem's parameters
+// (64 MiB, t=1, p=4: above OWASP's 46 MiB/t=1/p=1 minimum), salted, never
+// stored in clear; the fast fake is for the test kind only.
+func TestOWASP_A02_PasswordsAreArgon2id(t *testing.T) {
+	t.Parallel()
+
+	h := accounts.HasherFor(vukem.KindWeb)
+
+	first, err := h.Make("correct horse battery")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	second, err := h.Make("correct horse battery")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.HasPrefix(first, "$argon2id$v=19$m=65536,t=1,p=4$") {
+		t.Fatalf("hash = %q, want argon2id m=65536,t=1,p=4", first)
+	}
+
+	if first == second || strings.Contains(first, "correct horse") {
+		t.Fatal("hashes must be salted and never contain the password")
+	}
+
+	if ok, err := h.Verify(first, "correct horse battery"); err != nil || !ok {
+		t.Fatalf("Verify = %v, %v", ok, err)
+	}
+
+	if ok, _ := h.Verify(first, "wrong password!!"); ok {
+		t.Fatal("wrong password accepted")
+	}
+}
+
+// A02/A05: production refuses to boot on an http APP_URL.
+func TestOWASP_A05_ProductionRefusesHTTPAppURL(t *testing.T) {
+	t.Parallel()
+
+	_, err := vukemtest.Build(t, bootstrap.New, vukemtest.Options{Env: map[string]string{
+		"APP_ENV": "production", "APP_URL": "http://rifa.example.com", "APP_DEBUG": "false",
+	}})
+	if !errors.Is(err, bootstrap.ErrInsecureAppURL) {
+		t.Fatalf("boot error = %v, want ErrInsecureAppURL", err)
+	}
+}
+
+// A02/A05: over HTTPS, production answers with HSTS.
+func TestOWASP_A05_ProductionSendsHSTS(t *testing.T) {
+	t.Parallel()
+
+	app := vukemtest.New(t, bootstrap.New, vukemtest.Options{Env: map[string]string{
+		"APP_ENV": "production", "APP_URL": "https://rifa.example.com", "APP_DEBUG": "false",
+	}})
+
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "https://rifa.example.com/", nil)
+	req.TLS = &tls.ConnectionState{}
+	rec := httptest.NewRecorder()
+	app.Handler().ServeHTTP(rec, req)
+
+	if hsts := rec.Header().Get("Strict-Transport-Security"); !strings.Contains(hsts, "max-age=") {
+		t.Fatalf("Strict-Transport-Security = %q", hsts)
+	}
+}
+
+// A09: failed logins are security events with the request id; the log never
+// holds the password or the email that was tried.
+func TestOWASP_A09_FailedLoginIsLoggedWithoutCredentials(t *testing.T) {
+	t.Parallel()
+
+	var logs lockedBuffer
+
+	app := vukemtest.New(t, bootstrap.New, vukemtest.Options{AppOptions: []vukem.Option{
+		vukem.WithLogger(slog.New(slog.NewJSONHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug}))),
+	}})
+	register(t, app.Client(t).Inertia(""), "victim-log@example.com")
+
+	guess := "hunter2-" + strings.Repeat("x", 8)
+	app.Client(t).Inertia("").WithHeader("Referer", "/login").
+		PostJSON("/login", map[string]any{"email": "victim-log@example.com", "password": guess}).AssertRedirect("/login")
+
+	out := logs.String()
+	if !strings.Contains(out, `"event":"auth.login_failed"`) || !strings.Contains(out, "request_id") {
+		t.Fatalf("no auth.login_failed security event:\n%s", out)
+	}
+
+	for _, leak := range []string{guess, "victim-log@example.com"} {
+		if strings.Contains(out, leak) {
+			t.Fatalf("log leaks %q", leak)
+		}
+	}
+}
+
+// A09: every payout is a security event (who paid whom how much), without
+// the free-text reference.
+func TestOWASP_A09_PayoutIsLogged(t *testing.T) {
+	t.Parallel()
+
+	var logs lockedBuffer
+
+	env := payEnv()
+	env.AppOptions = append(env.AppOptions, vukem.WithLogger(slog.New(slog.NewJSONHandler(&logs, nil))))
+
+	f := newReservationFixture(t, env)
+	f.paidSale(t, 3)
+	makeAdmin(t, f.app, "admin-log@example.com")
+
+	loginJSON(t, f.app, "admin-log@example.com").
+		PostJSON("/admin/payouts", map[string]any{"user_id": f.raffle.UserID, "amount_cents": 500, "reference": "PIX-E2E-SECRETREF"})
+
+	out := logs.String()
+	for _, want := range []string{`"event":"payout.recorded"`, `"amount_cents":500`, `"admin_id"`, "request_id"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("payout log lacks %s:\n%s", want, out)
+		}
+	}
+
+	if strings.Contains(out, "PIX-E2E-SECRETREF") {
+		t.Fatal("payout log leaks the reference")
 	}
 }

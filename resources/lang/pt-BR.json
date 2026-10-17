@@ -68,6 +68,12 @@
 		"social": {
 			"no_email": "Sua conta {provider} não compartilhou um endereço de e-mail.",
 			"exists": "Já existe uma conta com este e-mail. Entre com sua senha primeiro."
+		},
+		"check_email": {
+			"title": "Confira seu e-mail",
+			"lead": "Se este endereço puder ser usado, enviamos uma mensagem para ele: um link para confirmar a nova conta, ou instruções para entrar se ele já tiver uma.",
+			"spam": "Nada depois de alguns minutos? Confira a pasta de spam.",
+			"login": "Voltar para o login"
 		}
 	},
 	"dashboard": {
@@ -151,6 +157,13 @@
 			"subject": "Número {number} vendido",
 			"intro": "{buyer} pagou {amount} pelo número {number} da rifa \"{title}\".",
 			"action": "Abrir a rifa"
+		},
+		"account_exists": {
+			"subject": "Alguém tentou criar uma conta com seu e-mail",
+			"intro": "Alguém (talvez você) tentou criar uma nova conta com este endereço de e-mail, que já tem uma conta. Nenhuma conta nova foi criada.",
+			"login": "Entrar",
+			"reset": "Esqueceu a senha? Redefina",
+			"ignore": "Se não foi você, pode ignorar esta mensagem."
 		}
 	},
 	"raffle": {

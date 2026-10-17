@@ -50,3 +50,25 @@ func (m ResetPassword) Envelope() mail.Envelope {
 
 // Content implements mail.Mailable.
 func (m ResetPassword) Content() mail.Content { return mail.View("mail/reset_password", m) }
+
+// AccountExists tells the owner of an address that someone tried to sign
+// up with it (the sign-up form never reveals that the account exists).
+type AccountExists struct {
+	User      models.User
+	LoginLink string
+	ResetLink string
+	Subject   string
+}
+
+// NewAccountExists builds the mail in the request locale.
+func NewAccountExists(ctx context.Context, u models.User, login, reset string) AccountExists {
+	return AccountExists{User: u, LoginLink: login, ResetLink: reset, Subject: i18n.T(ctx, "mail.account_exists.subject")}
+}
+
+// Envelope implements mail.Mailable.
+func (m AccountExists) Envelope() mail.Envelope {
+	return mail.Envelope{To: []string{m.User.Email}, Subject: m.Subject}
+}
+
+// Content implements mail.Mailable.
+func (m AccountExists) Content() mail.Content { return mail.View("mail/account_exists", m) }

@@ -1,12 +1,15 @@
 package tests
 
 import (
+	"context"
 	"net/url"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
+	vukem "github.com/AlexGalhardo/vukem"
+	"github.com/AlexGalhardo/vukem/queue"
 	"github.com/AlexGalhardo/vukem/vukemtest"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/accounts"
@@ -20,6 +23,11 @@ func link(t *testing.T, app *vukemtest.App, email string) string {
 	t.Helper()
 
 	sent := app.Mails().SentTo(email)
+	if len(sent) == 0 {
+		deliverQueuedMail(t, app, email)
+		sent = app.Mails().SentTo(email)
+	}
+
 	if len(sent) == 0 {
 		t.Fatalf("no mail sent to %s", email)
 	}
@@ -37,13 +45,17 @@ func link(t *testing.T, app *vukemtest.App, email string) string {
 	return parsed.RequestURI()
 }
 
+// register signs up email and then logs in with it (sign-up itself never
+// logs in, so new and existing emails look the same).
 func register(t *testing.T, c *vukemtest.Client, email string) {
 	t.Helper()
 
 	c.PostJSON("/register", map[string]any{
 		"name": "Ana Silva", "email": email,
 		"password": "correct horse battery", "password_confirmation": "correct horse battery",
-	}).AssertRedirect("/email/verify")
+	}).AssertRedirect("/register/check-email")
+
+	c.PostJSON("/login", map[string]any{"email": email, "password": "correct horse battery"}).AssertRedirect("/dashboard")
 }
 
 func TestRegisterAndVerifyEmail(t *testing.T) {
@@ -55,27 +67,70 @@ func TestRegisterAndVerifyEmail(t *testing.T) {
 	c.Get("/dashboard").AssertRedirect("/login")
 	c.Get("/login").AssertInertia("Auth/Login").PropEquals("auth.user", nil)
 
-	register(t, c, "ana@example.com")
+	signup := app.Client(t).Inertia("")
+	signup.PostJSON("/register", map[string]any{
+		"name": "Ana Silva", "email": "ana@example.com",
+		"password": "correct horse battery", "password_confirmation": "correct horse battery",
+	}).AssertRedirect("/register/check-email")
+	signup.Get("/register/check-email").AssertOK().AssertInertia("Auth/CheckEmail").PropEquals("auth.user", nil)
 	vukemtest.AssertDatabaseHas(t, app, "users", map[string]any{"email": "ana@example.com", "email_verified_at": nil})
 
-	c.Get("/email/verify").AssertOK().AssertInertia("Auth/VerifyEmail").PropEquals("auth.user.email", "ana@example.com")
-
 	verify := link(t, app, "ana@example.com")
-	app.Client(t).Get(verify).AssertRedirect("/login") // the link needs the account's session
-	c.Get(verify + "x").AssertForbidden()              // tampered signature
-	c.Get(verify).AssertRedirect("/dashboard")
+	c.Get(verify + "x").AssertForbidden() // tampered signature
+
+	stranger := app.Client(t).Inertia("")
+	register(t, stranger, "someone-else@example.com")
+	stranger.Get(verify).AssertForbidden() // signed in as another account
+
+	// Signed out, the link verifies and sends to the login page.
+	c.Get(verify).AssertRedirect("/login")
+	vukemtest.AssertDatabaseMissing(t, app, "users", map[string]any{"email": "ana@example.com", "email_verified_at": nil})
+
+	c.PostJSON("/login", map[string]any{"email": "ana@example.com", "password": "correct horse battery"}).AssertRedirect("/dashboard")
 	c.Get("/dashboard").AssertOK().
 		AssertInertia("Dashboard").
 		PropEquals("auth.user.name", "Ana Silva").
 		HasProp("auth.user.email_verified_at")
+}
 
-	// Duplicate emails are rejected.
-	other := app.Client(t).Inertia("").WithHeader("Referer", "/register")
-	other.PostJSON("/register", map[string]any{
-		"name": "Other", "email": "ANA@example.com",
-		"password": "another long password", "password_confirmation": "another long password",
-	}).AssertRedirect("/register")
-	other.Get("/register").AssertInertia("Auth/Register").HasProp("errors.email")
+// A07: signing up with an existing email answers exactly like a new one,
+// creates nothing, and mails the owner a notice (once per hour).
+func TestRegister_ExistingEmailIsNotRevealed(t *testing.T) {
+	t.Parallel()
+
+	app := vukemtest.New(t, bootstrap.New)
+	register(t, app.Client(t).Inertia(""), "ana@example.com")
+	before := len(app.Mails().SentTo("ana@example.com"))
+
+	for range 2 {
+		other := app.Client(t).Inertia("").WithHeader("Referer", "/register")
+		res := other.PostJSON("/register", map[string]any{
+			"name": "Other", "email": " ANA@example.com",
+			"password": "another long password", "password_confirmation": "another long password",
+		}).AssertRedirect("/register/check-email")
+
+		if res.Header("Set-Cookie") != "" && strings.Contains(res.Header("Set-Cookie"), "remember") {
+			t.Fatal("sign-up of an existing email logged in")
+		}
+
+		other.Get("/dashboard").AssertRedirect("/login")
+	}
+
+	vukemtest.AssertDatabaseCount(t, app, "users", 1)
+	vukemtest.AssertDatabaseHas(t, app, "users", map[string]any{"email": "ana@example.com", "name": "Ana Silva"})
+
+	sent := app.Mails().SentTo("ana@example.com")
+	if len(sent) != before+1 {
+		t.Fatalf("mails to the existing owner = %d, want %d (one notice, throttled)", len(sent), before+1)
+	}
+
+	if last := sent[len(sent)-1]; !strings.Contains(last.Text, "/forgot-password") || !strings.Contains(last.Text, "/login") {
+		t.Fatalf("notice has no sign-in/reset links: %q", last.Text)
+	}
+
+	// The old password still works: the attempt changed nothing.
+	app.Client(t).Inertia("").PostJSON("/login", map[string]any{"email": "ana@example.com", "password": "correct horse battery"}).
+		AssertRedirect("/dashboard")
 }
 
 func TestLoginLogoutAndThrottle(t *testing.T) {
@@ -172,4 +227,48 @@ func apiTokenFor(t *testing.T, app *vukemtest.App, email string) string {
 	}
 
 	return u.AuthID()
+}
+
+// deliverQueuedMail sends the auth mails waiting in the queue (they are
+// queued, not sent inline): a queue.Fake is drained by hand, the database
+// queue by a short-lived worker until a mail to email arrives.
+func deliverQueuedMail(t *testing.T, app *vukemtest.App, email string) {
+	t.Helper()
+
+	q, err := app.Queue()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if fake, ok := q.Driver().(*queue.Fake); ok {
+		for _, m := range fake.Messages() {
+			if m.Kind != vukem.MailJobKind {
+				continue
+			}
+
+			if err := q.Process(t.Context(), &m); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancel()
+
+	done := make(chan struct{})
+
+	go func() {
+		defer close(done)
+
+		_ = q.Work(ctx, queue.WorkOptions{Queues: []string{"default"}, Concurrency: 1})
+	}()
+
+	for ctx.Err() == nil && len(app.Mails().SentTo(email)) == 0 {
+		time.Sleep(20 * time.Millisecond)
+	}
+
+	cancel()
+	<-done
 }

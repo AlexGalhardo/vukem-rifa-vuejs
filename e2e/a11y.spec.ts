@@ -72,7 +72,14 @@ for (const v of variants) {
 		test("guest pages", async ({ page }) => {
 			// /api/docs is the bundled third-party Scalar UI (vukem apidocs), not our markup: its axe
 			// findings are reported upstream (framework-feedback) instead of failing this suite.
-			for (const path of ["/", "/login", "/register", "/forgot-password", "/r/demodraw01"]) {
+			for (const path of [
+				"/",
+				"/login",
+				"/register",
+				"/register/check-email",
+				"/forgot-password",
+				"/r/demodraw01",
+			]) {
 				await page.goto(lang(path, v));
 				await expectAccessible(page, `${path} (${name})`);
 			}

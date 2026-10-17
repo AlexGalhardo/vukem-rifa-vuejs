@@ -29,9 +29,11 @@ New tests written for the consolidated suite live in `tests/security_owasp_test.
 | --- | --- |
 | Payment-link tokens are 256-bit and stored only as SHA-256 | `TestReservation_ReserveCreatesHashedLink` |
 | Session cookie HttpOnly + SameSite | `TestOWASP_A02_SessionCookieFlags` |
+| Passwords hashed with salted argon2id (m=64 MiB, t=1, p=4) outside tests | `TestOWASP_A02_PasswordsAreArgon2id` |
+| Production refuses an http `APP_URL`; HSTS over HTTPS | `TestOWASP_A05_ProductionRefusesHTTPAppURL`, `TestOWASP_A05_ProductionSendsHSTS` |
 | API key revoked/invalid tokens refused | `TestSecurityAPI_RejectsMissingInvalidAndRevokedTokens` |
 
-Not automated: argon2id is the production hasher (`hash.Default()` in `app/accounts`; tests use the fast fake hasher), HTTPS/HSTS is the platform's job (README "Deploy notes").
+Not automated: `APP_KEY` rotation through `APP_PREVIOUS_KEYS` (vukem feature, not exercised by the app's tests). On Railway HSTS needs `TRUST_FORWARDED_PROTO` behind a verified `TRUSTED_PROXIES` range (README "Deploy notes").
 
 ## A03 Injection
 
@@ -76,11 +78,10 @@ CI: `govulncheck`, `bun audit --audit-level=high`, Dependabot (Go, npm, Actions,
 | Copied session cookie is dead after logout | `TestPostgres_OWASP_A07_LogoutKillsCopiedSessionCookie` |
 | Password reset: single use, ends tokens and other sessions | `TestPasswordReset`, `TestPostgres_PasswordResetEndsOtherSessions` |
 | Reset enumeration: same answer for unknown emails; mail queued so timing does not differ | `TestPasswordReset`, `TestPostgres_OWASP_A07_ResetMailIsQueuedNotSentInline` |
+| Sign-up enumeration: same status, redirect and cookies for new and existing emails; existing owner gets a throttled notice, nothing is created; one queued mail either way | `TestRegister_ExistingEmailIsNotRevealed`, `TestPostgres_OWASP_A07_SignupIsEnumerationSafe` |
 | Unverified email cannot use the dashboard; Google cannot take over unverified accounts | `TestDashboard_RequiresVerifiedEmail`, `TestSocialDoesNotTakeOverUnverifiedEmails` |
 | CSRF on login and every browser mutation | `TestSecurity_CrossSiteLoginBlocked`, `TestSecurity_NumbersCrossSitePostBlocked`, `TestSecurity_CrossSiteConfirmBlocked` |
 | Cookie session is not ambient authority on the API | `TestSecurityAPI_CookieSessionIsNotAmbientAuthority` |
-
-Known gap: registration answers 409 for an existing email (account existence is visible there by design of the form).
 
 ## A08 Software and data integrity failures
 
@@ -97,8 +98,8 @@ Known gap: registration answers 409 for an existing email (account existence is 
 | Abuse case | Tests |
 | --- | --- |
 | Rejected webhooks logged as security events with the request id, never with the secret or signature | `TestOWASP_A09_RejectedWebhookIsLoggedWithoutSecrets` |
-
-Not automated: login failures and payout records rely on vukem's security events; review logs in Railway.
+| Failed logins logged (`auth.login_failed`) with the request id, without the password or the email tried | `TestOWASP_A09_FailedLoginIsLoggedWithoutCredentials` |
+| Payouts logged (`payout.recorded`: admin, owner, amount) without the free-text reference | `TestOWASP_A09_PayoutIsLogged` |
 
 ## A10 Server-side request forgery
 

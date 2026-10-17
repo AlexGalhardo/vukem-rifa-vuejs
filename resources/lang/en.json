@@ -68,6 +68,12 @@
 		"social": {
 			"no_email": "Your {provider} account did not share an email address.",
 			"exists": "An account with this email already exists. Log in with your password first."
+		},
+		"check_email": {
+			"title": "Check your email",
+			"lead": "If this address can be used, we sent it a message: a link to verify a new account, or instructions to sign in if it already has one.",
+			"spam": "Nothing after a few minutes? Check the spam folder.",
+			"login": "Back to sign in"
 		}
 	},
 	"dashboard": {
@@ -151,6 +157,13 @@
 			"subject": "Number {number} sold",
 			"intro": "{buyer} paid {amount} for number {number} of the raffle \"{title}\".",
 			"action": "Open the raffle"
+		},
+		"account_exists": {
+			"subject": "Someone tried to sign up with your email",
+			"intro": "Someone (maybe you) tried to create a new account with this email address, which already has an account. No new account was created.",
+			"login": "Sign in",
+			"reset": "Forgot your password? Reset it",
+			"ignore": "If it was not you, you can ignore this message."
 		}
 	},
 	"raffle": {

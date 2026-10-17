@@ -8,7 +8,7 @@ export function uniqueEmail(prefix: string): string {
 	return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
 }
 
-/** Registers an owner, verifies the email through Mailpit and lands on the dashboard. */
+/** Registers an owner, verifies the email through Mailpit, logs in and lands on the dashboard. */
 /** The labels are matched in pt-BR: pass "/register?lang=pt-BR" from an English context. */
 export async function registerVerifiedOwner(
 	page: Page,
@@ -22,10 +22,19 @@ export async function registerVerifiedOwner(
 	await page.getByLabel("Senha (mínimo de 12 caracteres)").fill(PASSWORD);
 	await page.getByLabel("Confirme a senha").fill(PASSWORD);
 	await page.getByRole("button", { name: "Criar conta" }).click();
-	await expect(page).toHaveURL(/\/email\/verify$/);
+	// Sign-up never logs in (same answer for new and existing emails).
+	await expect(page).toHaveURL(/\/register\/check-email$/);
 
 	// The app builds links from APP_URL; keep only the path for the test origin.
 	const link = new URL(await latestLinkTo(email));
 	await page.goto(link.pathname + link.search);
+	await expect(page).toHaveURL(/\/login$/);
+	// Keep the labels in pt-BR when the caller forced it (?lang is per request).
+	const lang = new URL(registerPath, "http://localhost").searchParams.get("lang");
+	if (lang) await page.goto(`/login?lang=${lang}`);
+
+	await page.getByLabel("E-mail").fill(email);
+	await page.getByLabel("Senha", { exact: true }).fill(PASSWORD);
+	await page.getByRole("button", { name: "Entrar", exact: true }).click();
 	await expect(page).toHaveURL(/\/dashboard$/);
 }

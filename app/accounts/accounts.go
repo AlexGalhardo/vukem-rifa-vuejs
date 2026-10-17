@@ -13,6 +13,7 @@ import (
 	"github.com/AlexGalhardo/vukem"
 	"github.com/AlexGalhardo/vukem/auth"
 	"github.com/AlexGalhardo/vukem/auth/hash"
+	"github.com/AlexGalhardo/vukem/cache"
 	"github.com/AlexGalhardo/vukem/database"
 	"github.com/AlexGalhardo/vukem/mail"
 	"github.com/AlexGalhardo/vukem/session"
@@ -39,6 +40,7 @@ type Accounts struct {
 	VerifyTTL time.Duration
 	now       func() time.Time
 	sessions  func() (*session.Manager, error)
+	cache     func() (*cache.Cache, error)
 }
 
 // RevokeOtherSessions signs userID out of every browser session except
@@ -59,6 +61,16 @@ func (a *Accounts) RevokeOtherSessions(ctx context.Context, userID int64, keep s
 	return err
 }
 
+// HasherFor returns the password hasher: argon2id (vukem defaults: 64 MiB,
+// t=1, p=4) everywhere but the test kind, where a fast fake keeps tests quick.
+func HasherFor(kind vukem.Kind) hash.Hasher {
+	if kind == vukem.KindTest {
+		return hash.Fake()
+	}
+
+	return hash.Default()
+}
+
 // New builds Accounts from the app.
 func New(app *vukem.App) (*Accounts, error) {
 	db, err := app.DB()
@@ -71,10 +83,7 @@ func New(app *vukem.App) (*Accounts, error) {
 		return nil, err
 	}
 
-	hasher := hash.Default()
-	if app.Kind == vukem.KindTest {
-		hasher = hash.Fake() // fast hashing keeps tests quick
-	}
+	hasher := HasherFor(app.Kind)
 
 	users := auth.NewORMProvider[models.User](db)
 	tokens := auth.NewTokens(db)
@@ -91,5 +100,6 @@ func New(app *vukem.App) (*Accounts, error) {
 		VerifyTTL: time.Hour,
 		now:       time.Now,
 		sessions:  app.Sessions,
+		cache:     app.Cache,
 	}, nil
 }

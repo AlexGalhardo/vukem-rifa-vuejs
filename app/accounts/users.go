@@ -2,6 +2,9 @@ package accounts
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -14,36 +17,72 @@ import (
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/requests"
 )
 
-// Register creates a user (unique email, hashed password) and sends the
-// verification email.
-func (a *Accounts) Register(ctx context.Context, in requests.Register) (models.User, error) {
-	email := strings.ToLower(in.Email)
-
-	if err := orm.Validate(ctx, a.DB, orm.Unique[models.User]("email", email)); err != nil {
-		return models.User{}, err
-	}
+// Register signs up in.Email without revealing whether it already has an
+// account: the caller always answers "check your email". A new address gets
+// the account and a verification mail; an existing one gets a notice ("sign
+// in or reset your password", at most one per hour per address) and nothing
+// is created. Both paths hash the password and queue one mail, so they also
+// take the same time. It reports whether an account was created.
+func (a *Accounts) Register(ctx context.Context, in requests.Register) (bool, error) {
+	email := strings.ToLower(strings.TrimSpace(in.Email))
 
 	h, err := a.Hasher.Make(in.Password)
 	if err != nil {
-		return models.User{}, err
+		return false, err
+	}
+
+	existing, err := orm.QueryOf[models.User](a.DB).Where("email", email).First(ctx)
+	if err == nil {
+		return false, a.notifyExisting(ctx, existing)
+	}
+
+	if !errors.Is(err, orm.ErrNotFound) {
+		return false, err
 	}
 
 	u := models.User{Name: in.Name, Email: email, Password: h}
 	if err := orm.Create(ctx, a.DB, &u); err != nil {
-		return models.User{}, err
+		// A concurrent sign-up with the same email won the unique index.
+		if existing, findErr := orm.QueryOf[models.User](a.DB).Where("email", email).First(ctx); findErr == nil {
+			return false, a.notifyExisting(ctx, existing)
+		}
+
+		return false, err
 	}
 
-	return u, a.SendVerification(ctx, u)
+	return true, a.SendVerification(ctx, u)
 }
 
-// SendVerification emails a signed link that verifies u's address.
+// notifyExisting tells the owner of an existing account that someone tried
+// to sign up with it, at most once per hour per address (no mail bombing).
+func (a *Accounts) notifyExisting(ctx context.Context, u models.User) error {
+	c, err := a.cache()
+	if err != nil {
+		return err
+	}
+
+	sum := sha256.Sum256([]byte(u.Email))
+
+	n, err := c.Increment(ctx, "register:exists:"+hex.EncodeToString(sum[:]), 1, time.Hour)
+	if err != nil {
+		return err
+	}
+
+	if n > 1 {
+		return nil
+	}
+
+	return a.Mailer.SendLater(ctx, mail.NewAccountExists(ctx, u, a.URL+"/login", a.URL+"/forgot-password"))
+}
+
+// SendVerification queues a signed link that verifies u's address.
 func (a *Accounts) SendVerification(ctx context.Context, u models.User) error {
 	link, err := a.Signer.Sign(fmt.Sprintf("%s/email/verify/%d", a.URL, u.ID), a.VerifyTTL)
 	if err != nil {
 		return err
 	}
 
-	return a.Mailer.Send(ctx, mail.NewVerifyEmail(ctx, u, link))
+	return a.Mailer.SendLater(ctx, mail.NewVerifyEmail(ctx, u, link))
 }
 
 // MarkVerified sets email_verified_at using ex (a.DB, or the transaction
