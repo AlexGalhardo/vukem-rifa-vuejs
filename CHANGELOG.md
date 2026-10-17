@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Owner requests (2026-10-17): the navbar uses the vukem docs container (sticky, 90rem, same gutters); the theme toggle is a light/dark/system radiogroup with sun, moon and monitor icons; the buyer page shows the PIX QR code inline (no modal) with a "Copiar código" button (clipboard.js 2.0.11) and a toast; every live payment link stays listed for the owner for its 10 minutes (token sealed with APP_KEY in `reservations.token_sealed`).
 - Security tests: argon2id password hashes, production HSTS and http `APP_URL` refusal, failed-login and payout security events without secrets, enumeration-safe sign-up (`docs/owasp-matrix.md`).
 - Consolidated OWASP Top 10 suite (`docs/owasp-matrix.md`): new tests for mass assignment, session cookie flags, injection payloads, security headers, security-event logging without secrets, gateway URL hardening, logout killing copied session cookies and reset-mail timing; `e2e/security.spec.ts` (no CSP violations, cancelled link reuse).
 - QA checklist (`docs/qa-checklist.md`, run 1) and tuned ZAP baseline: security headers, cookie flags, version leaks and error disclosure now fail CI.
@@ -35,6 +36,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Editing a raffle cancels its live payment links in the same transaction (numbers released, audit event `raffle.links_cancelled`, flash with the count); paid numbers still lock price, size and duration.
 - Production moved to <https://rifa.vukem.dev> (docs: <https://vukem.dev>); every repository reference to the Railway and `rifa.vukem.com` URLs now points there.
 - Production on Railway sends HSTS (`HSTS_FORCE`) and sees real client IPs (`TRUSTED_PROXIES=100.64.0.0/24`, `CLIENT_IP_HEADER=X-Real-IP`), so per-IP rate limits no longer share one bucket.
 - Bumped vukem to v0.25.0: the database queue worker runs in `serve` by vukem (`QUEUE_IN_SERVE`; `bootstrap.Background` removed), the queue follows `app.Now`, buyer error pages use `inertia.RenderStatus`, the REST API registers with `api.Register` + `ValidateResponse` and authenticates with `auth.Required` (APIGuard, 401 problem+json), API tokens use the app clock, generated types are zod 4, CSV downloads stream through vukem `export` (stronger formula guard; plain numbers such as E.164 phones and negative amounts are no longer prefixed).
