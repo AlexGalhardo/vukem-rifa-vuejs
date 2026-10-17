@@ -330,7 +330,7 @@ When the coordinator announces a vukem release (CI green): `go get github.com/Al
 | What | Env / where | Needed by |
 | --- | --- | --- |
 | Mailtrap account: API token, account id, sandbox id, sandbox SMTP user/pass (`sandbox.smtp.mailtrap.io:2525`) | `MAILTRAP_API_TOKEN`, `MAILTRAP_ACCOUNT_ID`, `MAILTRAP_SANDBOX_ID`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` (local `.env` + GitHub Actions secrets for e2e) | Phase 1 |
-| Google OAuth client (Web), redirect URIs `http://localhost:3000/auth/google/callback` and `https://rifa.vukem.com/auth/google/callback` | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Phase 1 |
+| Google OAuth client (Web), redirect URIs `http://localhost:3000/auth/google/callback` and `https://rifa.vukem.com/auth/google/callback` | `SOCIAL_GOOGLE_CLIENT_ID`, `SOCIAL_GOOGLE_CLIENT_SECRET` | Phase 1 |
 | AbacatePay account in Dev mode: API key `abc_dev_…` with `TRANSPARENT:CREATE`, `TRANSPARENT:READ`, `WEBHOOK:CREATE`; webhook secret | `ABACATEPAY_API_KEY`, `ABACATEPAY_WEBHOOK_SECRET` (+ the HMAC key AbacatePay shows for `X-Webhook-Signature`, if different) | Phase 4 |
 | Production sender: Mailtrap Sending (verified domain `vukem.com`: SPF/DKIM/DMARC CNAMEs) or another SMTP | `SMTP_*`, `MAIL_FROM` | Phase 9 |
 | Railway project + Postgres plugin; set `APP_KEY` (`vukem key:generate`), `APP_ENV=production`, `APP_URL=https://rifa.vukem.com`, all of the above | Railway variables | Phase 9 |
