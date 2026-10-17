@@ -7,6 +7,7 @@ import (
 	"github.com/AlexGalhardo/vukem/web"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/draws"
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/ledger"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/raffles"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/requests"
@@ -43,7 +44,12 @@ func (rc *RaffleController) Index(c *web.Ctx) error {
 		return err
 	}
 
-	return inertia.Render(c, "Dashboard", inertia.Props{"raffles": list})
+	balance, err := ledger.Balance(c.Context(), rc.raffles.DB, u.ID)
+	if err != nil {
+		return err
+	}
+
+	return inertia.Render(c, "Dashboard", inertia.Props{"raffles": list, "balance_cents": balance})
 }
 
 // Create shows the new raffle form.

@@ -18,5 +18,6 @@ func All() []func(r *router.Router, app *vukem.App) error {
 		API,
 		Payments,
 		Webhooks,
+		Admin,
 	}
 }

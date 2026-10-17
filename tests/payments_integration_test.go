@@ -76,3 +76,55 @@ func TestPostgres_ConcurrentWebhookDeliveries(t *testing.T) {
 		t.Fatalf("queued payment emails = %d, %v", queued, err)
 	}
 }
+
+// A double submit (or two admins) cannot pay out the same balance twice.
+func TestPostgres_ConcurrentPayoutsNeverExceedTheBalance(t *testing.T) {
+	t.Parallel()
+
+	f := newReservationFixture(t, mergeEnv(postgresEnv(t), payEnv().Env))
+	f.paidSale(t, 31)
+	makeAdmin(t, f.app, "admin@example.com")
+
+	const workers = 10
+
+	var (
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		statuses = map[int]int{}
+	)
+
+	start := make(chan struct{})
+
+	for i := range workers {
+		c := loginJSON(t, f.app, "admin@example.com")
+
+		wg.Go(func() {
+			<-start
+
+			status := c.PostJSON("/admin/payouts", map[string]any{
+				"user_id": f.raffle.UserID, "amount_cents": 900, "reference": fmt.Sprintf("race-%d", i),
+			}).Status()
+
+			mu.Lock()
+			statuses[status]++
+			mu.Unlock()
+		})
+	}
+
+	close(start)
+	wg.Wait()
+
+	if statuses[http.StatusSeeOther]+statuses[http.StatusFound]+statuses[http.StatusOK] != 1 ||
+		statuses[http.StatusUnprocessableEntity] != workers-1 {
+		t.Fatalf("statuses = %v; want one success and %d 422", statuses, workers-1)
+	}
+
+	if got := f.balance(t); got != 0 {
+		t.Fatalf("balance = %d, want 0", got)
+	}
+
+	var payouts int
+	if err := f.svc.DB.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM payouts").Scan(&payouts); err != nil || payouts != 1 {
+		t.Fatalf("payouts = %d, %v", payouts, err)
+	}
+}
