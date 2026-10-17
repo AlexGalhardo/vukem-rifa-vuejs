@@ -232,7 +232,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 #### 1.1 Scaffold and Postgres
 
-- [ ] Run `vukem install:auth --social google` in a scratch copy, port the generated files, adapt migrations to Postgres → verify: `go test ./...` and integration green.
+- [x] Run `vukem install:auth --social google` in a scratch copy, port the generated files, adapt migrations to Postgres → verify: `go test ./...` and integration green.
 - [ ] Add `users.is_admin` (default false) → verify: migration test.
 - [ ] Translate auth pages and validation messages (pt-BR/en) → verify: page tests check translated props.
 
@@ -240,7 +240,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 - [ ] SMTP config documented and wired (`MAIL_MAILER=smtp`) → verify: compose sends verification mail visible in Mailpit (`GET :8025/api/v1/messages`).
 - [ ] `tests/mailtrap` helper (net/http): list sandbox messages by recipient, read `body.html`/`body.txt`, extract links, clean sandbox; skip without `MAILTRAP_API_TOKEN` → verify: `go test -tags=mailtrap ./tests/...` with owner creds.
-- [ ] Email verification required for the dashboard → verify: unverified user redirected (test).
+- [x] Email verification required for the dashboard → verify: unverified user redirected (test `TestDashboard_RequiresVerifiedEmail`).
 - [ ] Password reset end-to-end → verify: integration test with array mailer + Mailtrap e2e.
 
 #### 1.3 Google login

@@ -14,6 +14,7 @@ import (
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/accounts"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/controllers/account"
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 )
 
 // Auth registers login, registration, password reset and email
@@ -48,9 +49,29 @@ func Auth(r *router.Router, app *vukem.App) error {
 	r.Get("/email/verify/{id}", h.Verify).Name("verification.verify").Use(required, acc.Signer.Middleware())
 	r.Post("/email/verification-notification", h.Resend).Name("verification.send").Use(required, mails)
 
-	r.Get("/dashboard", h.Dashboard).Name("dashboard").Use(required)
+	r.Get("/dashboard", h.Dashboard).Name("dashboard").Use(required, verifiedOrNotice())
 
 	return nil
+}
+
+// verifiedOrNotice sends signed-in users without a verified email to the
+// verification notice. Place it after auth.Required.
+//
+// workaround(vukem v0.21.1): auth.Verified answers 403 with no redirect option for browser routes.
+func verifiedOrNotice() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			c := web.NewCtx(w, r, web.ServicesFrom(r.Context()))
+
+			u, err := auth.User[models.User](c, "web")
+			if err != nil || !u.EmailVerified() {
+				_ = c.Redirect("/email/verify")
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // shareAuth shares the signed-in user (or null) with every page as
