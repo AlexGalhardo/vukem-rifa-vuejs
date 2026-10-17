@@ -130,3 +130,22 @@ func normalizeOptionalPhone(s string) string {
 }
 
 func normalizeTelegram(s string) string { return strings.ToLower(strings.TrimPrefix(s, "@")) }
+
+// CanonicalEmail folds the aliases of one mailbox for rate-limit and cap
+// keys (never for storage or sending): lowercase, no "+tag", and for Gmail
+// no dots and gmail.com for googlemail.com.
+func CanonicalEmail(email string) string {
+	local, domain, ok := strings.Cut(strings.ToLower(strings.TrimSpace(email)), "@")
+	if !ok {
+		return strings.ToLower(strings.TrimSpace(email))
+	}
+
+	local, _, _ = strings.Cut(local, "+")
+
+	if domain == "gmail.com" || domain == "googlemail.com" {
+		domain = "gmail.com"
+		local = strings.ReplaceAll(local, ".", "")
+	}
+
+	return local + "@" + domain
+}

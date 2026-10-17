@@ -75,6 +75,9 @@ type ReserveOptions struct {
 	// MaxLivePerEmail caps the live links of one buyer email in the raffle
 	// (0 = no cap); checked in the reserve transaction.
 	MaxLivePerEmail int
+	// MaxLivePublic caps the live public links of the raffle, all buyers
+	// together (0 = no cap); checked in the reserve transaction.
+	MaxLivePublic int
 	// ConsentVersion is the LGPD notice version the buyer accepted; when
 	// set, the reservation records it with the time of consent.
 	ConsentVersion string
@@ -147,16 +150,9 @@ func (s *Service) ReserveWith(ctx context.Context, r models.Raffle, number int, 
 
 		res.AmountCents = cur.PriceReais * 100
 
-		if o.MaxLivePerEmail > 0 {
-			var live int
-			if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM reservations WHERE raffle_id = "+p(1)+" AND buyer_email = "+p(2)+
-				" AND status IN ('"+models.ReservationPending+"','"+models.ReservationAwaitingPayment+"') AND expires_at > "+p(3),
-				r.ID, in.Email, now).Scan(&live); err != nil {
-				return fmt.Errorf("count live links: %w", err)
-			}
-
-			if live >= o.MaxLivePerEmail {
-				return errTooManyLinks(ctx)
+		if o.MaxLivePerEmail > 0 || o.MaxLivePublic > 0 {
+			if err := checkCaps(ctx, tx, r.ID, in.Email, now, o); err != nil {
+				return err
 			}
 		}
 
@@ -364,4 +360,45 @@ func (s *Service) release(ctx context.Context, res models.Reservation, status st
 	})
 
 	return released, err
+}
+
+// checkCaps counts the raffle's live public links (all buyers, and those of
+// the buyer's mailbox, aliases folded by requests.CanonicalEmail) inside the
+// locked reserve transaction.
+func checkCaps(ctx context.Context, tx *database.Tx, raffleID int64, email string, now time.Time, o ReserveOptions) error {
+	p := tx.Dialect().Placeholder
+
+	rows, err := tx.QueryContext(ctx, "SELECT buyer_email FROM reservations WHERE raffle_id = "+p(1)+" AND origin = "+p(2)+
+		" AND status IN ('"+models.ReservationPending+"','"+models.ReservationAwaitingPayment+"') AND expires_at > "+p(3),
+		raffleID, models.OriginPublic, now)
+	if err != nil {
+		return fmt.Errorf("count live links: %w", err)
+	}
+	defer rows.Close()
+
+	mine, all := 0, 0
+	key := requests.CanonicalEmail(email)
+
+	for rows.Next() {
+		var e string
+		if err := rows.Scan(&e); err != nil {
+			return err
+		}
+
+		all++
+
+		if requests.CanonicalEmail(e) == key {
+			mine++
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	if (o.MaxLivePublic > 0 && all >= o.MaxLivePublic) || (o.MaxLivePerEmail > 0 && mine >= o.MaxLivePerEmail) {
+		return errTooManyLinks(ctx)
+	}
+
+	return nil
 }

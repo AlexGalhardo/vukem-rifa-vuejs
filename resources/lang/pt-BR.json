@@ -282,7 +282,7 @@
 		},
 		"public": {
 			"taken": "Este número acabou de ser reservado. Escolha outro número livre.",
-			"refused": "Não foi possível reservar este número. Tente novamente.",
+			"refused": "Não foi possível reservar este número agora. Tente novamente mais tarde.",
 			"title": "Comprar o número {number}",
 			"name": "Seu nome",
 			"email": "Seu e-mail",

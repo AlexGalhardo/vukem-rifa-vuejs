@@ -26,6 +26,10 @@ import (
 // email may hold in a raffle.
 const MaxLivePublicLinksPerEmail = 5
 
+// MaxLivePublicLinks caps the live public links of a raffle (all buyers
+// together) so nobody can hold the whole grid: 20% of the numbers, at least 5.
+func MaxLivePublicLinks(numberCount int) int { return max(5, numberCount/5) }
+
 // PublicConsentVersion identifies the privacy notice text (link.public.consent)
 // a public buyer accepts; bump it whenever that text changes.
 const PublicConsentVersion = "2026-10-17"
@@ -76,14 +80,15 @@ func (pc *PublicCheckoutController) Reserve(c *web.Ctx) error {
 		return refuse("link.public.refused")
 	}
 
-	sum := sha256.Sum256([]byte(in.Email))
+	sum := sha256.Sum256([]byte(requests.CanonicalEmail(in.Email)))
 	if res, err := pc.perEmail.Allow(ctx, "email:"+hex.EncodeToString(sum[:])); err != nil || !res.Allowed {
 		web.SecurityEvent(c.Request(), "checkout.email_rate_limited", "raffle_id", r.ID)
-		return refuse("link.too_many_for_email")
+		return refuse("link.public.refused")
 	}
 
 	link, err := pc.reservations.ReserveWith(ctx, r, number, in.Buyer(), reservations.ReserveOptions{
 		Origin: models.OriginPublic, BuyerUserID: pc.buyerAccount(c, in.Email), MaxLivePerEmail: MaxLivePublicLinksPerEmail,
+		MaxLivePublic:  MaxLivePublicLinks(r.NumberCount),
 		ConsentVersion: PublicConsentVersion,
 	})
 	if err != nil {
@@ -91,7 +96,9 @@ func (pc *PublicCheckoutController) Reserve(c *web.Ctx) error {
 		case http.StatusConflict:
 			return refuse("link.public.taken")
 		case http.StatusTooManyRequests:
-			return refuse("link.too_many_for_email")
+			// One generic answer for every cap: it never says which one, nor
+			// that this email already holds links.
+			return refuse("link.public.refused")
 		default:
 			return err
 		}

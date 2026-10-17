@@ -10,6 +10,7 @@ import (
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/controllers"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/reservations"
 )
 
 // Owner request: anyone with the public raffle link can buy a free number
@@ -250,4 +251,47 @@ func TestPublicCheckout_PurchaseHistoryShowsOnlyMyPurchases(t *testing.T) {
 	me.Get("/account/purchases").AssertDontSee("outra@example.com")
 
 	f.app.Client(t).Get("/account/purchases").AssertRedirect("/login")
+}
+
+// Security review fix: a raffle holds at most max(5, 20%) live public links,
+// whoever asks, so nobody can lock up the whole grid; the refusal is the
+// same generic message for every cap and limit.
+func TestPublicCheckout_GlobalCapOfLivePublicLinks(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t) // 100 numbers: at most 20 live public links
+
+	// Twenty buyers (from many IPs, so straight through the service).
+	for n := 1; n <= 20; n++ {
+		b := buyer
+		b.Email = fmt.Sprintf("crowd%d@example.com", n)
+		if _, err := f.svc.ReserveWith(t.Context(), f.raffle, n, b, reservations.ReserveOptions{
+			Origin: models.OriginPublic, MaxLivePublic: controllers.MaxLivePublicLinks(f.raffle.NumberCount),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	visitor := f.app.Client(t).Inertia("")
+	f.publicReserve(visitor, 21, publicBuyer("late@example.com")).AssertRedirect("/r/" + f.raffle.Slug)
+	visitor.Get("/r/"+f.raffle.Slug).AssertInertia("Raffles/Public").
+		PropEquals("errors.number", "We could not reserve this number right now. Please try again later.")
+
+	// Owner links are not counted.
+	postLink(f.c, f.path, 22, buyerForm()).AssertCreated()
+}
+
+func TestPublicCheckout_EmailCapIgnoresPlusTagsAndGmailDots(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t)
+
+	for n, email := range []string{"ana.maria@gmail.com", "anamaria+1@gmail.com", "a.n.a.maria@googlemail.com", "anamaria+x@gmail.com", "AnaMaria@gmail.com"} {
+		payPathOf(t, f.publicReserve(f.app.Client(t).Inertia(""), n+1, publicBuyer(email)))
+	}
+
+	visitor := f.app.Client(t).Inertia("")
+	f.publicReserve(visitor, 9, publicBuyer("ana.maria+sixth@gmail.com")).AssertRedirect("/r/" + f.raffle.Slug)
+	visitor.Get("/r/"+f.raffle.Slug).AssertInertia("Raffles/Public").
+		PropEquals("errors.number", "We could not reserve this number right now. Please try again later.")
 }

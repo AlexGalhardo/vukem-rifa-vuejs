@@ -35,7 +35,7 @@ func Checkout(r *router.Router, app *vukem.App) error {
 		limiters("public-checkout-email", 10, 10*time.Minute),
 	)
 
-	perIP := ratelimit.Middleware(limiters("public-checkout-ip", 10, 10*time.Minute), ratelimit.ByIP)
+	perIP := ratelimit.Middleware(limiters("public-checkout-ip", 10, 10*time.Minute), byClientIP)
 
 	r.Post("/r/{slug}/numbers/{number}/reserve", pc.Reserve).Name("checkout.reserve").Use(perIP)
 	r.Get("/account/purchases", pc.Purchases).Name("account.purchases").Use(auth.Required(acc.Web))
