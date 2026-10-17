@@ -120,5 +120,20 @@
 			"password_confirmation": "password confirmation",
 			"token": "token"
 		}
+	},
+	"mail": {
+		"greeting": "Hello {name},",
+		"verify": {
+			"subject": "Verify your email address",
+			"intro": "Please confirm your email address:",
+			"action": "Verify email",
+			"expires": "The link expires in one hour."
+		},
+		"reset": {
+			"subject": "Reset your password",
+			"intro": "Someone asked to reset your password. If it was you:",
+			"action": "Reset password",
+			"expires": "The link expires in one hour and works once. If you did not ask, ignore this email."
+		}
 	}
 }

@@ -120,5 +120,20 @@
 			"password_confirmation": "confirmação de senha",
 			"token": "token"
 		}
+	},
+	"mail": {
+		"greeting": "Olá, {name}!",
+		"verify": {
+			"subject": "Confirme seu e-mail",
+			"intro": "Confirme seu endereço de e-mail:",
+			"action": "Confirmar e-mail",
+			"expires": "O link expira em uma hora."
+		},
+		"reset": {
+			"subject": "Redefina sua senha",
+			"intro": "Alguém pediu para redefinir sua senha. Se foi você:",
+			"action": "Redefinir senha",
+			"expires": "O link expira em uma hora e funciona uma única vez. Se não foi você, ignore este e-mail."
+		}
 	}
 }

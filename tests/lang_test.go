@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"maps"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/AlexGalhardo/vukem/vukemtest"
@@ -100,4 +101,37 @@ func TestRegister_ValidationIsLocalized(t *testing.T) {
 	c.Get("/register").AssertInertia("Auth/Register").
 		PropEquals("errors.email", "O campo e-mail deve ser um e-mail válido.").
 		PropEquals("errors.password", "O campo senha deve ter pelo menos 12 caracteres.")
+}
+
+func TestVerificationEmail_IsLocalized(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		lang, subject, body string
+	}{
+		{"pt-BR", "Confirme seu e-mail", "Confirme seu endereço de e-mail"},
+		{"en", "Verify your email address", "Please confirm your email address"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.lang, func(t *testing.T) {
+			t.Parallel()
+
+			app := vukemtest.New(t, bootstrap.New)
+			register(t, app.Client(t).Inertia(app.Inertia.Version()).WithCookie("lang", tt.lang), "mail@example.com")
+
+			sent := app.Mails().SentTo("mail@example.com")
+			if len(sent) != 1 {
+				t.Fatalf("sent %d mails, want 1", len(sent))
+			}
+
+			if sent[0].Subject != tt.subject {
+				t.Errorf("subject = %q, want %q", sent[0].Subject, tt.subject)
+			}
+
+			if !strings.Contains(sent[0].Text, tt.body) {
+				t.Errorf("text = %q, want it to contain %q", sent[0].Text, tt.body)
+			}
+		})
+	}
 }

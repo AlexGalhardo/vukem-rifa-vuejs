@@ -1,10 +1,10 @@
 {{/* layout: none */}}
 <!doctype html>
-<html lang="en">
+<html lang="{{locale}}">
 <body>
-	<p>Hello {{.User.Name}},</p>
-	<p>Please confirm your email address:</p>
-	<p><a href="{{.Link}}">Verify email</a></p>
-	<p>The link expires in one hour.</p>
+	<p>{{t "mail.greeting" "name" .User.Name}}</p>
+	<p>{{t "mail.verify.intro"}}</p>
+	<p><a href="{{.Link}}">{{t "mail.verify.action"}}</a></p>
+	<p>{{t "mail.verify.expires"}}</p>
 </body>
 </html>

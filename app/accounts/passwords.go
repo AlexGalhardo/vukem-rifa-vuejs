@@ -48,7 +48,7 @@ func (a *Accounts) SendResetLink(ctx context.Context, email string) error {
 
 	link := a.URL + "/reset-password/" + token + "?email=" + url.QueryEscape(email)
 
-	return a.Mailer.Send(ctx, mail.ResetPassword{User: u, Link: link})
+	return a.Mailer.Send(ctx, mail.NewResetPassword(ctx, u, link))
 }
 
 // invalidReset is the same answer for every bad token, in the request locale.

@@ -236,7 +236,8 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 - [x] Add `users.is_admin` (default false) → verify: `TestRegister_IsNotAdmin` (SQLite + Postgres).
 - [x] Translate auth pages, flashes and auth errors (pt-BR/en) + Google button + nav → verify: `TestLangCatalogs_SameKeys`, `TestForgotPassword_FlashIsLocalized`.
 - [x] Translate validation messages (`validation.*` + `validation.attributes.*` catalogs) → verify: `TestRegister_ValidationIsLocalized`.
-- [ ] Translate auth emails (subject + views) and the custom password-confirmation message → verify: array-mailer test per locale.
+- [x] Translate auth emails (subject + views via `t`) → verify: `TestVerificationEmail_IsLocalized`.
+- [ ] Localize the custom password-confirmation message (blocked: vukem `z.FieldError` has no key; feedback logged) → verify: pt-BR error text test.
 
 #### 1.2 Email (Mailtrap / Mailpit)
 
