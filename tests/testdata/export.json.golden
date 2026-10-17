@@ -1,0 +1,169 @@
+{
+  "generated_at": "2026-10-10T12:00:00Z",
+  "raffle": {
+    "id": 1,
+    "slug": "golden0001",
+    "title": "=HYPERLINK(\"https://evil.example\",\"clique\")",
+    "description": "@SUM(1+1) prêmio",
+    "status": "active",
+    "number_count": 10,
+    "price_reais": 10,
+    "price_cents": 1000,
+    "duration_days": 30,
+    "starts_at": "2026-10-01T12:00:00Z",
+    "ends_at": "2026-10-31T12:00:00Z",
+    "locked_at": "2026-10-10T12:03:00Z",
+    "archived_at": null,
+    "created_at": "2026-10-01T12:00:00Z",
+    "available": 8,
+    "reserved": 1,
+    "paid": 1,
+    "owner_share_cents": 900,
+    "platform_fee_cents": 100,
+    "refund_due_cents": 1000
+  },
+  "numbers": [
+    {
+      "number": 1,
+      "status": "available",
+      "paid_at": null,
+      "reservation_id": null
+    },
+    {
+      "number": 2,
+      "status": "paid",
+      "paid_at": "2026-10-10T12:03:00Z",
+      "reservation_id": 1
+    },
+    {
+      "number": 3,
+      "status": "available",
+      "paid_at": null,
+      "reservation_id": null
+    },
+    {
+      "number": 4,
+      "status": "available",
+      "paid_at": null,
+      "reservation_id": null
+    },
+    {
+      "number": 5,
+      "status": "reserved",
+      "paid_at": null,
+      "reservation_id": 2
+    },
+    {
+      "number": 6,
+      "status": "available",
+      "paid_at": null,
+      "reservation_id": null
+    },
+    {
+      "number": 7,
+      "status": "available",
+      "paid_at": null,
+      "reservation_id": null
+    },
+    {
+      "number": 8,
+      "status": "available",
+      "paid_at": null,
+      "reservation_id": null
+    },
+    {
+      "number": 9,
+      "status": "available",
+      "paid_at": null,
+      "reservation_id": null
+    },
+    {
+      "number": 10,
+      "status": "available",
+      "paid_at": null,
+      "reservation_id": null
+    }
+  ],
+  "reservations": [
+    {
+      "id": 1,
+      "number": 2,
+      "buyer_name": "Maria Silva",
+      "buyer_email": "maria@example.com",
+      "buyer_phone": "+5511987654321",
+      "status": "paid",
+      "amount_cents": 1000,
+      "charge_id": "pix_char_123",
+      "expires_at": "2026-10-10T12:10:00Z",
+      "paid_at": "2026-10-10T12:03:00Z",
+      "created_at": "2026-10-10T12:00:00Z",
+      "refund_due": false
+    },
+    {
+      "id": 2,
+      "number": 5,
+      "buyer_name": "-2+3 João",
+      "buyer_email": "joao@example.com",
+      "buyer_phone": "+5521912345678",
+      "status": "pending",
+      "amount_cents": 1000,
+      "charge_id": null,
+      "expires_at": "2026-10-10T12:10:00Z",
+      "paid_at": null,
+      "created_at": "2026-10-10T12:00:00Z",
+      "refund_due": false
+    },
+    {
+      "id": 3,
+      "number": 7,
+      "buyer_name": "Ana Souza",
+      "buyer_email": "ana@example.com",
+      "buyer_phone": "+5531998765432",
+      "status": "expired",
+      "amount_cents": 1000,
+      "charge_id": "pix_char_456",
+      "expires_at": "2026-10-10T12:10:00Z",
+      "paid_at": null,
+      "created_at": "2026-10-10T12:00:00Z",
+      "refund_due": true
+    }
+  ],
+  "ledger": [
+    {
+      "id": 1,
+      "kind": "sale_owner_share",
+      "amount_cents": 900,
+      "reservation_id": 1,
+      "note": "",
+      "refund_due": false,
+      "created_at": "2026-10-10T12:03:00Z"
+    },
+    {
+      "id": 2,
+      "kind": "platform_fee",
+      "amount_cents": 100,
+      "reservation_id": 1,
+      "note": "",
+      "refund_due": false,
+      "created_at": "2026-10-10T12:03:00Z"
+    },
+    {
+      "id": 3,
+      "kind": "refund_due",
+      "amount_cents": 1000,
+      "reservation_id": 3,
+      "note": "=cmd|' /C calc'!A0",
+      "refund_due": true,
+      "created_at": "2026-10-10T12:03:00Z"
+    }
+  ],
+  "draw": {
+    "drawn_at": "2026-10-31T12:00:00Z",
+    "trigger": "deadline",
+    "algorithm": "v1",
+    "seed": "abababababababababababababababababababababababababababababababab",
+    "participants_count": 1,
+    "participants_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+    "winning_number": 2
+  }
+}

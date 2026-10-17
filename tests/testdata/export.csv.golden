@@ -1,0 +1,27 @@
+record,id,slug,title,description,status,number_count,price_cents,duration_days,starts_at,ends_at,locked_at,archived_at,available,reserved,paid,owner_share_cents,platform_fee_cents,refund_due_cents,generated_at
+raffle,1,golden0001,"'=HYPERLINK(""https://evil.example"",""clique"")",'@SUM(1+1) prêmio,active,10,1000,30,2026-10-01T12:00:00Z,2026-10-31T12:00:00Z,2026-10-10T12:03:00Z,,8,1,1,900,100,1000,2026-10-10T12:00:00Z
+
+record,number,status,paid_at,reservation_id
+number,1,available,,
+number,2,paid,2026-10-10T12:03:00Z,1
+number,3,available,,
+number,4,available,,
+number,5,reserved,,2
+number,6,available,,
+number,7,available,,
+number,8,available,,
+number,9,available,,
+number,10,available,,
+
+record,id,number,buyer_name,buyer_email,buyer_phone,status,amount_cents,charge_id,expires_at,paid_at,created_at,refund_due
+reservation,1,2,Maria Silva,maria@example.com,'+5511987654321,paid,1000,pix_char_123,2026-10-10T12:10:00Z,2026-10-10T12:03:00Z,2026-10-10T12:00:00Z,false
+reservation,2,5,'-2+3 João,joao@example.com,'+5521912345678,pending,1000,,2026-10-10T12:10:00Z,,2026-10-10T12:00:00Z,false
+reservation,3,7,Ana Souza,ana@example.com,'+5531998765432,expired,1000,pix_char_456,2026-10-10T12:10:00Z,,2026-10-10T12:00:00Z,true
+
+record,id,kind,amount_cents,reservation_id,note,refund_due,created_at
+ledger,1,sale_owner_share,900,1,,false,2026-10-10T12:03:00Z
+ledger,2,platform_fee,100,1,,false,2026-10-10T12:03:00Z
+ledger,3,refund_due,1000,3,'=cmd|' /C calc'!A0,true,2026-10-10T12:03:00Z
+
+record,drawn_at,trigger,algorithm,seed,participants_count,participants_sha256,winning_number
+draw,2026-10-31T12:00:00Z,deadline,v1,abababababababababababababababababababababababababababababababab,1,cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd,2
