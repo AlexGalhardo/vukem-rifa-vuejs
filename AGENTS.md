@@ -21,6 +21,7 @@ Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go ba
 | API types | `UPDATE_GOLDEN=1 go test ./tests -run TestCodegen_TypesUpToDate` regenerates `resources/js/generated/api.ts` (OpenAPI → TS + zod); the same test fails in CI when it is stale |
 | Golden files | `UPDATE_GOLDEN=1 go test ./tests -run TestExport` rewrites `tests/testdata/*.golden` |
 | Accessibility | `bunx playwright test e2e/a11y.spec.ts` (axe; serious/critical violations fail; part of `bun run test:e2e`). The admin payouts scan needs `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD` set for both `db:seed` and Playwright (CI does), otherwise it is skipped |
+| Security suite | `go test ./tests -run 'Security\|OWASP'` + `TestPostgres_OWASP_*` (integration) + `bunx playwright test e2e/security.spec.ts`; category map in `docs/owasp-matrix.md` (add new abuse tests there) |
 | Docs | `bun run lint:md` |
 | AbacatePay sandbox | `ABACATEPAY_API_KEY=abc_dev_… go test -tags=abacatepay -p 1 -run AbacatePaySandbox ./...` (real dev mode, opt-in) |
 | Admin | `go run ./cmd/app make:admin <email>` grants the payouts page (`/admin/payouts`) |

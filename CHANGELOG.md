@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Consolidated OWASP Top 10 suite (`docs/owasp-matrix.md`): new tests for mass assignment, session cookie flags, injection payloads, security headers, security-event logging without secrets, gateway URL hardening, logout killing copied session cookies and reset-mail timing; `e2e/security.spec.ts` (no CSP violations, cancelled link reuse).
 - QA checklist (`docs/qa-checklist.md`, run 1) and tuned ZAP baseline: security headers, cookie flags, version leaks and error disclosure now fail CI.
 - Admin payouts page under the axe suite, with an env-gated e2e admin seeder (`E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD`, CI only).
 - Accessibility e2e (`e2e/a11y.spec.ts`, `@axe-core/playwright` 4.14.0): every page and state (guest, owner, link form/result, buyer card, checkout, PIX modal, confirmation, expired and cancelled links, public and drawn raffles) in light/dark, pt-BR/en, desktop/mobile; fails on serious or critical violations.
@@ -33,6 +34,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Production refuses a non-HTTPS `ABACATEPAY_BASE_URL` (the API key never travels in clear text).
 - Bumped vukem to v0.24.0: the scheduler runs in `serve` by vukem itself (`SCHEDULE_IN_SERVE`; `bootstrap.Background` keeps only the database queue worker), job handlers are registered with `WithJobsFunc`, `DispatchTx` replaces the after-commit fallbacks (delayed jobs on the sync driver fall back to the sweepers), the buyer phone uses `z.Preprocess`, payment locks use `orm.LockForUpdate`.
 - Bumped vukem to v0.23.0 and drivers/postgres to v0.4.0: rate limits go through `app.RateLimiters()` with `RATE_LIMIT_STORE=cache` (counters shared in the database cache), `tests/pgtest` delegates to the driver's `pgtest.Database`, `key:generate` runs from the app binary.
 - The Mailtrap sandbox is never cleaned by tests (shared free sandbox); CI runs the Mailtrap and AbacatePay sandbox jobs when their secrets exist.
@@ -40,6 +42,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - `serve` runs the database queue worker and the scheduler in-process (`BACKGROUND_IN_SERVE`).
 
 ### Fixed
+
+- Password reset mail is queued instead of sent during the request, so known and unknown emails answer in the same time (no enumeration by timing).
 
 - A password reset now signs the account out of every other browser session (database sessions).
 - The password-confirmation mismatch message is translated (pt-BR/en).

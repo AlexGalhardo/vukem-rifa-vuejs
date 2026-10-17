@@ -2,6 +2,7 @@ package payments
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/payments/abacatepay"
 )
@@ -14,6 +15,10 @@ type Config struct {
 	Fake       bool
 	Production bool
 }
+
+// ErrInsecureBaseURL refuses to send the API key over anything but HTTPS
+// in production (a mistyped ABACATEPAY_BASE_URL must not leak it).
+var ErrInsecureBaseURL = errors.New("payments: ABACATEPAY_BASE_URL must be an https:// URL in production")
 
 // ErrFakeInProduction refuses to boot a production app on the fake gateway.
 var ErrFakeInProduction = errors.New("payments: ABACATEPAY_FAKE=true is refused in production")
@@ -37,6 +42,8 @@ func (c Config) Gateway() (abacatepay.Gateway, error) {
 		return nil, ErrFakeInProduction
 	case c.Fake:
 		return abacatepay.NewFake(), nil
+	case c.APIKey != "" && c.Production && c.BaseURL != "" && !strings.HasPrefix(c.BaseURL, "https://"):
+		return nil, ErrInsecureBaseURL
 	case c.APIKey != "":
 		return abacatepay.New(c.BaseURL, c.APIKey, nil), nil
 	default:

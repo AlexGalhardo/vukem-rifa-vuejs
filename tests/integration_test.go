@@ -110,7 +110,12 @@ func TestPostgres_LoginThrottleSharedInDatabase(t *testing.T) {
 func TestPostgres_PasswordResetEndsOtherSessions(t *testing.T) {
 	t.Parallel()
 
-	app := newPostgresApp(t)
+	// Sync queue: the queued reset mail is delivered during the request.
+	app := vukemtest.New(t, bootstrap.New, vukemtest.Options{Env: map[string]string{
+		"DATABASE_URL":   pgtest.NewDatabase(t),
+		"SESSION_DRIVER": "database",
+		"CACHE_STORE":    "database",
+	}})
 	victim := owner(t, app, "reset-pg@example.com")
 	victim.Get("/dashboard").AssertOK()
 
@@ -129,4 +134,66 @@ func TestPostgres_PasswordResetEndsOtherSessions(t *testing.T) {
 	}).AssertRedirect("/login")
 
 	victim.Get("/dashboard").AssertRedirect("/login")
+}
+
+// A07: a session cookie copied before logout is dead after it (database
+// sessions are destroyed server-side, not just cleared in the browser).
+func TestPostgres_OWASP_A07_LogoutKillsCopiedSessionCookie(t *testing.T) {
+	t.Parallel()
+
+	app := newPostgresApp(t)
+	c := owner(t, app, "logout-pg@example.com")
+	c.Get("/dashboard").AssertOK()
+
+	stolen := c.CookieValue("vukem_session")
+	if stolen == "" {
+		t.Fatal("no session cookie")
+	}
+
+	c.PostJSON("/logout", nil).AssertRedirect("/")
+
+	app.Client(t).Inertia("").WithCookie("vukem_session", stolen).Get("/dashboard").AssertRedirect("/login")
+}
+
+// A07: the reset mail is queued, not sent during the request, so a known
+// email does not answer measurably slower than an unknown one (no account
+// enumeration by timing); both get the same redirect.
+func TestPostgres_OWASP_A07_ResetMailIsQueuedNotSentInline(t *testing.T) {
+	t.Parallel()
+
+	app := newPostgresApp(t)
+	register(t, app.Client(t).Inertia(""), "enum-pg@example.com")
+
+	// The database queue creates its table on first use.
+	if _, err := app.Queue(); err != nil {
+		t.Fatal(err)
+	}
+
+	db, err := app.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jobs := func() int {
+		var n int
+		if err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM jobs").Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+
+		return n
+	}
+
+	before, sent := jobs(), len(app.Mails().SentTo("enum-pg@example.com"))
+
+	c := app.Client(t).Inertia("")
+	c.PostJSON("/forgot-password", map[string]any{"email": "nobody-pg@example.com"}).AssertRedirect("/forgot-password")
+	c.PostJSON("/forgot-password", map[string]any{"email": "enum-pg@example.com"}).AssertRedirect("/forgot-password")
+
+	if got := jobs(); got != before+1 {
+		t.Fatalf("queued jobs = %d, want %d (one reset mail, none for the unknown email)", got, before+1)
+	}
+
+	if got := len(app.Mails().SentTo("enum-pg@example.com")); got != sent {
+		t.Fatalf("reset mail sent inline (%d → %d)", sent, got)
+	}
 }

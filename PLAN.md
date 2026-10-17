@@ -189,17 +189,17 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 ## 7. OWASP security checklist
 
-- [ ] A01 Broken access control: every owner query scoped by `user_id`; IDOR tests for raffles, numbers, reservations, exports, API keys (revoke owner-checked).
+- [x] A01 Broken access control: every owner query scoped by `user_id`; IDOR tests for raffles, numbers, reservations, exports, API keys (revoke owner-checked).
 - [x] A02 Security misconfiguration: vukem secure headers + CSP nonce on; production refuses insecure cookies; `/_vukem` devtools off in production.
-- [ ] A03 Supply chain: pinned versions, Dependabot, govulncheck + `bun audit` in CI.
+- [x] A03 Supply chain: pinned versions, Dependabot, govulncheck + `bun audit` in CI.
 - [ ] A04 Cryptographic failures: argon2id passwords; tokens from `crypto/rand`, stored hashed; HTTPS only in production; `APP_KEY` rotation via `APP_PREVIOUS_KEYS`.
-- [ ] A05 Injection/XSS: parameterized SQL; Vue escapes by default (no `v-html`); CSV export guards formula injection (`=`,`+`,`-`,`@` prefixed with `'`).
+- [x] A05 Injection/XSS: parameterized SQL; Vue escapes by default (no `v-html`); CSV export guards formula injection (`=`,`+`,`-`,`@` prefixed with `'`).
 - [x] A06 Insecure design: number state machine guarded in SQL; race test reserving the same number concurrently; expired link reuse test.
-- [ ] A07 Auth failures: login/reset/verification rate limits (brute-force test), email verification required for dashboard, session rotation on login.
+- [x] A07 Auth failures: login/reset/verification rate limits (brute-force test), email verification required for dashboard, session rotation on login.
 - [x] A08 Integrity: webhook secret + HMAC verification, replay/duplicate event test, forged signature test.
 - [ ] A09 Logging: security events (login failures, webhook rejections, payout records) logged with request id, no PII/secrets.
 - [ ] A10 Exceptional conditions: AbacatePay timeouts/5xx handled (retry job, user-facing error), fail closed on verification errors.
-- [ ] CSRF on all browser mutations (test), CORS denied by default for `/api`.
+- [x] CSRF on all browser mutations (test), CORS denied by default for `/api`.
 - [x] DAST: ZAP baseline + nuclei in CI against the running container.
 
 ## 8. Phases
@@ -317,7 +317,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 ### Phase 8 — Security hardening and QA
 
-- [ ] OWASP abuse suite (Go + e2e): IDOR, CSRF, XSS payloads in title/description/buyer name, brute force rate limit, webhook forgery/replay, concurrent reserve race, expired link reuse → verify: `go test ./tests -run Security`, `bun run test:e2e -- security`.
+- [x] OWASP abuse suite (Go + e2e): IDOR, CSRF, XSS payloads in title/description/buyer name, brute force rate limit, webhook forgery/replay, concurrent reserve race, expired link reuse → verify: `go test ./tests -run 'Security|OWASP'`, `bunx playwright test e2e/security.spec.ts`; map in `docs/owasp-matrix.md`.
 - [x] Postgres rate-limit store (D5, vukem v0.23.0 `RATE_LIMIT_STORE=cache`) → verify: `TestPostgres_LoginThrottleSharedInDatabase`.
 - [x] `docs/qa-checklist.md` exploratory checklist executed once with notes → verify: checklist filled (run 1, 2026-10-17).
 - [x] ZAP rules tuned (promote relevant rules to FAIL) → verify: CI green (`.zap/rules.tsv`: 12 FAIL, 3 IGNORE with reasons).
