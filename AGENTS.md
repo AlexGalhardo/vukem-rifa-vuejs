@@ -1,0 +1,46 @@
+# AGENTS.md
+
+Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go backend on the [vukem](https://vukem.vercel.app) framework, Inertia v3 + Vue 3 + TypeScript + Tailwind v4 frontend, PostgreSQL only.
+
+## Start here
+
+1. Read [PLAN.md](PLAN.md): briefing, decision log, architecture, then the first unchecked task of the current phase.
+2. Read the `.claude/rules/*` that match the files you touch.
+3. Framework problems: follow `.claude/skills/vukem-feedback` (log to `../framework-feedback/rifa.md`, local workaround tagged `// workaround(vukem vX.Y.Z): …`). Never edit `../vukem`.
+
+## Commands
+
+| Task | Command |
+| --- | --- |
+| Stack | `docker compose up -d --build` (app :3000, postgres :5432, mailpit :8025) |
+| Dev | `docker compose up -d postgres mailpit`, `go run ./cmd/app migrate`, `bun run dev`, `go run ./cmd/app` |
+| Go tests | `go test -race ./...`; integration `TEST_DATABASE_URL=postgres://rifa:rifa@localhost:5432/rifa?sslmode=disable go test -tags=integration -race ./...` |
+| Go lint | `golangci-lint fmt` then `golangci-lint run ./...` |
+| Frontend | `bun run lint`, `bun run typecheck`, `bun run build` |
+| E2E | `bun run test:e2e` (stack running, `BASE_URL` default `http://localhost:3000`) |
+| Docs | `bun run lint:md` |
+| CI status | `gh run list --limit 5`, `gh run view <id> --log-failed` |
+
+## Rules
+
+- Test first; done = `→ verify:` passes + CI green + `CHANGELOG.md` `[Unreleased]` updated + PLAN.md box ticked.
+- Validate every input/output with vukem `z` (Go) and zod (forms). Money as integers (see `.claude/rules/money-and-payments.md`).
+- Owner data always scoped by `user_id`; buyers never see other buyers' data; public pages show no personal data.
+- Conventional Commits in English; SemVer; Keep a Changelog. Bun only for JS; exact stable versions; pinned Docker tags.
+- Framework pin: bump vukem only when the coordinator announces a release (flow in PLAN.md §9).
+- No git worktrees without explicit owner confirmation.
+- `.claude/settings.local.json` (`disableAllHooks: true`) belongs to the owner: git-ignored, never commit or edit it.
+
+## Where things live
+
+| Path | What |
+| --- | --- |
+| `bootstrap/` | explicit app wiring (Postgres driver, i18n, Inertia, providers) |
+| `routes/` | HTTP routes (`web.go`), schedule |
+| `app/` | controllers, jobs, listeners, mail, domain logic |
+| `database/migrations/` | schema migrations (registry in `registry.go`) |
+| `resources/js/` | Vue pages, layouts, components, composables |
+| `resources/lang/` | `pt-BR.json`, `en.json` shared by Go and Vue |
+| `tests/` | Go tests; `tests/pgtest` gives each integration test its own database |
+| `e2e/` | Playwright specs |
+| `.claude/skills/`, `.claude/rules/` | agent skills and path-scoped rules |
