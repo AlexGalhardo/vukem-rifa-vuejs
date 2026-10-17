@@ -19,6 +19,13 @@ const name = computed(() => page.props.auth?.user?.name ?? "");
 	<div class="mb-6 flex items-center justify-between gap-4">
 		<h1 class="text-2xl font-semibold" data-testid="dashboard-hello">{{ t("dashboard.hello", { name }) }}</h1>
 		<Link
+			href="/settings/contact"
+			data-testid="contact-settings"
+			class="ml-auto rounded-md border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+		>
+			{{ t("contact.nav") }}
+		</Link>
+		<Link
 			href="/raffles/create"
 			data-testid="new-raffle"
 			class="rounded-md bg-brand-600 px-4 py-2 font-medium text-white hover:bg-brand-700"

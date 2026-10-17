@@ -35,6 +35,7 @@ export interface PublicRaffle {
 	starts_at: string;
 	ends_at: string;
 	status: RaffleStatus;
+	created_at: string;
 }
 
 /** The owner's view of a raffle. */
@@ -156,4 +157,15 @@ export interface Purchase {
 	created_at: string;
 	expires_at: string;
 	paid_at: string | null;
+}
+
+/** The public organizer card (Raffles/Public): contacts only when opted in. */
+export interface Organizer {
+	name: string;
+	member_since: string;
+	raffles_total: number;
+	raffles_finished: number;
+	email: { user: string; domain: string } | null;
+	whatsapp: { url: string; display: string } | null;
+	telegram: { url: string; display: string } | null;
 }

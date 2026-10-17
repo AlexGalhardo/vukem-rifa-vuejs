@@ -163,6 +163,8 @@ for (const v of variants) {
 			await expectAccessible(page, `public buy form (${name})`);
 			await page.goto(lang("/account/purchases", v));
 			await expectAccessible(page, `my purchases (${name})`);
+			await page.goto(lang("/settings/contact", v));
+			await expectAccessible(page, `public contact settings (${name})`);
 		});
 	});
 }

@@ -135,7 +135,8 @@
 			"duration_days": "duration"
 		},
 		"password_mismatch": "The password confirmation does not match.",
-		"consent_required": "Accept the privacy notice to continue."
+		"consent_required": "Accept the privacy notice to continue.",
+		"contact_required": "Fill this in to show it."
 	},
 	"mail": {
 		"greeting": "Hello {name},",
@@ -419,5 +420,27 @@
 			"cancelled": "Cancelled",
 			"paid": "Paid"
 		}
+	},
+	"contact": {
+		"nav": "Public contact",
+		"title": "Public contact",
+		"lead": "Choose what buyers see on the public page of your raffles, so they can confirm it is you and reach you.",
+		"privacy": "Anything you turn on here is visible to anyone who has the link to your raffles. Everything is off by default and turning it off removes it right away.",
+		"show_email": "Show my email ({email})",
+		"whatsapp": "WhatsApp number",
+		"show_whatsapp": "Show my WhatsApp",
+		"telegram": "Telegram username",
+		"show_telegram": "Show my Telegram",
+		"save": "Save",
+		"saved": "Public contact saved.",
+		"invalid_whatsapp": "Enter a Brazilian number with area code.",
+		"invalid_telegram": "Enter a Telegram username (5 to 32 letters, digits or _)."
+	},
+	"organizer": {
+		"title": "Organized by",
+		"member_since": "On Vukem Rifa since {date}",
+		"raffles": "{total} raffle(s) created, {finished} finished",
+		"created_at": "This raffle was created on {date}",
+		"show_email": "Show email"
 	}
 }

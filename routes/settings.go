@@ -32,5 +32,9 @@ func Settings(r *router.Router, app *vukem.App) error {
 	r.Post("/settings/api-keys", kc.Store).Name("apikeys.store").Use(append(owner, creation)...)
 	r.Delete("/settings/api-keys/{id}", kc.Destroy).Name("apikeys.destroy").Use(owner...)
 
+	cc := controllers.NewContactController(acc.DB)
+	r.Get("/settings/contact", cc.Edit).Name("contact.edit").Use(owner...)
+	r.Put("/settings/contact", cc.Update).Name("contact.update").Use(owner...)
+
 	return nil
 }

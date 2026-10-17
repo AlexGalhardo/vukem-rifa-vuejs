@@ -15,6 +15,13 @@ type User struct {
 	Password        string       `json:"-"`
 	EmailVerifiedAt orm.NullTime `json:"email_verified_at"`
 	IsAdmin         bool         `json:"is_admin"`
+
+	// Opt-in public contact (organizer card on the public raffle page).
+	ShowEmail    bool    `json:"-"`
+	WhatsApp     *string `db:"whatsapp" json:"-"`
+	ShowWhatsApp bool    `db:"show_whatsapp" json:"-"`
+	Telegram     *string `json:"-"`
+	ShowTelegram bool    `json:"-"`
 }
 
 // AuthID implements auth.Authenticatable.

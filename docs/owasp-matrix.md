@@ -18,6 +18,7 @@ New tests written for the consolidated suite live in `tests/security_owasp_test.
 | IDOR on numbers / payment links / cancel | `TestSecurity_NumbersOtherOwnersGet404`, `TestSecurity_NumbersGuestsAndUnverifiedBlocked` |
 | IDOR on exports | `TestExport_OtherOwnerGetsNotFound` |
 | IDOR on API keys (revoke another user's key) and API `{id}` routes | `TestAPIKeys_RevokeIsOwnerChecked`, `TestSecurityAPI_OtherOwnersRafflesAreNotFound` |
+| Organizer contact is opt-in (defaults off), validated, never leaks across owners; email split against scrapers | `TestOrganizer_PublicPageShowsTheOrganizerButNoContactByDefault`, `TestOrganizer_ContactTogglesShowExactlyWhatWasChosen`, `TestOrganizer_InvalidContactsAreRejected`, `TestOrganizer_OtherOwnersNeverLeak` |
 | Buyer sees only their own masked data; public page has no personal data | `TestPay_ShowsOnlyTheBuyersOwnMaskedData`, `TestRaffle_PublicPageHasNoPersonalData`, `TestNumbers_LiveLinksStayVisibleToTheOwnerForTenMinutes` |
 | Vertical escalation: non-admin on payouts (GET and POST) | `TestAdminPayouts_HiddenFromNonAdmins`, `TestRegister_IsNotAdmin` |
 | Mass assignment (`user_id`, `status`, `slug`, `locked_at`, `is_admin` in bodies) | `TestOWASP_A01_MassAssignmentIsIgnored` |

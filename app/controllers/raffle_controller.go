@@ -226,7 +226,15 @@ func (rc *RaffleController) Public(c *web.Ctx) error {
 
 	// The buyer form shows only while the raffle sells (the server checks again).
 	canBuy := r.Status == models.RaffleActive && rc.raffles.Now().Before(r.EndsAt)
-	props := inertia.Props{"raffle": public(r), "statuses": statuses, "draw": nil, "can_buy": canBuy}
+
+	organizer, err := rc.raffles.OrganizerOf(c.Context(), r)
+	if err != nil {
+		return err
+	}
+
+	pub := public(r)
+	pub["created_at"] = r.CreatedAt
+	props := inertia.Props{"raffle": pub, "statuses": statuses, "draw": nil, "can_buy": canBuy, "organizer": organizer}
 	if drawn {
 		props["draw"] = drawResult(d)
 	}

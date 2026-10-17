@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 
@@ -73,3 +74,59 @@ var PublicBuyerSchema = z.Struct[PublicBuyer](z.Shape{
 
 	return nil
 })
+
+// telegramHandle is a Telegram username: 5 to 32 letters, digits or
+// underscores, optionally written with a leading "@".
+var telegramHandle = regexp.MustCompile(`^@?[A-Za-z][A-Za-z0-9_]{4,31}$`)
+
+// Contact is the organizer's opt-in public contact form.
+type Contact struct {
+	ShowEmail    bool   `json:"show_email"    form:"show_email"`
+	WhatsApp     string `json:"whatsapp"      form:"whatsapp"`
+	ShowWhatsApp bool   `json:"show_whatsapp" form:"show_whatsapp"`
+	Telegram     string `json:"telegram"      form:"telegram"`
+	ShowTelegram bool   `json:"show_telegram" form:"show_telegram"`
+}
+
+// ContactSchema validates Contact: WhatsApp is a BR phone stored in E.164,
+// Telegram a username stored lowercase without "@"; a shown field must be
+// filled in.
+var ContactSchema = z.Struct[Contact](z.Shape{
+	"show_email":    z.Bool(),
+	"whatsapp":      z.String().Trim().Optional().Refine(optionalMatch(brPhone)).Transform(normalizeOptionalPhone),
+	"show_whatsapp": z.Bool(),
+	"telegram":      z.String().Trim().Optional().Refine(optionalMatch(telegramHandle)).Transform(normalizeTelegram),
+	"show_telegram": z.Bool(),
+}).Refine(func(c Contact) error {
+	if c.ShowWhatsApp && c.WhatsApp == "" {
+		return z.FieldErrorKey("whatsapp", "contact_required", "Fill in the number to show it.", nil)
+	}
+
+	if c.ShowTelegram && c.Telegram == "" {
+		return z.FieldErrorKey("telegram", "contact_required", "Fill in the username to show it.", nil)
+	}
+
+	return nil
+})
+
+var errInvalidFormat = errors.New("invalid format")
+
+func optionalMatch(re *regexp.Regexp) func(string) error {
+	return func(s string) error {
+		if s == "" || re.MatchString(s) {
+			return nil
+		}
+
+		return errInvalidFormat
+	}
+}
+
+func normalizeOptionalPhone(s string) string {
+	if s == "" {
+		return ""
+	}
+
+	return NormalizePhone(s)
+}
+
+func normalizeTelegram(s string) string { return strings.ToLower(strings.TrimPrefix(s, "@")) }

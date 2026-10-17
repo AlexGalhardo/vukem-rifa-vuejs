@@ -135,7 +135,8 @@
 			"duration_days": "duração"
 		},
 		"password_mismatch": "A confirmação da senha não confere.",
-		"consent_required": "Aceite o aviso de privacidade para continuar."
+		"consent_required": "Aceite o aviso de privacidade para continuar.",
+		"contact_required": "Preencha para mostrar."
 	},
 	"mail": {
 		"greeting": "Olá, {name}!",
@@ -419,5 +420,27 @@
 			"cancelled": "Cancelado",
 			"paid": "Pago"
 		}
+	},
+	"contact": {
+		"nav": "Contato público",
+		"title": "Contato público",
+		"lead": "Escolha o que os compradores veem na página pública das suas rifas, para confirmarem que é você e falarem com você.",
+		"privacy": "O que você ativar aqui fica visível para qualquer pessoa com o link das suas rifas. Tudo começa desligado e desligar remove na hora.",
+		"show_email": "Mostrar meu e-mail ({email})",
+		"whatsapp": "Número do WhatsApp",
+		"show_whatsapp": "Mostrar meu WhatsApp",
+		"telegram": "Usuário do Telegram",
+		"show_telegram": "Mostrar meu Telegram",
+		"save": "Salvar",
+		"saved": "Contato público salvo.",
+		"invalid_whatsapp": "Informe um número brasileiro com DDD.",
+		"invalid_telegram": "Informe um usuário do Telegram (5 a 32 letras, números ou _)."
+	},
+	"organizer": {
+		"title": "Organizado por",
+		"member_since": "Na Vukem Rifa desde {date}",
+		"raffles": "{total} rifa(s) criada(s), {finished} finalizada(s)",
+		"created_at": "Esta rifa foi criada em {date}",
+		"show_email": "Mostrar e-mail"
 	}
 }
