@@ -209,10 +209,13 @@ func (s *Service) Numbers(ctx context.Context, raffleID int64) ([]models.RaffleN
 }
 
 // Update applies in to r. Title and description always change; number
-// count, price and duration only while no number is paid.
-func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raffle) error {
+// count, price and duration only while no number is paid. Every live payment
+// link (pending or awaiting payment) is cancelled in the same transaction,
+// so no buyer pays on the old terms; a PIX paid after that is a late
+// payment (refund_due). It returns how many links it cancelled.
+func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raffle) (int, error) {
 	if r.Status != models.RaffleActive {
-		return errs.New(http.StatusConflict, i18n.T(ctx, "raffle.finished"))
+		return 0, errs.New(http.StatusConflict, i18n.T(ctx, "raffle.finished"))
 	}
 
 	if r.Locked() {
@@ -230,11 +233,18 @@ func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raff
 		}
 
 		if !v.Empty() {
-			return v
+			return 0, v
 		}
 	}
 
-	return s.DB.Tx(ctx, func(tx *database.Tx) error {
+	cancelled := 0
+
+	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
+		var err error
+		if cancelled, err = s.cancelLiveLinks(ctx, tx, r.ID); err != nil {
+			return err
+		}
+
 		if err := s.resize(ctx, tx, r, in.NumberCount); err != nil {
 			return err
 		}
@@ -256,6 +266,37 @@ func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raff
 
 		return s.scheduleDraw(ctx, tx, *r)
 	})
+	if err != nil {
+		return 0, err
+	}
+
+	return cancelled, nil
+}
+
+// cancelLiveLinks cancels every pending or awaiting-payment reservation of
+// raffleID and frees its numbers, guarded by status like reservations.release.
+func (s *Service) cancelLiveLinks(ctx context.Context, tx *database.Tx, raffleID int64) (int, error) {
+	p := tx.Dialect().Placeholder
+	now := s.Now().UTC()
+
+	out, err := tx.ExecContext(ctx, "UPDATE reservations SET status = '"+models.ReservationCancelled+"', updated_at = "+p(1)+
+		" WHERE raffle_id = "+p(2)+" AND status IN ('"+models.ReservationPending+"','"+models.ReservationAwaitingPayment+"')",
+		now, raffleID)
+	if err != nil {
+		return 0, fmt.Errorf("cancel links of raffle %d: %w", raffleID, err)
+	}
+
+	n, err := out.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	if _, err := tx.ExecContext(ctx, "UPDATE raffle_numbers SET status = '"+models.NumberAvailable+"', reservation_id = NULL, updated_at = "+p(1)+
+		" WHERE raffle_id = "+p(2)+" AND status = '"+models.NumberReserved+"'", now, raffleID); err != nil {
+		return 0, fmt.Errorf("free numbers of raffle %d: %w", raffleID, err)
+	}
+
+	return int(n), nil
 }
 
 // resize adds or removes trailing numbers; removing is refused when one of

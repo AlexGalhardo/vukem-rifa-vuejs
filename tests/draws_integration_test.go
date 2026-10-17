@@ -169,3 +169,43 @@ func waitFor(t *testing.T, timeout time.Duration, cond func() bool) {
 		time.Sleep(100 * time.Millisecond)
 	}
 }
+
+// Owner rule on Postgres: an edit cancels the live links in its transaction
+// (CHECKs and the one-live-link index hold), a paid number still locks the
+// price, and the refused edit cancels nothing.
+func TestPostgres_EditCancelsLiveLinks(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t, postgresEnv(t))
+	postLink(f.c, f.path, 2, buyerForm()).AssertCreated()
+	postLink(f.c, f.path, 3, buyerForm()).AssertCreated()
+
+	fields := validRaffle()
+	fields["title"] = "Rifa editada"
+	f.c.PutJSON(f.path, fields).AssertRedirect(f.path)
+	vukemtest.AssertDatabaseMissing(t, f.app, "reservations", map[string]any{"status": "pending"})
+	vukemtest.AssertDatabaseMissing(t, f.app, "raffle_numbers", map[string]any{"raffle_id": f.raffle.ID, "status": "reserved"})
+
+	// The numbers can be sold again right away (one live link per number).
+	postLink(f.c, f.path, 2, buyerForm()).AssertCreated()
+
+	markPaidPG(t, f, 1)
+
+	fields["price_reais"] = 99
+	f.c.WithHeader("Referer", f.path+"/edit").PutJSON(f.path, fields).AssertRedirect(f.path + "/edit")
+	vukemtest.AssertDatabaseHas(t, f.app, "reservations", map[string]any{"number": 2, "status": "pending"})
+}
+
+func markPaidPG(t *testing.T, f numbersFixture, number int) {
+	t.Helper()
+
+	now := f.app.Now().UTC()
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffle_numbers SET status = 'paid', paid_at = $1 WHERE raffle_id = $2 AND number = $3",
+		now, f.raffle.ID, number); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET locked_at = $1 WHERE id = $2", now, f.raffle.ID); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -227,3 +227,47 @@ func sell(t *testing.T, app *vukemtest.App, svc *reservations.Service, r models.
 		t.Fatal(err)
 	}
 }
+
+// Owner rule: saving an edit cancels every live payment link created before
+// it (numbers released, the buyer sees the expired page), so nobody pays on
+// the old terms; price/size/duration stay locked once a number is paid.
+func TestNumbers_EditCancelsLiveLinks(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t)
+	first := postLink(f.c, f.path, 2, buyerForm()).AssertCreated()
+	postLink(f.c, f.path, 3, buyerForm()).AssertCreated()
+
+	raw, _ := first.JSONPath("url")
+	payPath := strings.TrimPrefix(fmt.Sprint(raw), "http://localhost:3000")
+
+	fields := validRaffle()
+	fields["title"] = "Rifa da moto (nova descrição)"
+	f.c.PutJSON(f.path, fields).AssertRedirect(f.path)
+
+	f.show(t).PropEquals("numbers.1.status", "available").PropEquals("numbers.2.status", "available")
+	vukemtest.AssertDatabaseCount(t, f.app, "reservations", 2)
+	vukemtest.AssertDatabaseMissing(t, f.app, "reservations", map[string]any{"status": "pending"})
+	vukemtest.AssertDatabaseHas(t, f.app, "reservations", map[string]any{"number": 2, "status": "cancelled"})
+
+	f.app.Client(t).Inertia("").Get(payPath).AssertStatus(410)
+
+	// A number generated after the edit is untouched by it.
+	postLink(f.c, f.path, 4, buyerForm()).AssertCreated()
+	vukemtest.AssertDatabaseHas(t, f.app, "reservations", map[string]any{"number": 4, "status": "pending"})
+}
+
+func TestNumbers_EditStillLockedAfterAPaidNumber(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t)
+	markPaid(t, f.app, f.raffle.ID, 1)
+	postLink(f.c, f.path, 2, buyerForm()).AssertCreated()
+
+	fields := validRaffle()
+	fields["price_reais"] = 99
+	f.c.WithHeader("Referer", f.path+"/edit").PutJSON(f.path, fields).AssertRedirect(f.path + "/edit")
+
+	// The refused edit cancels nothing.
+	vukemtest.AssertDatabaseHas(t, f.app, "reservations", map[string]any{"number": 2, "status": "pending"})
+}

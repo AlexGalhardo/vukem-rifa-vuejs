@@ -217,8 +217,13 @@ func (h *Handlers) update(c *web.Ctx, in UpdateRaffle) (Raffle, error) {
 		return Raffle{}, err
 	}
 
-	if err := h.Raffles.Update(c.Context(), &r, req); err != nil {
+	cancelled, err := h.Raffles.Update(c.Context(), &r, req)
+	if err != nil {
 		return Raffle{}, err
+	}
+
+	if cancelled > 0 {
+		web.SecurityEvent(c.Request(), "raffle.links_cancelled", "raffle_id", r.ID, "count", cancelled, "reason", "edit")
 	}
 
 	return h.present(c, r)

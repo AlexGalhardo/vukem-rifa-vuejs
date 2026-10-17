@@ -222,7 +222,9 @@
 		"create_title": "Nova rifa",
 		"edit_title": "Editar rifa",
 		"public_footer": "Os dados dos compradores nunca são exibidos publicamente.",
-		"invalid_field": "Valor inválido para este campo."
+		"invalid_field": "Valor inválido para este campo.",
+		"updated_links_cancelled": "Rifa atualizada. {count} link(s) de pagamento ativo(s) foram cancelados: gere novos links com as novas condições.",
+		"edit_cancels_links": "Salvar cancela todos os links de pagamento ativos desta rifa (os números voltam a ficar disponíveis), para ninguém pagar pelas condições antigas."
 	},
 	"link": {
 		"not_on_sale": "Esta rifa não está vendendo números.",

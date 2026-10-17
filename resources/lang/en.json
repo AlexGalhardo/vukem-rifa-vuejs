@@ -222,7 +222,9 @@
 		"create_title": "New raffle",
 		"edit_title": "Edit raffle",
 		"public_footer": "Buyer data is never shown publicly.",
-		"invalid_field": "Invalid value for this field."
+		"invalid_field": "Invalid value for this field.",
+		"updated_links_cancelled": "Raffle updated. {count} active payment link(s) were cancelled: generate new links on the new terms.",
+		"edit_cancels_links": "Saving cancels every active payment link of this raffle (numbers become available again), so nobody pays on the old terms."
 	},
 	"link": {
 		"not_on_sale": "This raffle is not selling numbers.",
