@@ -1,11 +1,15 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/AlexGalhardo/vukem/database"
+	"github.com/AlexGalhardo/vukem/orm"
 	"github.com/AlexGalhardo/vukem/vukemtest"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/controllers"
@@ -295,3 +299,57 @@ func TestPublicCheckout_EmailCapIgnoresPlusTagsAndGmailDots(t *testing.T) {
 	visitor.Get("/r/"+f.raffle.Slug).AssertInertia("Raffles/Public").
 		PropEquals("errors.number", "We could not reserve this number right now. Please try again later.")
 }
+
+// Security review fix: the purchases page loads raffles in one query, not
+// one per reservation (an account with many purchases stays cheap).
+func TestPublicCheckout_PurchasesLoadRafflesInOneQuery(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t)
+	me := owner(t, f.app, "muitas@example.com")
+
+	db, err := f.app.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var meID int64
+	if err := db.QueryRowContext(t.Context(), "SELECT id FROM users WHERE email = ?", "muitas@example.com").Scan(&meID); err != nil {
+		t.Fatal(err)
+	}
+
+	ids := []int64{f.raffle.ID}
+	for i := range 3 {
+		fields := validRaffle()
+		fields["title"] = fmt.Sprintf("Outra rifa %d", i)
+		ids = append(ids, createRaffle(t, f.app, f.c, fields))
+	}
+
+	for i, id := range ids {
+		r, err := orm.QueryOf[models.Raffle](db).Find(t.Context(), id)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := f.svc.ReserveWith(t.Context(), r, i+1, buyer, reservations.ReserveOptions{Origin: models.OriginPublic, BuyerUserID: &meID}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var raffleQueries atomic.Int64
+	db.AddQueryObserver(queryObserverFunc(func(q database.Query) {
+		if strings.Contains(q.SQL, `FROM "raffles"`) || strings.Contains(q.SQL, "FROM raffles") {
+			raffleQueries.Add(1)
+		}
+	}))
+
+	me.Get("/account/purchases").AssertOK().AssertInertia("Account/Purchases").HasProp("unpaid", 4)
+
+	if n := raffleQueries.Load(); n != 1 {
+		t.Fatalf("raffle queries = %d, want 1", n)
+	}
+}
+
+type queryObserverFunc func(database.Query)
+
+func (f queryObserverFunc) ObserveQuery(_ context.Context, q database.Query) { f(q) }

@@ -3,7 +3,6 @@ package controllers
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"net/http"
 	"time"
 
@@ -150,18 +149,34 @@ func (pc *PublicCheckoutController) Purchases(c *web.Ctx) error {
 		return err
 	}
 
-	titles := map[int64]models.Raffle{}
+	// Every raffle in one query (a deleted raffle just has no title).
+	ids := make([]any, 0, len(list))
+	seen := map[int64]bool{}
+
+	for _, res := range list {
+		if !seen[res.RaffleID] {
+			seen[res.RaffleID] = true
+			ids = append(ids, res.RaffleID)
+		}
+	}
+
+	byID := map[int64]models.Raffle{}
+
+	if len(ids) > 0 {
+		rows, err := orm.QueryOf[models.Raffle](pc.acc.DB).WhereIn("id", ids...).Get(c.Context())
+		if err != nil {
+			return err
+		}
+
+		for _, r := range rows {
+			byID[r.ID] = r
+		}
+	}
+
 	paid, unpaid := []Purchase{}, []Purchase{}
 
 	for _, res := range list {
-		r, ok := titles[res.RaffleID]
-		if !ok {
-			if r, err = orm.QueryOf[models.Raffle](pc.acc.DB).Find(c.Context(), res.RaffleID); err != nil && !errors.Is(err, orm.ErrNotFound) {
-				return err
-			}
-
-			titles[res.RaffleID] = r
-		}
+		r := byID[res.RaffleID]
 
 		p := Purchase{
 			RaffleTitle: r.Title, RaffleSlug: r.Slug, Number: res.Number, AmountCents: res.AmountCents,
