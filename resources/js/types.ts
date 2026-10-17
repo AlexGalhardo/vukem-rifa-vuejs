@@ -178,7 +178,8 @@ export interface Organizer {
 	member_since: string;
 	raffles_total: number;
 	raffles_finished: number;
-	email: { user: string; domain: string } | null;
+	/** The address itself comes from POST /r/{slug}/organizer-email on a click. */
+	has_email: boolean;
 	whatsapp: { url: string; display: string } | null;
 	telegram: { url: string; display: string } | null;
 }

@@ -1,8 +1,11 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/AlexGalhardo/vukem"
 	"github.com/AlexGalhardo/vukem/auth"
+	"github.com/AlexGalhardo/vukem/ratelimit"
 	"github.com/AlexGalhardo/vukem/router"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/accounts"
@@ -32,6 +35,16 @@ func Raffles(r *router.Router, app *vukem.App) error {
 	r.Post("/raffles/{raffle}/archive", rc.Archive).Name("raffles.archive").Use(owner...)
 
 	r.Get("/r/{slug}", rc.Public).Name("raffles.public")
+
+	// The organizer email leaves only on a click (POST: no crawler or
+	// prefetch follows it), a few times per client.
+	limiters, err := app.RateLimiters()
+	if err != nil {
+		return err
+	}
+
+	r.Post("/r/{slug}/organizer-email", rc.OrganizerEmail).Name("raffles.organizer_email").
+		Use(ratelimit.Middleware(limiters("organizer-email", 10, 10*time.Minute), byClientIP))
 
 	return nil
 }

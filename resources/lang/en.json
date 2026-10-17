@@ -460,6 +460,7 @@
 		"member_since": "On Vukem Rifa since {date}",
 		"raffles": "{total} raffle(s) created, {finished} finished",
 		"created_at": "This raffle was created on {date}",
-		"show_email": "Show email"
+		"show_email": "Show email",
+		"email_failed": "Could not load the email now. Try again later."
 	}
 }

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/AlexGalhardo/vukem/vukemtest"
@@ -33,7 +34,7 @@ func TestOrganizer_PublicPageShowsTheOrganizerButNoContactByDefault(t *testing.T
 		PropEquals("organizer.raffles_finished", float64(0)).
 		HasProp("organizer.member_since").
 		HasProp("raffle.created_at").
-		PropEquals("organizer.email", nil).
+		PropEquals("organizer.has_email", false).
 		PropEquals("organizer.whatsapp", nil).
 		PropEquals("organizer.telegram", nil)
 }
@@ -56,7 +57,7 @@ func TestOrganizer_ContactTogglesShowExactlyWhatWasChosen(t *testing.T) {
 	pub().PropEquals("organizer.whatsapp.url", "https://wa.me/5511987654321").
 		PropEquals("organizer.whatsapp.display", "+55 11 98765-4321").
 		PropEquals("organizer.telegram", nil).
-		PropEquals("organizer.email", nil)
+		PropEquals("organizer.has_email", false)
 
 	// Saved but hidden: the Telegram handle never reaches the public page.
 	f.app.Client(t).Get("/r/" + f.raffle.Slug).AssertDontSee("rifa_da_ana")
@@ -68,12 +69,36 @@ func TestOrganizer_ContactTogglesShowExactlyWhatWasChosen(t *testing.T) {
 	page := pub().PropEquals("organizer.whatsapp", nil).
 		PropEquals("organizer.telegram.url", "https://t.me/rifa_da_ana").
 		PropEquals("organizer.telegram.display", "@rifa_da_ana").
-		PropEquals("organizer.email.user", "dono").
-		PropEquals("organizer.email.domain", "example.com")
+		PropEquals("organizer.has_email", true)
 	_ = page
 
-	// The address is split so it is never in the HTML as one string.
-	f.app.Client(t).Get("/r/" + f.raffle.Slug).AssertDontSee("dono@example.com")
+	// Security review fix: the address is in no prop at all, not even split;
+	// a visitor's click fetches it from a rate-limited endpoint.
+	f.app.Client(t).Get("/r/" + f.raffle.Slug).AssertDontSee("dono@example.com").AssertDontSee(`"domain"`)
+
+	visitor := f.app.Client(t)
+	visitor.PostJSON("/r/"+f.raffle.Slug+"/organizer-email", nil).AssertOK().
+		AssertJSON(map[string]string{"email": "dono@example.com"}).AssertHeader("Cache-Control", "no-store")
+
+	// Opted out (or no such raffle): 404, the address never leaves.
+	f.c.WithHeader("Referer", "/settings/contact").PutJSON("/settings/contact", contactForm(map[string]any{})).
+		AssertRedirect("/settings/contact")
+	f.app.Client(t).PostJSON("/r/"+f.raffle.Slug+"/organizer-email", nil).AssertNotFound()
+	f.app.Client(t).PostJSON("/r/nope-nope/organizer-email", nil).AssertNotFound()
+	pub().PropEquals("organizer.has_email", false)
+
+	// Per client IP (every test client shares one), counted before the lookup.
+	limited := false
+	for range 12 {
+		if visitor.PostJSON("/r/"+f.raffle.Slug+"/organizer-email", nil).Status() == http.StatusTooManyRequests {
+			limited = true
+			break
+		}
+	}
+
+	if !limited {
+		t.Fatal("the reveal endpoint must be rate limited")
+	}
 }
 
 func TestOrganizer_InvalidContactsAreRejected(t *testing.T) {

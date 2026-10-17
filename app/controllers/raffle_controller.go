@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/AlexGalhardo/vukem/auth"
@@ -199,6 +200,25 @@ func (rc *RaffleController) Archive(c *web.Ctx) error {
 	inertia.Flash(c, "success", i18n.T(c.Context(), "raffle.archived"))
 
 	return c.RedirectRoute("raffles.show", "raffle", r.ID)
+}
+
+// OrganizerEmail answers the organizer email for the public card's
+// "show email" click, when they opted in (404 otherwise).
+func (rc *RaffleController) OrganizerEmail(c *web.Ctx) error {
+	r, err := rc.raffles.BySlug(c.Context(), c.Param("slug"))
+	if err != nil {
+		return err
+	}
+
+	email, err := rc.raffles.OrganizerEmail(c.Context(), r)
+	if err != nil {
+		return err
+	}
+
+	c.SetHeader("Cache-Control", "no-store")
+	c.SetHeader("X-Robots-Tag", "noindex")
+
+	return c.JSON(http.StatusOK, map[string]string{"email": email})
 }
 
 // Public is the public raffle page: no personal data, statuses only.

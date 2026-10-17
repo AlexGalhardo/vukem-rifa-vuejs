@@ -34,7 +34,7 @@ const input =
 		{{ t("admin.refunds.intro") }}
 	</p>
 	<p class="mt-1 mb-6 text-sm">
-		<Link href="/admin/payouts" class="text-brand-700 underline dark:text-brand-300">{{
+		<Link href="/admin/payouts" class="text-brand-700 underline dark:text-brand-500">{{
 			t("admin.payouts.title")
 		}}</Link>
 	</p>

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlexGalhardo/vukem/errs"
 	"github.com/AlexGalhardo/vukem/orm"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
@@ -16,24 +17,19 @@ type ContactLink struct {
 	Display string `json:"display"`
 }
 
-// SplitEmail is the organizer email in two parts, joined only in the
-// browser (and on a click) so the page HTML never holds the address.
-type SplitEmail struct {
-	User   string `json:"user"`
-	Domain string `json:"domain"`
-}
-
 // Organizer is who runs a raffle, for buyers to check it is the right one:
 // the name, how long they have been here and how many raffles they ran,
 // plus only the contacts they opted in to show.
 type Organizer struct {
-	Name         string       `json:"name"`
-	MemberSince  time.Time    `json:"member_since"`
-	RafflesTotal int64        `json:"raffles_total"`
-	RafflesDone  int64        `json:"raffles_finished"`
-	Email        *SplitEmail  `json:"email"`
-	WhatsApp     *ContactLink `json:"whatsapp"`
-	Telegram     *ContactLink `json:"telegram"`
+	Name         string    `json:"name"`
+	MemberSince  time.Time `json:"member_since"`
+	RafflesTotal int64     `json:"raffles_total"`
+	RafflesDone  int64     `json:"raffles_finished"`
+	// HasEmail says the organizer shows an email; the address itself is
+	// only sent by OrganizerEmail, on a visitor's click (rate limited).
+	HasEmail bool         `json:"has_email"`
+	WhatsApp *ContactLink `json:"whatsapp"`
+	Telegram *ContactLink `json:"telegram"`
 }
 
 // OrganizerOf returns the public organizer card of raffle r.
@@ -56,11 +52,7 @@ func (s *Service) OrganizerOf(ctx context.Context, r models.Raffle) (Organizer, 
 
 	o := Organizer{Name: u.Name, MemberSince: u.CreatedAt, RafflesTotal: total, RafflesDone: done}
 
-	if u.ShowEmail {
-		if user, domain, ok := strings.Cut(u.Email, "@"); ok {
-			o.Email = &SplitEmail{User: user, Domain: domain}
-		}
-	}
+	o.HasEmail = u.ShowEmail
 
 	if u.ShowWhatsApp && u.WhatsApp != nil && *u.WhatsApp != "" {
 		o.WhatsApp = &ContactLink{URL: "https://wa.me/" + strings.TrimPrefix(*u.WhatsApp, "+"), Display: displayPhone(*u.WhatsApp)}
@@ -71,6 +63,17 @@ func (s *Service) OrganizerOf(ctx context.Context, r models.Raffle) (Organizer, 
 	}
 
 	return o, nil
+}
+
+// OrganizerEmail returns the email of r's organizer when they opted in to
+// show it; otherwise 404, like an unknown raffle.
+func (s *Service) OrganizerEmail(ctx context.Context, r models.Raffle) (string, error) {
+	u, err := orm.QueryOf[models.User](s.DB).Find(ctx, r.UserID)
+	if err != nil || !u.ShowEmail {
+		return "", errs.ErrNotFound
+	}
+
+	return u.Email, nil
 }
 
 // displayPhone formats an E.164 Brazilian number as "+55 11 98765-4321".

@@ -41,7 +41,7 @@ function select(n: number): void {
 			· {{ t("raffle.ends", { date: formatDateTime(raffle.ends_at, locale) }) }}
 		</p>
 		<p v-if="raffle.description" class="mt-4 whitespace-pre-line">{{ raffle.description }}</p>
-		<OrganizerCard class="mt-6" :organizer="organizer" :created-at="raffle.created_at" />
+		<OrganizerCard class="mt-6" :organizer="organizer" :slug="raffle.slug" :created-at="raffle.created_at" />
 		<DrawResult v-if="draw" class="mt-8" :draw="draw" :paid="paid" />
 		<p v-else-if="raffle.status === 'archived'" class="mt-6 text-sm text-zinc-600 dark:text-zinc-400">
 			{{ t("draw.archived") }}

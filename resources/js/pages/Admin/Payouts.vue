@@ -61,7 +61,7 @@ const input =
 	<h1 class="text-2xl font-semibold">{{ t("admin.payouts.title") }}</h1>
 	<p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ t("admin.payouts.intro") }}</p>
 	<p class="mt-1 mb-6 text-sm">
-		<Link href="/admin/refunds" class="text-brand-700 underline dark:text-brand-300" data-testid="link-refunds">
+		<Link href="/admin/refunds" class="text-brand-700 underline dark:text-brand-500" data-testid="link-refunds">
 			{{ t("admin.refunds.title") }}
 		</Link>
 	</p>

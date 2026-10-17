@@ -5,15 +5,35 @@ import { useI18n } from "../composables/useI18n";
 import { formatDateTime } from "../lib/format";
 import type { Organizer } from "../types";
 
-const props = defineProps<{ organizer: Organizer; createdAt: string }>();
+const props = defineProps<{ organizer: Organizer; slug: string; createdAt: string }>();
 
 const { t, locale } = useI18n();
-// The email comes split in two and is joined only on a click, so scrapers
-// reading the HTML never get the address.
-const revealed = ref(false);
-const email = computed(() =>
-	props.organizer.email ? `${props.organizer.email.user}@${props.organizer.email.domain}` : "",
-);
+// The address is not in the page at all: a click asks the server for it
+// (rate limited), so scrapers reading the HTML or props never get it.
+const email = ref("");
+const busy = ref(false);
+const failed = ref(false);
+
+async function reveal(): Promise<void> {
+	busy.value = true;
+	failed.value = false;
+	try {
+		const res = await fetch(`/r/${encodeURIComponent(props.slug)}/organizer-email`, {
+			method: "POST",
+			headers: { Accept: "application/json" },
+		});
+		const body: unknown = await res.json().catch(() => null);
+		if (res.ok && typeof body === "object" && body !== null && "email" in body && typeof body.email === "string") {
+			email.value = body.email;
+			return;
+		}
+		failed.value = true;
+	} catch {
+		failed.value = true;
+	} finally {
+		busy.value = false;
+	}
+}
 const since = computed(() =>
 	new Intl.DateTimeFormat(locale.value, { month: "long", year: "numeric" }).format(
 		new Date(props.organizer.member_since),
@@ -34,7 +54,7 @@ const link = "text-brand-700 underline hover:no-underline dark:text-brand-500";
 			<li>{{ t("organizer.created_at", { date: formatDateTime(createdAt, locale) }) }}</li>
 		</ul>
 		<ul
-			v-if="organizer.email || organizer.whatsapp || organizer.telegram"
+			v-if="organizer.has_email || organizer.whatsapp || organizer.telegram"
 			class="mt-3 flex flex-wrap gap-3 text-sm"
 			data-testid="organizer-contact"
 		>
@@ -60,13 +80,23 @@ const link = "text-brand-700 underline hover:no-underline dark:text-brand-500";
 					Telegram {{ organizer.telegram.display }}
 				</a>
 			</li>
-			<li v-if="organizer.email">
-				<a v-if="revealed" :href="`mailto:${email}`" rel="nofollow" :class="link" data-testid="organizer-email">{{
+			<li v-if="organizer.has_email">
+				<a v-if="email" :href="`mailto:${email}`" rel="nofollow" :class="link" data-testid="organizer-email">{{
 					email
 				}}</a>
-				<button v-else type="button" :class="link" data-testid="organizer-email-reveal" @click="revealed = true">
+				<button
+					v-else
+					type="button"
+					:class="link"
+					:disabled="busy"
+					data-testid="organizer-email-reveal"
+					@click="reveal"
+				>
 					{{ t("organizer.show_email") }}
 				</button>
+				<span v-if="failed" role="alert" class="ml-2 text-red-600 dark:text-red-400">{{
+					t("organizer.email_failed")
+				}}</span>
 			</li>
 		</ul>
 	</section>

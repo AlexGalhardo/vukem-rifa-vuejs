@@ -460,6 +460,7 @@
 		"member_since": "Na Vukem Rifa desde {date}",
 		"raffles": "{total} rifa(s) criada(s), {finished} finalizada(s)",
 		"created_at": "Esta rifa foi criada em {date}",
-		"show_email": "Mostrar e-mail"
+		"show_email": "Mostrar e-mail",
+		"email_failed": "Não foi possível carregar o e-mail agora. Tente mais tarde."
 	}
 }
