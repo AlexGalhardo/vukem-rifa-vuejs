@@ -36,7 +36,12 @@ func Numbers(r *router.Router, app *vukem.App) error {
 		app.Config.URL,
 	)
 	owner := []router.Middleware{auth.Required(acc.Web), auth.Verified(acc.Web)}
-	links := ratelimit.Middleware(ratelimit.NewMemory(LinksPerMinute, time.Minute), byOwner)
+	limiters, err := app.RateLimiters()
+	if err != nil {
+		return err
+	}
+
+	links := ratelimit.Middleware(limiters("payment-links", LinksPerMinute, time.Minute), byOwner)
 
 	r.Post("/raffles/{raffle}/numbers/{number}/link", nc.Link).Name("numbers.link").Use(append(owner, links)...)
 	r.Post("/raffles/{raffle}/numbers/{number}/cancel", nc.Cancel).Name("numbers.cancel").Use(owner...)
