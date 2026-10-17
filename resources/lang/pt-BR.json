@@ -1,0 +1,21 @@
+{
+	"app": {
+		"name": "Vukem Rifa",
+		"tagline": "Crie sua rifa online, receba via PIX e sorteie com transparência."
+	},
+	"home": {
+		"title": "Rifas online com PIX",
+		"lead": "Crie uma rifa, gere links de pagamento por número e deixe o sorteio automático e auditável cuidar do resto.",
+		"cta": "Criar minha rifa"
+	},
+	"theme": {
+		"toggle": "Alternar tema",
+		"light": "Claro",
+		"dark": "Escuro"
+	},
+	"locale": {
+		"switch": "Idioma",
+		"pt-BR": "Português",
+		"en": "English"
+	}
+}

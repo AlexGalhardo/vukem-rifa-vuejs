@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Theme is class-based (html.dark) so the toggle wins over the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+	--color-brand-50: oklch(0.97 0.03 155);
+	--color-brand-500: oklch(0.65 0.17 155);
+	--color-brand-600: oklch(0.56 0.16 155);
+	--color-brand-700: oklch(0.48 0.14 155);
+}

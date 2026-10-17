@@ -1,0 +1,22 @@
+{{/* layout: none */}}<!doctype html>
+<html lang="{{locale}}">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Vukem Rifa</title>
+	<meta property="csp-nonce" nonce="{{cspNonce}}">
+	<script nonce="{{cspNonce}}">
+		(() => {
+			let theme = null;
+			try { theme = localStorage.getItem("theme"); } catch {}
+			const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+			document.documentElement.classList.toggle("dark", dark);
+		})();
+	</script>
+	{{vite "resources/css/app.css" "resources/js/app.ts"}}
+	{{.Head}}
+</head>
+<body class="bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+	{{.Inertia}}
+</body>
+</html>

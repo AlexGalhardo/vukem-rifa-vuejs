@@ -1,0 +1,21 @@
+{
+	"app": {
+		"name": "Vukem Rifa",
+		"tagline": "Create your online raffle, get paid via PIX and draw transparently."
+	},
+	"home": {
+		"title": "Online raffles with PIX",
+		"lead": "Create a raffle, generate a payment link per number and let the automatic, auditable draw do the rest.",
+		"cta": "Create my raffle"
+	},
+	"theme": {
+		"toggle": "Toggle theme",
+		"light": "Light",
+		"dark": "Dark"
+	},
+	"locale": {
+		"switch": "Language",
+		"pt-BR": "Português",
+		"en": "English"
+	}
+}
