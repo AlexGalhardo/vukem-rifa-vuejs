@@ -397,6 +397,25 @@
 			"owner_not_found": "Owner not found.",
 			"invalid": "Invalid value for this field.",
 			"nav": "Payouts"
+		},
+		"refunds": {
+			"title": "Refunds due",
+			"intro": "Late payments that bought nothing. AbacatePay has no refund API: return the PIX in the AbacatePay dashboard, then record the refund reference here.",
+			"pending": "Pending",
+			"done": "Refunded",
+			"empty": "No refund pending.",
+			"raffle": "Raffle",
+			"number": "Number",
+			"buyer": "Buyer",
+			"amount": "Amount",
+			"created_at": "Received",
+			"refunded_at": "Refunded on",
+			"reference": "Refund reference",
+			"submit": "Mark refunded",
+			"recorded": "Refund recorded.",
+			"already": "This payment was already marked refunded.",
+			"not_found": "Refund not found.",
+			"nav": "Refunds"
 		}
 	},
 	"purchases": {

@@ -19,3 +19,14 @@ var PayoutSchema = z.Struct[Payout](z.Shape{
 	"amount_cents": z.Int64().Positive().Max(MaxPayoutCents),
 	"reference":    z.String().Trim().Min(1).Max(255),
 })
+
+// Refund is an admin's note that a refund_due payment was returned outside
+// the app (AbacatePay dashboard); Reference identifies that refund.
+type Refund struct {
+	Reference string `json:"reference" form:"reference"`
+}
+
+// RefundSchema validates Refund.
+var RefundSchema = z.Struct[Refund](z.Shape{
+	"reference": z.String().Trim().Min(1).Max(255),
+})

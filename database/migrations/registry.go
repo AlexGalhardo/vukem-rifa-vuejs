@@ -20,5 +20,6 @@ func All() []schema.Migration {
 		m20261017240000AddOriginAndBuyerUserToReservations(),
 		m20261017250000AddPublicContactToUsers(),
 		m20261017260000AddConsentToReservations(),
+		m20261017270000CreateRefundsTable(),
 	}
 }

@@ -397,6 +397,25 @@
 			"owner_not_found": "Dono não encontrado.",
 			"invalid": "Valor inválido para este campo.",
 			"nav": "Repasses"
+		},
+		"refunds": {
+			"title": "Reembolsos devidos",
+			"intro": "Pagamentos atrasados que não compraram nada. A AbacatePay não tem API de reembolso: devolva o PIX no painel da AbacatePay e registre aqui a referência do reembolso.",
+			"pending": "Pendentes",
+			"done": "Reembolsados",
+			"empty": "Nenhum reembolso pendente.",
+			"raffle": "Rifa",
+			"number": "Número",
+			"buyer": "Comprador",
+			"amount": "Valor",
+			"created_at": "Recebido em",
+			"refunded_at": "Reembolsado em",
+			"reference": "Referência do reembolso",
+			"submit": "Marcar como reembolsado",
+			"recorded": "Reembolso registrado.",
+			"already": "Este pagamento já foi marcado como reembolsado.",
+			"not_found": "Reembolso não encontrado.",
+			"nav": "Reembolsos"
 		}
 	},
 	"purchases": {

@@ -48,11 +48,13 @@ func Admin(r *router.Router, app *vukem.App) error {
 		return err
 	}
 
-	ac := controllers.NewAdminController(acc.DB, user)
+	ac := controllers.NewAdminController(acc.DB, user, app.Now)
 	throttle := ratelimit.Middleware(limiters("admin-payouts", 30, time.Minute), ratelimit.ByIP)
 
 	r.Get("/admin/payouts", ac.Payouts).Name("admin.payouts").Use(onlyAdmins)
 	r.Post("/admin/payouts", ac.StorePayout).Name("admin.payouts.store").Use(onlyAdmins, throttle)
+	r.Get("/admin/refunds", ac.Refunds).Name("admin.refunds").Use(onlyAdmins)
+	r.Post("/admin/refunds/{id}", ac.MarkRefunded).Name("admin.refunds.store").Use(onlyAdmins, throttle)
 
 	return nil
 }

@@ -171,7 +171,7 @@ for (const v of variants) {
 
 // One login for every variant: the login throttle (5/min per email and IP)
 // would refuse eight parallel logins of the same admin.
-test("admin payouts in every variant", async ({ browser }) => {
+test("admin payouts and refunds in every variant", async ({ browser }) => {
 	const email = process.env.E2E_ADMIN_EMAIL;
 	const password = process.env.E2E_ADMIN_PASSWORD;
 	test.skip(!email || !password, "set E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD and run db:seed (CI does)");
@@ -206,6 +206,9 @@ test("admin payouts in every variant", async ({ browser }) => {
 		await admin.goto(lang("/admin/payouts", v));
 		await expect(admin.getByTestId("nav-payouts")).toBeAttached();
 		await expectAccessible(admin, `admin payouts (${name})`);
+		await admin.goto(lang("/admin/refunds", v));
+		await expect(admin.getByRole("heading", { level: 1 })).toBeVisible();
+		await expectAccessible(admin, `admin refunds (${name})`);
 		await ctx.close();
 	}
 });

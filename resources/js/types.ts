@@ -147,6 +147,19 @@ export interface OwnerBalance {
 	balance_cents: number;
 }
 
+/** GET /admin/refunds: a late payment the platform owes back (refund_due). */
+export interface RefundDue {
+	id: number;
+	raffle_title: string;
+	number: number;
+	buyer_email: string;
+	amount_cents: number;
+	note: string;
+	created_at: string;
+	refunded_at: string | null;
+	reference: string;
+}
+
 /** GET /account/purchases: one number the signed-in user bought or tried to buy. */
 export interface Purchase {
 	raffle_title: string;
