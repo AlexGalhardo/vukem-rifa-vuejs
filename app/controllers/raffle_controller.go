@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"strings"
+
 	"github.com/AlexGalhardo/vukem/auth"
 	"github.com/AlexGalhardo/vukem/i18n"
 	"github.com/AlexGalhardo/vukem/inertia"
@@ -18,11 +20,13 @@ import (
 type RaffleController struct {
 	raffles *raffles.Service
 	draws   *draws.Service
+	appURL  string
 }
 
-// NewRaffleController returns a RaffleController.
-func NewRaffleController(s *raffles.Service, d *draws.Service) *RaffleController {
-	return &RaffleController{raffles: s, draws: d}
+// NewRaffleController returns a RaffleController; appURL builds the payment
+// links shown to the owner.
+func NewRaffleController(s *raffles.Service, d *draws.Service, appURL string) *RaffleController {
+	return &RaffleController{raffles: s, draws: d, appURL: strings.TrimSuffix(appURL, "/")}
 }
 
 // limits are sent to the forms so client validation mirrors the server.
@@ -103,7 +107,22 @@ func (rc *RaffleController) Show(c *web.Ctx) error {
 		return err
 	}
 
-	props := inertia.Props{"raffle": owned(r), "numbers": numbers, "buyers": buyers, "draw": nil, "winner": nil}
+	active, err := rc.raffles.ActiveLinks(ctx, r.ID)
+	if err != nil {
+		return err
+	}
+
+	links := make([]map[string]any, len(active))
+	for i, l := range active {
+		links[i] = map[string]any{
+			"number": l.Number, "url": rc.appURL + "/pay/" + l.Token, "expires_at": l.ExpiresAt,
+			"buyer_name": l.Name, "buyer_phone": l.Phone,
+		}
+	}
+
+	props := inertia.Props{
+		"raffle": owned(r), "numbers": numbers, "buyers": buyers, "links": links, "draw": nil, "winner": nil,
+	}
 	if drawn {
 		props["draw"] = drawResult(d)
 		props["winner"] = winner(d, buyers)

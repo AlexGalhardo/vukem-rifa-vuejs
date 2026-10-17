@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from "@inertiajs/vue3";
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 
 import BuyerCard from "../../components/BuyerCard.vue";
 import DrawResult from "../../components/DrawResult.vue";
@@ -16,6 +16,7 @@ const props = defineProps<{
 	raffle: OwnedRaffle;
 	numbers: RaffleNumber[];
 	buyers: Buyer[];
+	links: PaymentLink[];
 	draw: Draw | null;
 	winner: Buyer | null;
 }>();
@@ -29,9 +30,17 @@ const button =
 	"rounded-md border border-zinc-300 px-3 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800";
 
 const selected = ref<number | null>(null);
-// The new link lives only in this component's state: it is never stored
-// server-side and disappears on reload, by design.
+// The link just created opens in the panel; every live link (server-side,
+// sealed with APP_KEY) is also listed below the grid until its 10 minutes end.
 const created = ref<PaymentLink | null>(null);
+const now = ref(Date.now());
+const tick = window.setInterval(() => {
+	now.value = Date.now();
+}, 1000);
+onBeforeUnmount(() => window.clearInterval(tick));
+const activeLinks = computed(() =>
+	props.links.filter((l) => Date.parse(l.expires_at) > now.value && l.number !== created.value?.number),
+);
 
 const selectedStatus = computed(() => (selected.value ? props.numbers[selected.value - 1]?.status : undefined));
 const selectedBuyer = computed(() => props.buyers.find((b) => b.number === selected.value) ?? null);
@@ -48,7 +57,7 @@ function close(): void {
 
 function onCreated(link: PaymentLink): void {
 	created.value = link;
-	router.reload({ only: ["numbers", "buyers"] });
+	router.reload({ only: ["numbers", "buyers", "links"] });
 }
 
 function destroy(): void {
@@ -129,4 +138,17 @@ function archive(): void {
 			</p>
 		</aside>
 	</div>
+	<section v-if="activeLinks.length > 0" class="mt-8" data-testid="active-links">
+		<h2 class="mb-1 text-lg font-semibold">{{ t("link.active.title") }}</h2>
+		<p class="mb-3 text-sm text-zinc-600 dark:text-zinc-400">{{ t("link.active.lead") }}</p>
+		<ul class="grid gap-4 md:grid-cols-2">
+			<li
+				v-for="l in activeLinks"
+				:key="l.number"
+				class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+			>
+				<LinkResult :link="l" :raffle-title="raffle.title" compact />
+			</li>
+		</ul>
+	</section>
 </template>

@@ -12,7 +12,10 @@ async function createRaffle(page: Page, title: string): Promise<void> {
 	await expect(page).toHaveURL(/\/raffles\/\d+$/);
 }
 
-test("owner generates a payment link once, sees the buyer and cancels it", async ({ page, browser }) => {
+test("owner generates payment links, keeps seeing them for 10 minutes, sees the buyer and cancels", async ({
+	page,
+	browser,
+}) => {
 	await registerVerifiedOwner(page, uniqueEmail("links"));
 	await createRaffle(page, "Rifa do videogame");
 
@@ -42,9 +45,22 @@ test("owner generates a payment link once, sees the buyer and cancels it", async
 	await expect(page.locator('[data-testid="number-7"][aria-pressed="true"]')).toBeVisible();
 	await expect(page.locator('li[data-number="7"]')).toHaveAttribute("data-status", "reserved");
 
-	// The link is shown once: after a reload it is gone for good.
+	// The link stays listed for its 10 minutes, also after a reload and
+	// after creating a link for another number.
+	await page.getByTestId("number-8").click();
+	await page.getByTestId("buyer-name").fill("Carla Lima");
+	await page.getByTestId("buyer-email").fill("carla@example.com");
+	await page.getByTestId("buyer-phone").fill("11987650000");
+	await page.getByTestId("link-submit").click();
+	await expect(page.getByTestId("link-url")).toHaveValue(/\/pay\//);
+	await expect(page.getByTestId("active-link-7").getByTestId("active-link-url")).toHaveValue(link);
+
 	await page.reload();
-	expect(await page.content()).not.toContain(link.split("/pay/")[1]);
+	await expect(page.getByTestId("active-link-7").getByTestId("active-link-url")).toHaveValue(link);
+	await expect(page.getByTestId("active-link-8")).toBeVisible();
+	await expect(page.getByTestId("active-link-7").getByTestId("active-link-countdown")).toContainText(
+		/Expira em \d+:\d\d/,
+	);
 
 	// The owner sees the buyer, rendered as text (no HTML injection).
 	await page.getByTestId("number-7").click();
@@ -61,6 +77,7 @@ test("owner generates a payment link once, sees the buyer and cancels it", async
 	await expect(visitor.locator('li[data-number="7"]')).toHaveAttribute("data-status", "reserved");
 	const html = await visitor.content();
 	expect(html).not.toContain("ana@example.com");
+	expect(html).not.toContain(link.split("/pay/")[1]);
 	expect(html).not.toContain("onerror");
 	await expect(visitor.getByTestId("draw-pending")).toBeVisible();
 	await visitor.close();

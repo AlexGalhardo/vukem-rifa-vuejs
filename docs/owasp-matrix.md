@@ -27,7 +27,7 @@ New tests written for the consolidated suite live in `tests/security_owasp_test.
 
 | Abuse case | Tests |
 | --- | --- |
-| Payment-link tokens are 256-bit and stored only as SHA-256 | `TestReservation_ReserveCreatesHashedLink` |
+| Payment-link tokens are 256-bit, looked up by SHA-256 and sealed with APP_KEY for the owner view (never stored in clear, never on public pages) | `TestReservation_ReserveCreatesHashedLink`, `TestNumbers_LiveLinksStayVisibleToTheOwnerForTenMinutes` |
 | Session cookie HttpOnly + SameSite | `TestOWASP_A02_SessionCookieFlags` |
 | Passwords hashed with salted argon2id (m=64 MiB, t=1, p=4) outside tests | `TestOWASP_A02_PasswordsAreArgon2id` |
 | Production refuses an http `APP_URL`; HSTS over HTTPS | `TestOWASP_A05_ProductionRefusesHTTPAppURL`, `TestOWASP_A05_ProductionSendsHSTS` |

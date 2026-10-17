@@ -93,7 +93,7 @@ export interface Buyer {
 	paid_at: string | null;
 }
 
-/** POST /raffles/{id}/numbers/{n}/link: the link is returned once and never stored. */
+/** A payment link (POST /raffles/{id}/numbers/{n}/link, and the live ones in the Show props). */
 export interface PaymentLink {
 	number: number;
 	url: string;

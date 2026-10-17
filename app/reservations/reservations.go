@@ -85,6 +85,7 @@ func (s *Service) Reserve(ctx context.Context, r models.Raffle, number int, in r
 		BuyerEmail:  in.Email,
 		BuyerPhone:  in.Phone,
 		TokenHash:   HashToken(token),
+		TokenSealed: orm.Encrypted[string]{V: token},
 		Status:      models.ReservationPending,
 		ExpiresAt:   now.Add(models.ReservationTTL),
 		AmountCents: r.PriceReais * 100,

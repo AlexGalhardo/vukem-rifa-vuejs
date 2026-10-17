@@ -250,7 +250,7 @@
 		},
 		"result": {
 			"title": "Link generated for number {number}",
-			"once": "Copy and send it now: for security, this link will not be shown again.",
+			"once": "Copy and send it: the link stays listed on this page for its 10 minutes.",
 			"copy": "Copy link",
 			"copied": "Copied!",
 			"whatsapp": "Send on WhatsApp",
@@ -270,6 +270,10 @@
 				"awaiting_payment": "PIX created, waiting for payment",
 				"paid": "Paid"
 			}
+		},
+		"active": {
+			"title": "Active payment links",
+			"lead": "Each link is listed here until its 10 minutes end, even after you create links for other numbers."
 		}
 	},
 	"apikeys": {

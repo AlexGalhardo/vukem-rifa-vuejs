@@ -76,7 +76,11 @@ func (f numbersFixture) show(t *testing.T) *vukemtest.InertiaPage {
 	return f.c.Get(f.path).AssertOK().AssertInertia("Raffles/Show")
 }
 
-func TestNumbers_LinkIsShownOnceAndBuyerOnlyToOwner(t *testing.T) {
+// Owner rule: every generated link stays visible to the raffle's owner for
+// its whole 10 minutes, even after links for other numbers; it is stored
+// hashed (lookup) and sealed with APP_KEY (owner view), never in clear, and
+// never reaches the public page or other owners.
+func TestNumbers_LiveLinksStayVisibleToTheOwnerForTenMinutes(t *testing.T) {
 	t.Parallel()
 
 	f := newNumbersFixture(t)
@@ -95,27 +99,44 @@ func TestNumbers_LinkIsShownOnceAndBuyerOnlyToOwner(t *testing.T) {
 
 	vukemtest.AssertDatabaseHas(t, f.app, "reservations", map[string]any{"number": 7, "token_hash": reservations.HashToken(token)})
 	vukemtest.AssertDatabaseMissing(t, f.app, "reservations", map[string]any{"token_hash": token})
+	vukemtest.AssertDatabaseMissing(t, f.app, "reservations", map[string]any{"token_sealed": token})
 
-	page := f.c.Get(f.path).AssertOK()
-	// No token prop or column (shared catalogs may say "token" in prose).
-	page.AssertDontSee(token).AssertDontSee(reservations.HashToken(token)).AssertDontSee(`\"token\"`).AssertDontSee("token_hash")
-	page.AssertInertia("Raffles/Show").
+	f.clock.Advance(3 * time.Minute)
+	second := postLink(f.c, f.path, 9, buyerForm()).AssertCreated()
+	raw2, _ := second.JSONPath("url")
+
+	page := f.show(t).
 		PropEquals("numbers.6.status", "reserved").
-		HasProp("buyers", 1).
+		HasProp("buyers", 2).
 		PropEquals("buyers.0.number", float64(7)).
 		PropEquals("buyers.0.status", "pending").
 		PropEquals("buyers.0.buyer_name", "Maria Silva").
 		PropEquals("buyers.0.buyer_email", "maria@example.com").
 		PropEquals("buyers.0.buyer_phone", "+5511987654321").
-		PropEquals("buyers.0.expires_at", f.clock.Now().Add(10*time.Minute).Format(time.RFC3339)).
-		PropEquals("draw", nil)
+		PropEquals("draw", nil).
+		HasProp("links", 2).
+		PropEquals("links.0.number", float64(7)).
+		PropEquals("links.0.url", url).
+		PropEquals("links.0.buyer_name", "Maria Silva").
+		PropEquals("links.1.number", float64(9)).
+		PropEquals("links.1.url", raw2)
+	_ = page
 
 	pub := f.app.Client(t).Get("/r/" + f.raffle.Slug).AssertOK()
-	pub.AssertDontSee("Maria").AssertDontSee("maria@example.com").AssertDontSee("5511987654321")
-	pub.AssertInertia("Raffles/Public").PropEquals("statuses.6", "reserved").MissingProp("buyers")
+	pub.AssertDontSee("Maria").AssertDontSee("maria@example.com").AssertDontSee("5511987654321").AssertDontSee(token)
+	pub.AssertInertia("Raffles/Public").PropEquals("statuses.6", "reserved").MissingProp("buyers").MissingProp("links")
 
 	// The number is taken until the link ends.
 	postLink(f.c, f.path, 7, buyerForm()).AssertStatus(409)
+
+	// Ten minutes after the first link (app clock), only the second is left,
+	// even before the sweeper runs; after its own ten minutes, none.
+	f.clock.Advance(7 * time.Minute)
+	f.show(t).HasProp("links", 1).PropEquals("links.0.number", float64(9))
+	f.c.Get(f.path).AssertDontSee(token)
+
+	f.clock.Advance(3 * time.Minute)
+	f.show(t).HasProp("links", 0)
 }
 
 func TestNumbers_LinkValidatesBuyer(t *testing.T) {
