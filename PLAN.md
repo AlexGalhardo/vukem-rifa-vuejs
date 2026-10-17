@@ -3,7 +3,7 @@
 The onboarding file for every session and agent. Read it top to bottom once, then pick the first unchecked task of the current phase.
 
 - Repository: <https://github.com/AlexGalhardo/vukem-rifa-vuejs> (public). Production: <https://rifa.vukem.com> (Railway).
-- Current phase: **Phase 3 — Numbers and payment links** (Phases 0–2 done; Phase 1 has two owner-blocked items).
+- Current phase: **Phase 8 — Security hardening and QA** (Phases 0–7 done; Phase 1 has owner-blocked items).
 
 ## 1. Briefing
 
@@ -33,6 +33,8 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | D16 | JS tooling via Bun 1.4.3; Biome 2.5 for lint/format; Playwright 1.64 e2e; lefthook git hooks; commitlint; markdownlint-cli2. | Owner standards. |
 | D18 | Duration is locked together with price and number count after the first paid number; before that, shrinking the count is refused if a removed number is reserved or paid. | Changing the deadline after sales would be unfair to buyers. |
 | D19 | Tests: unit/HTTP tests run on SQLite via `vukemtest`, so domain SQL stays dialect-neutral (recursive CTE for numbers); Postgres-only parts (CHECKs, `FOR UPDATE`, partial indexes) are covered by `-tags=integration`. | vukem has no Postgres test helper yet. |
+| D20 | AbacatePay webhook authenticity = `webhookSecret` query parameter (constant-time); `X-Webhook-Signature` (HMAC with AbacatePay's published public key) only proves body integrity. Registered URL: `https://vukem-rifa.up.railway.app/webhooks/abacatepay?webhookSecret=…`. | docs.abacatepay.com/pages/webhooks (security). |
+| D21 | Archived raffles are never drawn; a draw expires every live link in its transaction; payments on non-active raffles become `refund_due`. | Raffles/payments stream decisions. |
 | D17 | Local `.claude/settings.local.json` (`disableAllHooks: true`) is owner-managed and git-ignored. | Owner. |
 
 ## 3. Versions (verified 2026-10-17, exact pins)
@@ -192,13 +194,13 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 - [ ] A03 Supply chain: pinned versions, Dependabot, govulncheck + `bun audit` in CI.
 - [ ] A04 Cryptographic failures: argon2id passwords; tokens from `crypto/rand`, stored hashed; HTTPS only in production; `APP_KEY` rotation via `APP_PREVIOUS_KEYS`.
 - [ ] A05 Injection/XSS: parameterized SQL; Vue escapes by default (no `v-html`); CSV export guards formula injection (`=`,`+`,`-`,`@` prefixed with `'`).
-- [ ] A06 Insecure design: number state machine guarded in SQL; race test reserving the same number concurrently; expired link reuse test.
+- [x] A06 Insecure design: number state machine guarded in SQL; race test reserving the same number concurrently; expired link reuse test.
 - [ ] A07 Auth failures: login/reset/verification rate limits (brute-force test), email verification required for dashboard, session rotation on login.
-- [ ] A08 Integrity: webhook secret + HMAC verification, replay/duplicate event test, forged signature test.
+- [x] A08 Integrity: webhook secret + HMAC verification, replay/duplicate event test, forged signature test.
 - [ ] A09 Logging: security events (login failures, webhook rejections, payout records) logged with request id, no PII/secrets.
 - [ ] A10 Exceptional conditions: AbacatePay timeouts/5xx handled (retry job, user-facing error), fail closed on verification errors.
 - [ ] CSRF on all browser mutations (test), CORS denied by default for `/api`.
-- [ ] DAST: ZAP baseline + nuclei in CI against the running container.
+- [x] DAST: ZAP baseline + nuclei in CI against the running container.
 
 ## 8. Phases
 
@@ -272,46 +274,46 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 ### Phase 3 — Numbers and payment links
 
-- [ ] Migration `reservations` (partial unique index) → verify: integration test.
-- [ ] Buyer form (name, email, BR phone → E.164) with `z` → verify: validation tests (phone formats).
-- [ ] Generate link: guarded reserve tx + token + `ExpireReservation` (`DispatchTx`, `Delay(10m)`) → verify: test with fake clock.
-- [ ] Concurrency: 20 goroutines reserve the same number → exactly 1 succeeds → verify: integration `-race`.
-- [ ] Expiry job + every-minute sweeper → verify: fake clock test, number back to available.
-- [ ] Owner cancel → verify: test.
-- [ ] Buyer page `/pay/{token}` + expired message (PT-BR text in D-brief) → verify: tests + e2e.
-- [ ] Background runners (queue worker + scheduler) inside `serve` (D15) → verify: integration test processes a delayed job.
+- [x] Migration `reservations` (partial unique index) → verify: integration test.
+- [x] Buyer form (name, email, BR phone → E.164) with `z` → verify: validation tests (phone formats).
+- [x] Generate link: guarded reserve tx + token + `ExpireReservation` (`DispatchTx`, `Delay(10m)`) → verify: test with fake clock.
+- [x] Concurrency: 20 goroutines reserve the same number → exactly 1 succeeds → verify: integration `-race`.
+- [x] Expiry job + every-minute sweeper → verify: fake clock test, number back to available.
+- [x] Owner cancel → verify: test.
+- [x] Buyer page `/pay/{token}` + expired message (PT-BR text in D-brief) → verify: tests + e2e.
+- [x] Background runners (queue worker + scheduler) inside `serve` (D15) → verify: integration test processes a delayed job.
 
 ### Phase 4 — Payments (AbacatePay)
 
-- [ ] `abacatepay` client: create PIX (`/v2/transparents/create`), check, simulate-payment (dev), `z`-validated responses, timeouts → verify: unit tests with `httptest.Server`.
-- [ ] Confirm endpoint creates PIX with `expiresIn` = remaining seconds, stores `charge_id`, `brCode`, `brCodeBase64` → verify: test.
-- [ ] Modal with QR + copy-paste + polling → verify: e2e (fake AbacatePay in CI).
-- [ ] Webhook: secret + HMAC verification, `payment_events` dedupe, `transparent.completed` → paid → verify: tests for valid, forged, replayed, out-of-order events.
-- [ ] Late payment → `refund_due` → verify: test.
-- [ ] Confirmation emails to buyer and owner (queued) → verify: array mailer test + Mailtrap e2e.
-- [ ] Sandbox end-to-end with real dev key + `simulate-payment` (manual/opt-in tag `abacatepay`) → verify: script output.
+- [x] `abacatepay` client: create PIX (`/v2/transparents/create`), check, simulate-payment (dev), `z`-validated responses, timeouts → verify: unit tests with `httptest.Server`.
+- [x] Confirm endpoint creates PIX with `expiresIn` = remaining seconds, stores `charge_id`, `brCode`, `brCodeBase64` → verify: test.
+- [x] Modal with QR + copy-paste + polling → verify: e2e (fake AbacatePay in CI).
+- [x] Webhook: secret + HMAC verification, `payment_events` dedupe, `transparent.completed` → paid → verify: tests for valid, forged, replayed, out-of-order events.
+- [x] Late payment → `refund_due` → verify: test.
+- [x] Confirmation emails to buyer and owner (queued) → verify: array mailer test + Mailtrap e2e.
+- [x] Sandbox end-to-end with real dev key + `simulate-payment` (manual/opt-in tag `abacatepay`) → verify: script output.
 
 ### Phase 5 — Ledger and payouts
 
-- [ ] Migration `ledger_entries` (append-only trigger) + `payouts` → verify: UPDATE/DELETE rejected (integration).
-- [ ] Split 90/10 on payment → verify: table test (amount edge cases).
-- [ ] Owner balance on dashboard → verify: test.
-- [ ] Admin payouts page (admin only, amount ≤ balance) → verify: tests incl. non-admin 404.
+- [x] Migration `ledger_entries` (append-only trigger) + `payouts` → verify: UPDATE/DELETE rejected (integration).
+- [x] Split 90/10 on payment → verify: table test (amount edge cases).
+- [x] Owner balance on dashboard → verify: test.
+- [x] Admin payouts page (admin only, amount ≤ balance) → verify: tests incl. non-admin 404.
 
 ### Phase 6 — Draw
 
-- [ ] Draw algorithm v1 (seed, rejection sampling, participants hash) as pure function → verify: deterministic test vectors + distribution sanity test.
-- [ ] `RunDraw` job (deadline + sold out) with row lock, idempotent → verify: concurrency test runs once.
-- [ ] Zero paid numbers → `closed` without winner → verify: test.
-- [ ] Public result + "how to verify" section → verify: page test, e2e.
+- [x] Draw algorithm v1 (seed, rejection sampling, participants hash) as pure function → verify: deterministic test vectors + distribution sanity test.
+- [x] `RunDraw` job (deadline + sold out) with row lock, idempotent → verify: concurrency test runs once.
+- [x] Zero paid numbers → `closed` without winner → verify: test.
+- [x] Public result + "how to verify" section → verify: page test, e2e.
 
 ### Phase 7 — Export and REST API
 
-- [ ] Export JSON + CSV (encoding/csv, formula-injection guard) → verify: golden tests.
-- [ ] API keys page (create shows token once, revoke owner-checked, abilities read/write) → verify: tests incl. IDOR revoke.
-- [ ] `/api/v1` endpoints (§5) with `z`, problem+json, pagination, Idempotency (explicit Scope) → verify: HTTP tests + `AssertMatchesOpenAPI`.
-- [ ] OpenAPI + Scalar at `/api/docs` → verify: e2e loads docs.
-- [ ] Generate TS types + zod schemas from OpenAPI (`go run ./cmd/app codegen:types -zod`) and use them in forms → verify: `bun run typecheck`.
+- [x] Export JSON + CSV (encoding/csv, formula-injection guard) → verify: golden tests.
+- [x] API keys page (create shows token once, revoke owner-checked, abilities read/write) → verify: tests incl. IDOR revoke.
+- [x] `/api/v1` endpoints (§5) with `z`, problem+json, pagination, Idempotency (explicit Scope) → verify: HTTP tests + `AssertMatchesOpenAPI`.
+- [x] OpenAPI + Scalar at `/api/docs` → verify: e2e loads docs.
+- [x] Generate TS types + zod schemas from OpenAPI (`go run ./cmd/app codegen:types -zod`) and use them in forms → verify: `bun run typecheck`.
 
 ### Phase 8 — Security hardening and QA
 

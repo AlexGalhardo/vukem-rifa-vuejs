@@ -84,7 +84,7 @@ jobs:
         if: env.MAILTRAP_API_TOKEN != ''
         with:
           go-version-file: go.mod
-      - run: go test -tags=mailtrap -p 1 -run Mailtrap ./tests/
+      - run: go test -v -tags=mailtrap -p 1 -run Mailtrap ./tests/
         if: env.MAILTRAP_API_TOKEN != ''
 
   abacatepay:
@@ -102,7 +102,7 @@ jobs:
         if: env.ABACATEPAY_API_KEY != ''
         with:
           go-version-file: go.mod
-      - run: go test -tags=abacatepay -p 1 -run AbacatePaySandbox ./...
+      - run: go test -v -tags=abacatepay -p 1 -run AbacatePaySandbox ./...
         if: env.ABACATEPAY_API_KEY != ''
 
   govulncheck:
