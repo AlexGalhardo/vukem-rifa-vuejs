@@ -11,6 +11,7 @@ import (
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/ledger"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/raffles"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/requests"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/reservations"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/bootstrap"
@@ -346,4 +347,61 @@ func TestReservation_UsesTheCurrentRaffleNotTheCallersCopy(t *testing.T) {
 
 	_, err = f.svc.Reserve(t.Context(), stale, 2, buyer)
 	wantStatus(t, err, http.StatusConflict)
+}
+
+// Security review fix: the sealed plain token lives only while the link
+// does; expiry, cancel, an edit and payment all erase it.
+func TestReservation_SealedTokenIsErasedWhenTheLinkEnds(t *testing.T) {
+	t.Parallel()
+
+	f := newReservationFixture(t, payEnv())
+	sealed := func(number int) bool {
+		var v any
+		if err := f.svc.DB.QueryRowContext(t.Context(), "SELECT token_sealed FROM reservations WHERE raffle_id = ? AND number = ? ORDER BY id DESC LIMIT 1",
+			f.raffle.ID, number).Scan(&v); err != nil {
+			t.Fatal(err)
+		}
+
+		return v != nil
+	}
+
+	if _, err := f.svc.Reserve(t.Context(), f.raffle, 1, buyer); err != nil {
+		t.Fatal(err)
+	}
+
+	if !sealed(1) {
+		t.Fatal("a live link must keep its sealed token")
+	}
+
+	if err := f.svc.Cancel(t.Context(), f.raffle.ID, 1); err != nil {
+		t.Fatal(err)
+	}
+
+	link, err := f.svc.Reserve(t.Context(), f.raffle, 2, buyer)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f.clock.Advance(11 * time.Minute)
+	if _, err := f.svc.Expire(t.Context(), link.Reservation.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	f.paidSale(t, 3)
+
+	if _, err := f.svc.Reserve(t.Context(), f.raffle, 4, buyer); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := raffles.New(f.svc.DB, f.clock.Now, nil).Update(t.Context(), &f.raffle, requests.Raffle{
+		Title: "Editada", NumberCount: f.raffle.NumberCount, PriceReais: f.raffle.PriceReais, DurationDays: f.raffle.DurationDays,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	for n, why := range map[int]string{1: "cancelled", 2: "expired", 3: "paid", 4: "cancelled by an edit"} {
+		if sealed(n) {
+			t.Errorf("number %d (%s) still has its sealed token", n, why)
+		}
+	}
 }

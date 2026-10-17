@@ -217,7 +217,7 @@ func (s *Service) markPaid(ctx context.Context, tx *database.Tx, raffle models.R
 		return false, err
 	}
 
-	out, err = tx.ExecContext(ctx, "UPDATE reservations SET status = '"+models.ReservationPaid+"', paid_at = "+p(1)+", updated_at = "+p(2)+
+	out, err = tx.ExecContext(ctx, "UPDATE reservations SET status = '"+models.ReservationPaid+"', token_sealed = NULL, paid_at = "+p(1)+", updated_at = "+p(2)+
 		" WHERE id = "+p(3)+" AND status IN ('"+models.ReservationPending+"','"+models.ReservationAwaitingPayment+"')", now, now, res.ID)
 	if err != nil {
 		return false, fmt.Errorf("pay reservation %d: %w", res.ID, err)

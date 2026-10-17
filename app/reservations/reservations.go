@@ -337,7 +337,7 @@ func (s *Service) release(ctx context.Context, res models.Reservation, status st
 	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
 		p := tx.Dialect().Placeholder
 
-		out, err := tx.ExecContext(ctx, "UPDATE reservations SET status = "+p(1)+", updated_at = "+p(2)+
+		out, err := tx.ExecContext(ctx, "UPDATE reservations SET status = "+p(1)+", token_sealed = NULL, updated_at = "+p(2)+
 			" WHERE id = "+p(3)+" AND status IN ('"+models.ReservationPending+"','"+models.ReservationAwaitingPayment+"')",
 			status, now, res.ID)
 		if err != nil {

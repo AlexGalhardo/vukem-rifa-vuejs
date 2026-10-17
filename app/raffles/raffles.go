@@ -301,7 +301,7 @@ func (s *Service) cancelLiveLinks(ctx context.Context, tx *database.Tx, raffleID
 	p := tx.Dialect().Placeholder
 	now := s.Now().UTC()
 
-	out, err := tx.ExecContext(ctx, "UPDATE reservations SET status = '"+models.ReservationCancelled+"', updated_at = "+p(1)+
+	out, err := tx.ExecContext(ctx, "UPDATE reservations SET status = '"+models.ReservationCancelled+"', token_sealed = NULL, updated_at = "+p(1)+
 		" WHERE raffle_id = "+p(2)+" AND status IN ('"+models.ReservationPending+"','"+models.ReservationAwaitingPayment+"')",
 		now, raffleID)
 	if err != nil {

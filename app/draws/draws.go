@@ -172,7 +172,7 @@ func paidNumbers(ctx context.Context, tx *database.Tx, raffleID int64) ([]int, e
 func releaseLive(ctx context.Context, tx *database.Tx, raffleID int64, now time.Time) error {
 	p := tx.Dialect().Placeholder
 
-	if _, err := tx.ExecContext(ctx, "UPDATE reservations SET status = '"+models.ReservationExpired+"', updated_at = "+p(1)+
+	if _, err := tx.ExecContext(ctx, "UPDATE reservations SET status = '"+models.ReservationExpired+"', token_sealed = NULL, updated_at = "+p(1)+
 		" WHERE raffle_id = "+p(2)+" AND status IN ('"+models.ReservationPending+"','"+models.ReservationAwaitingPayment+"')",
 		now, raffleID); err != nil {
 		return fmt.Errorf("expire links of raffle %d: %w", raffleID, err)
