@@ -66,16 +66,28 @@ test("buyer confirms a payment link, sees the PIX QR code and the confirmation",
 	await expect(buyer.getByTestId("pay-countdown")).toContainText(/O link expira em \d+:\d\d/);
 
 	await buyer.getByTestId("pay-confirm").click();
-	const modal = buyer.getByTestId("pix-modal");
-	await expect(modal).toBeVisible();
+	// No modal: the QR code and the copy-and-paste code render inline, below
+	// the payment details.
+	const pix = buyer.getByTestId("pix-inline");
+	await expect(pix).toBeVisible();
+	await expect(buyer.getByRole("dialog")).toHaveCount(0);
+	const details = await buyer.getByTestId("pay-amount").boundingBox();
+	const qrBox = await buyer.getByTestId("pix-qr").boundingBox();
+	expect(qrBox?.y ?? 0).toBeGreaterThan(details?.y ?? 0);
 	await expect(buyer.getByTestId("pix-qr")).toHaveAttribute("src", /^data:image\/png;base64,/);
 	await expect(buyer.getByTestId("pix-code")).toHaveValue(/^000201/);
-
-	// Closing and reopening keeps the same charge.
 	const code = await buyer.getByTestId("pix-code").inputValue();
-	await buyer.getByTestId("pix-close").click();
-	await expect(modal).toBeHidden();
-	await buyer.getByTestId("pay-show-qr").click();
+
+	// "Copiar código" (clipboard.js) copies the code and confirms with a toast.
+	await buyerCtx.grantPermissions(["clipboard-read", "clipboard-write"]);
+	await buyer.getByTestId("pix-copy").click();
+	await expect(buyer.getByTestId("toast")).toHaveText("Código copiado!");
+	await expect(buyer.getByTestId("toast")).toHaveAttribute("role", "status");
+	expect(await buyer.evaluate(() => navigator.clipboard.readText())).toBe(code);
+	await expect(buyer.getByTestId("toast")).toBeHidden({ timeout: 6_000 });
+
+	// A reload keeps the same charge.
+	await buyer.reload();
 	await expect(buyer.getByTestId("pix-code")).toHaveValue(code);
 
 	// AbacatePay dev mode "simulate payment" → transparent.completed.
@@ -85,7 +97,7 @@ test("buyer confirms a payment link, sees the PIX QR code and the confirmation",
 
 	// The page polls the status every 3 s.
 	await expect(buyer.getByTestId("pay-confirmed")).toContainText("Pagamento confirmado", { timeout: 15_000 });
-	await expect(buyer.getByTestId("pix-modal")).toBeHidden();
+	await expect(buyer.getByTestId("pix-inline")).toBeHidden();
 
 	// The public grid shows the number as paid, without the buyer's data.
 	await buyer.getByRole("link", { name: "Ver a rifa" }).click();

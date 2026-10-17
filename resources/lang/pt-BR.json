@@ -350,16 +350,15 @@
 		"qr_alt": "QR Code PIX",
 		"copy_label": "PIX copia e cola",
 		"copy": "Copiar código",
-		"copied": "Código copiado",
+		"copied": "Código copiado!",
 		"waiting": "Aguardando o pagamento…",
-		"show_qr": "Mostrar QR Code",
-		"close": "Fechar",
 		"paid": "Pagamento confirmado",
 		"paid_detail": "O número {number} da rifa {title} é seu. Enviamos a confirmação para o seu e-mail.",
 		"view_raffle": "Ver a rifa",
 		"expired": "Link expirado. Peça ao dono da rifa para gerar um novo link e te enviar novamente para pagar",
 		"unavailable": "Os pagamentos estão indisponíveis no momento. Tente novamente mais tarde.",
-		"gateway_error": "Não foi possível gerar o PIX agora. Tente novamente em instantes."
+		"gateway_error": "Não foi possível gerar o PIX agora. Tente novamente em instantes.",
+		"copy_failed": "Não foi possível copiar automaticamente: selecione o código acima e copie."
 	},
 	"ledger": {
 		"balance": "Saldo a receber",

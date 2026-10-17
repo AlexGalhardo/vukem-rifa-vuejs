@@ -4,6 +4,7 @@ import { computed } from "vue";
 
 import LocaleSwitcher from "../components/LocaleSwitcher.vue";
 import ThemeToggle from "../components/ThemeToggle.vue";
+import ToastRegion from "../components/ToastRegion.vue";
 import { useI18n } from "../composables/useI18n";
 import type { SharedProps } from "../types";
 
@@ -52,4 +53,5 @@ const link = "text-sm text-brand-700 hover:underline dark:text-brand-500";
 		</p>
 		<slot />
 	</main>
+	<ToastRegion />
 </template>

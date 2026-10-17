@@ -350,16 +350,15 @@
 		"qr_alt": "PIX QR code",
 		"copy_label": "PIX copy and paste",
 		"copy": "Copy code",
-		"copied": "Code copied",
+		"copied": "Code copied!",
 		"waiting": "Waiting for the payment…",
-		"show_qr": "Show QR code",
-		"close": "Close",
 		"paid": "Payment confirmed",
 		"paid_detail": "Number {number} of the raffle {title} is yours. We sent the confirmation to your email.",
 		"view_raffle": "See the raffle",
 		"expired": "Link expired. Ask the raffle owner to generate a new link and send it to you again to pay",
 		"unavailable": "Payments are unavailable right now. Please try again later.",
-		"gateway_error": "We could not create the PIX right now. Please try again in a moment."
+		"gateway_error": "We could not create the PIX right now. Please try again in a moment.",
+		"copy_failed": "Could not copy automatically: select the code above and copy it."
 	},
 	"ledger": {
 		"balance": "Balance to receive",

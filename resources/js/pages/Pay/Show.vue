@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Head, Link, router, usePage } from "@inertiajs/vue3";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import ClipboardJS from "clipboard";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 
 import PrimaryButton from "../../components/PrimaryButton.vue";
 import { useI18n } from "../../composables/useI18n";
+import { useToast } from "../../composables/useToast";
 import { formatCents, formatCountdown } from "../../lib/format";
 import { payStatusSchema } from "../../lib/paySchema";
 import type { Checkout, CheckoutState, Pix } from "../../types";
@@ -22,9 +24,8 @@ const page = usePage();
 const base = computed(() => page.url.split("?")[0] ?? "");
 
 const secondsLeft = ref(props.checkout?.seconds_left ?? 0);
-const modalOpen = ref(props.pix !== null);
-const copied = ref(false);
 const confirming = ref(false);
+const toast = useToast();
 
 watch(
 	() => props.checkout?.seconds_left,
@@ -32,12 +33,29 @@ watch(
 		secondsLeft.value = s ?? 0;
 	},
 );
+// "Copiar código" uses clipboard.js (owner request): it also works where
+// navigator.clipboard is unavailable (older mobile browsers, http).
+const copyButton = ref<HTMLButtonElement | null>(null);
+let clipboard: ClipboardJS | undefined;
+
 watch(
 	() => props.pix,
-	(p) => {
-		modalOpen.value = p !== null;
+	async (pix) => {
+		clipboard?.destroy();
+		clipboard = undefined;
+		if (!pix) return;
+		await nextTick();
+		if (!copyButton.value) return;
+		clipboard = new ClipboardJS(copyButton.value, { text: () => props.pix?.br_code ?? "" });
+		clipboard.on("success", (e) => {
+			e.clearSelection();
+			toast.show(t("pay.copied"));
+		});
+		clipboard.on("error", () => toast.show(t("pay.copy_failed"), "error", 6000));
 	},
+	{ immediate: true },
 );
+onBeforeUnmount(() => clipboard?.destroy());
 
 let tick: ReturnType<typeof setInterval> | undefined;
 let poll: ReturnType<typeof setInterval> | undefined;
@@ -102,19 +120,6 @@ function confirm(): void {
 	);
 }
 
-async function copy(): Promise<void> {
-	if (!props.pix) return;
-	try {
-		await navigator.clipboard.writeText(props.pix.br_code);
-		copied.value = true;
-		setTimeout(() => {
-			copied.value = false;
-		}, 2000);
-	} catch {
-		copied.value = false;
-	}
-}
-
 const card = "rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
 </script>
 
@@ -171,72 +176,44 @@ const card = "rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:bord
 				{{ error }}
 			</p>
 
-			<div class="mt-6">
-				<PrimaryButton v-if="!pix" type="button" data-testid="pay-confirm" :disabled="confirming" @click="confirm">
+			<div v-if="!pix" class="mt-6">
+				<PrimaryButton type="button" data-testid="pay-confirm" :disabled="confirming" @click="confirm">
 					{{ confirming ? t("pay.confirming") : t("pay.confirm") }}
 				</PrimaryButton>
-				<template v-else>
-					<p class="text-sm text-zinc-600 dark:text-zinc-400" data-testid="pay-waiting">{{ t("pay.waiting") }}</p>
-					<button
-						v-if="!modalOpen"
-						type="button"
-						class="mt-2 text-brand-700 hover:underline dark:text-brand-500"
-						data-testid="pay-show-qr"
-						@click="modalOpen = true"
-					>
-						{{ t("pay.show_qr") }}
-					</button>
-				</template>
 			</div>
+
+			<section v-if="pix" class="mt-6 border-t border-zinc-200 pt-6 dark:border-zinc-800" data-testid="pix-inline">
+				<h2 class="text-xl font-semibold">{{ t("pay.qr_title") }}</h2>
+				<p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ t("pay.qr_hint") }}</p>
+				<img
+					:src="pix.br_code_base64"
+					:alt="t('pay.qr_alt')"
+					data-testid="pix-qr"
+					class="mx-auto mt-4 size-56 rounded bg-white p-2"
+				/>
+				<label class="mt-4 block text-sm">
+					<span class="font-medium">{{ t("pay.copy_label") }}</span>
+					<textarea
+						:value="pix.br_code"
+						readonly
+						rows="3"
+						data-testid="pix-code"
+						class="mt-1 block w-full resize-none rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1 font-mono text-xs break-all dark:border-zinc-700 dark:bg-zinc-800"
+					/>
+				</label>
+				<button
+					ref="copyButton"
+					type="button"
+					data-testid="pix-copy"
+					class="mt-3 w-full rounded-md bg-brand-600 px-4 py-2 font-medium text-white hover:bg-brand-700"
+				>
+					{{ t("pay.copy") }}
+				</button>
+				<p class="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-400" data-testid="pay-waiting" aria-live="polite">
+					{{ t("pay.waiting") }}
+				</p>
+			</section>
 		</div>
 	</section>
 
-	<div
-		v-if="state === 'live' && pix && modalOpen"
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-		@click.self="modalOpen = false"
-	>
-		<div
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="pix-title"
-			data-testid="pix-modal"
-			class="w-full max-w-sm rounded-lg bg-white p-6 text-zinc-900 shadow-xl dark:bg-zinc-900 dark:text-zinc-100"
-		>
-			<h2 id="pix-title" class="text-xl font-semibold">{{ t("pay.qr_title") }}</h2>
-			<p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{{ t("pay.qr_hint") }}</p>
-			<img
-				:src="pix.br_code_base64"
-				:alt="t('pay.qr_alt')"
-				data-testid="pix-qr"
-				class="mx-auto mt-4 h-56 w-56 rounded bg-white p-2"
-			/>
-			<label class="mt-4 block text-sm">
-				<span class="font-medium">{{ t("pay.copy_label") }}</span>
-				<textarea
-					:value="pix.br_code"
-					readonly
-					rows="3"
-					data-testid="pix-code"
-					class="mt-1 block w-full resize-none rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1 font-mono text-xs break-all dark:border-zinc-700 dark:bg-zinc-800"
-				/>
-			</label>
-			<div class="mt-4 flex items-center justify-between gap-2">
-				<PrimaryButton type="button" data-testid="pix-copy" @click="copy">
-					{{ copied ? t("pay.copied") : t("pay.copy") }}
-				</PrimaryButton>
-				<button
-					type="button"
-					class="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
-					data-testid="pix-close"
-					@click="modalOpen = false"
-				>
-					{{ t("pay.close") }}
-				</button>
-			</div>
-			<p class="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-400" aria-live="polite">
-				{{ t("pay.waiting") }} · {{ formatCountdown(secondsLeft) }}
-			</p>
-		</div>
-	</div>
 </template>

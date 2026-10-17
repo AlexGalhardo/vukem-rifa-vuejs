@@ -137,8 +137,11 @@ for (const v of variants) {
 			await buyer.goto(payPath);
 			await expectAccessible(buyer, `pay page (${name})`);
 			await buyer.getByTestId("pay-confirm").click();
-			await expect(buyer.getByTestId("pix-modal")).toBeVisible();
-			await expectAccessible(buyer, `PIX modal (${name})`);
+			await expect(buyer.getByTestId("pix-inline")).toBeVisible();
+			await expectAccessible(buyer, `PIX QR code (${name})`);
+			await buyer.getByTestId("pix-copy").click();
+			await expect(buyer.getByTestId("toast")).toBeVisible();
+			await expectAccessible(buyer, `copy toast (${name})`);
 
 			const paid = await buyer.request.post(`/dev${payPath}/simulate`);
 			expect(paid.status()).toBe(200);
