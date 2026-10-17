@@ -3,7 +3,9 @@ package tests
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"slices"
+	"strconv"
 	"testing"
 	"time"
 
@@ -16,6 +18,8 @@ import (
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/jobs"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/requests"
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/bootstrap"
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/database/seeders"
 )
 
 const thirtyDays = 30 * 24 * time.Hour
@@ -310,4 +314,28 @@ func TestDraw_JobHandler(t *testing.T) {
 	}
 
 	vukemtest.AssertDatabaseHas(t, f.app, "draws", map[string]any{"raffle_id": f.raffle.ID, "winning_number": 10})
+}
+
+// The e2e demo seeder: a drawn raffle among its paid numbers, idempotent.
+func TestDraw_DemoSeeder(t *testing.T) {
+	t.Parallel()
+
+	app := vukemtest.New(t, bootstrap.New)
+	for range 2 {
+		if err := app.Seed(t.Context()); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	vukemtest.AssertDatabaseCount(t, app, "draws", 1)
+
+	page := app.Client(t).Get("/r/"+seeders.DrawDemoSlug).AssertOK().AssertDontSee("Comprador").
+		AssertInertia("Raffles/Public").PropEquals("raffle.status", "drawn").
+		PropEquals("draw.participants_count", float64(3)).
+		PropEquals("draw.participants_sha256", draws.ParticipantsHash(seeders.DrawDemoPaid))
+
+	w, _ := page.Prop("draw.winning_number")
+	if !slices.ContainsFunc(seeders.DrawDemoPaid, func(n int) bool { return fmt.Sprint(w) == strconv.Itoa(n) }) {
+		t.Fatalf("winner = %v, want one of %v", w, seeders.DrawDemoPaid)
+	}
 }
