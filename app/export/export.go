@@ -242,13 +242,17 @@ func WriteCSV(w io.Writer, e Export) error {
 	r := e.Raffle
 
 	rows := [][]string{
-		{"record", "id", "slug", "title", "description", "status", "number_count", "price_cents", "duration_days",
+		{
+			"record", "id", "slug", "title", "description", "status", "number_count", "price_cents", "duration_days",
 			"starts_at", "ends_at", "locked_at", "archived_at", "available", "reserved", "paid",
-			"owner_share_cents", "platform_fee_cents", "refund_due_cents", "generated_at"},
-		{"raffle", itoa(r.ID), Text(r.Slug), Text(r.Title), Text(r.Description), Text(r.Status),
+			"owner_share_cents", "platform_fee_cents", "refund_due_cents", "generated_at",
+		},
+		{
+			"raffle", itoa(r.ID), Text(r.Slug), Text(r.Title), Text(r.Description), Text(r.Status),
 			itoa(r.NumberCount), itoa(r.PriceCents), itoa(r.DurationDays), ts(r.StartsAt), ts(r.EndsAt),
 			tsPtr(r.LockedAt), tsPtr(r.ArchivedAt), itoa(r.Available), itoa(r.Reserved), itoa(r.Paid),
-			itoa(r.OwnerShareCents), itoa(r.PlatformFeeCents), itoa(r.RefundDueCents), ts(e.GeneratedAt)},
+			itoa(r.OwnerShareCents), itoa(r.PlatformFeeCents), itoa(r.RefundDueCents), ts(e.GeneratedAt),
+		},
 		{},
 		{"record", "number", "status", "paid_at", "reservation_id"},
 	}
@@ -257,8 +261,10 @@ func WriteCSV(w io.Writer, e Export) error {
 		rows = append(rows, []string{"number", itoa(n.Number), Text(n.Status), tsPtr(n.PaidAt), idPtr(n.ReservationID)})
 	}
 
-	rows = append(rows, []string{}, []string{"record", "id", "number", "buyer_name", "buyer_email", "buyer_phone",
-		"status", "amount_cents", "charge_id", "expires_at", "paid_at", "created_at", "refund_due"})
+	rows = append(rows, []string{}, []string{
+		"record", "id", "number", "buyer_name", "buyer_email", "buyer_phone",
+		"status", "amount_cents", "charge_id", "expires_at", "paid_at", "created_at", "refund_due",
+	})
 
 	for _, res := range e.Reservations {
 		charge := ""
@@ -266,21 +272,29 @@ func WriteCSV(w io.Writer, e Export) error {
 			charge = *res.ChargeID
 		}
 
-		rows = append(rows, []string{"reservation", itoa(res.ID), itoa(res.Number), Text(res.BuyerName),
+		rows = append(rows, []string{
+			"reservation", itoa(res.ID), itoa(res.Number), Text(res.BuyerName),
 			Text(res.BuyerEmail), Text(res.BuyerPhone), Text(res.Status), itoa(res.AmountCents), Text(charge),
-			ts(res.ExpiresAt), tsPtr(res.PaidAt), ts(res.CreatedAt), strconv.FormatBool(res.RefundDue)})
+			ts(res.ExpiresAt), tsPtr(res.PaidAt), ts(res.CreatedAt), strconv.FormatBool(res.RefundDue),
+		})
 	}
 
-	rows = append(rows, []string{}, []string{"record", "id", "kind", "amount_cents", "reservation_id", "note",
-		"refund_due", "created_at"})
+	rows = append(rows, []string{}, []string{
+		"record", "id", "kind", "amount_cents", "reservation_id", "note",
+		"refund_due", "created_at",
+	})
 
 	for _, l := range e.Ledger {
-		rows = append(rows, []string{"ledger", itoa(l.ID), Text(l.Kind), itoa(l.AmountCents), idPtr(l.ReservationID),
-			Text(l.Note), strconv.FormatBool(l.RefundDue), ts(l.CreatedAt)})
+		rows = append(rows, []string{
+			"ledger", itoa(l.ID), Text(l.Kind), itoa(l.AmountCents), idPtr(l.ReservationID),
+			Text(l.Note), strconv.FormatBool(l.RefundDue), ts(l.CreatedAt),
+		})
 	}
 
-	rows = append(rows, []string{}, []string{"record", "drawn_at", "trigger", "algorithm", "seed",
-		"participants_count", "participants_sha256", "winning_number"})
+	rows = append(rows, []string{}, []string{
+		"record", "drawn_at", "trigger", "algorithm", "seed",
+		"participants_count", "participants_sha256", "winning_number",
+	})
 
 	if d := e.Draw; d != nil {
 		winner := ""
@@ -288,8 +302,10 @@ func WriteCSV(w io.Writer, e Export) error {
 			winner = itoa(*d.WinningNumber)
 		}
 
-		rows = append(rows, []string{"draw", ts(d.DrawnAt), Text(d.Trigger), Text(d.Algorithm), Text(d.Seed),
-			itoa(d.ParticipantsCount), Text(d.ParticipantsSHA256), winner})
+		rows = append(rows, []string{
+			"draw", ts(d.DrawnAt), Text(d.Trigger), Text(d.Algorithm), Text(d.Seed),
+			itoa(d.ParticipantsCount), Text(d.ParticipantsSHA256), winner,
+		})
 	}
 
 	for _, row := range rows {

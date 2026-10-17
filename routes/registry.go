@@ -13,5 +13,7 @@ func All() []func(r *router.Router, app *vukem.App) error {
 		Social,
 		Raffles,
 		Export,
+		Settings,
+		API,
 	}
 }
