@@ -74,6 +74,9 @@ type ReserveOptions struct {
 	// MaxLivePerEmail caps the live links of one buyer email in the raffle
 	// (0 = no cap); checked in the reserve transaction.
 	MaxLivePerEmail int
+	// ConsentVersion is the LGPD notice version the buyer accepted; when
+	// set, the reservation records it with the time of consent.
+	ConsentVersion string
 }
 
 // ErrTooManyLinks is a 429 for a buyer email over ReserveOptions.MaxLivePerEmail.
@@ -116,6 +119,12 @@ func (s *Service) ReserveWith(ctx context.Context, r models.Raffle, number int, 
 		AmountCents: r.PriceReais * 100,
 		Origin:      o.Origin,
 		BuyerUserID: o.BuyerUserID,
+	}
+
+	if o.ConsentVersion != "" {
+		v := o.ConsentVersion
+		res.ConsentVersion = &v
+		res.ConsentAt.V, res.ConsentAt.Valid = now, true
 	}
 
 	q, queued := s.queue()

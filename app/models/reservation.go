@@ -51,6 +51,10 @@ type Reservation struct {
 	// BuyerUserID links the reservation to the buyer's account (purchase
 	// history): the signed-in buyer, or a verified account with the email.
 	BuyerUserID *int64 `json:"-"`
+	// ConsentAt and ConsentVersion record the LGPD notice a public buyer
+	// accepted (nil for owner/API links).
+	ConsentAt      orm.NullTime `json:"-"`
+	ConsentVersion *string      `json:"-"`
 }
 
 // Live reports whether the reservation still holds its number at now.

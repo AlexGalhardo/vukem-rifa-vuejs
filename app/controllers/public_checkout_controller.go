@@ -26,6 +26,10 @@ import (
 // email may hold in a raffle.
 const MaxLivePublicLinksPerEmail = 5
 
+// PublicConsentVersion identifies the privacy notice text (link.public.consent)
+// a public buyer accepts; bump it whenever that text changes.
+const PublicConsentVersion = "2026-10-17"
+
 // PublicCheckoutController lets anyone with the public raffle link buy a
 // free number (no account needed) and signed-in buyers see their purchases.
 type PublicCheckoutController struct {
@@ -80,6 +84,7 @@ func (pc *PublicCheckoutController) Reserve(c *web.Ctx) error {
 
 	link, err := pc.reservations.ReserveWith(ctx, r, number, in.Buyer(), reservations.ReserveOptions{
 		Origin: models.OriginPublic, BuyerUserID: pc.buyerAccount(c, in.Email), MaxLivePerEmail: MaxLivePublicLinksPerEmail,
+		ConsentVersion: PublicConsentVersion,
 	})
 	if err != nil {
 		switch errs.Status(err) {

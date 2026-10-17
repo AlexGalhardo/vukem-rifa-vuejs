@@ -287,7 +287,7 @@
 			"name": "Your name",
 			"email": "Your email",
 			"phone": "Your phone (with area code)",
-			"consent": "I agree that the raffle organizer and Vukem Rifa use my name, email and phone to process this purchase and contact me about it (LGPD). They are never shown on the public page.",
+			"consent": "I agree that my name, email and phone are shared with the raffle organizer (who sees them to run the raffle and contact me) and used by Vukem Rifa to process this purchase (LGPD). They are never shown on the public page.",
 			"submit": "Continue to PIX payment",
 			"hint": "Pick a free number to buy it. Reserved and paid numbers cannot be chosen.",
 			"consent_required": "Accept the privacy notice to continue."

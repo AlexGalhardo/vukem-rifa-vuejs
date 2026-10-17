@@ -8,6 +8,7 @@ import (
 
 	"github.com/AlexGalhardo/vukem/vukemtest"
 
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/controllers"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 )
 
@@ -51,6 +52,9 @@ func TestPublicCheckout_FreeNumberGoesToThePayPage(t *testing.T) {
 	vukemtest.AssertDatabaseHas(t, f.app, "reservations", map[string]any{
 		"number": 12, "origin": "public", "buyer_email": "paula@example.com", "status": "pending",
 	})
+	// LGPD: the consent is recorded with the version of the notice shown.
+	vukemtest.AssertDatabaseHas(t, f.app, "reservations", map[string]any{"number": 12, "consent_version": controllers.PublicConsentVersion})
+	vukemtest.AssertDatabaseMissing(t, f.app, "reservations", map[string]any{"number": 12, "consent_at": nil})
 
 	visitor.Get(pay).AssertOK().AssertInertia("Pay/Show").PropEquals("state", "live").PropEquals("checkout.number", float64(12))
 

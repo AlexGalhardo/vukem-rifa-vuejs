@@ -287,7 +287,7 @@
 			"name": "Seu nome",
 			"email": "Seu e-mail",
 			"phone": "Seu celular (com DDD)",
-			"consent": "Concordo que o organizador da rifa e a Vukem Rifa usem meu nome, e-mail e telefone para processar esta compra e falar comigo sobre ela (LGPD). Eles nunca aparecem na página pública.",
+			"consent": "Concordo que meu nome, e-mail e telefone sejam compartilhados com o organizador da rifa (que os vê para gerir a rifa e falar comigo) e usados pela Vukem Rifa para processar esta compra (LGPD). Eles nunca aparecem na página pública.",
 			"submit": "Continuar para o pagamento PIX",
 			"hint": "Escolha um número livre para comprar. Números reservados e pagos não podem ser escolhidos.",
 			"consent_required": "Aceite o aviso de privacidade para continuar."
