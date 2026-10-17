@@ -68,3 +68,38 @@ export interface RaffleLimits {
 	min_duration: number;
 	max_duration: number;
 }
+
+export type ReservationStatus = "pending" | "awaiting_payment" | "paid";
+
+/** Who holds a number (owner page only): a live payment link or a paid number. */
+export interface Buyer {
+	number: number;
+	status: ReservationStatus;
+	buyer_name: string;
+	buyer_email: string;
+	buyer_phone: string;
+	expires_at: string;
+	paid_at: string | null;
+}
+
+/** POST /raffles/{id}/numbers/{n}/link: the link is returned once and never stored. */
+export interface PaymentLink {
+	number: number;
+	url: string;
+	expires_at: string;
+	buyer_name: string;
+	buyer_phone: string;
+}
+
+export type DrawTrigger = "deadline" | "sold_out";
+
+/** Public, auditable draw result (docs/draw-algorithm.md). */
+export interface DrawResult {
+	drawn_at: string;
+	seed: string;
+	participants_count: number;
+	participants_sha256: string;
+	winning_number: number | null;
+	algorithm: string;
+	trigger: DrawTrigger;
+}
