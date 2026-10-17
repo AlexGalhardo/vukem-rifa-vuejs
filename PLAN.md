@@ -233,7 +233,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 #### 1.1 Scaffold and Postgres
 
 - [x] Run `vukem install:auth --social google` in a scratch copy, port the generated files, adapt migrations to Postgres → verify: `go test ./...` and integration green.
-- [ ] Add `users.is_admin` (default false) → verify: migration test.
+- [x] Add `users.is_admin` (default false) → verify: `TestRegister_IsNotAdmin` (SQLite + Postgres).
 - [ ] Translate auth pages and validation messages (pt-BR/en) → verify: page tests check translated props.
 
 #### 1.2 Email (Mailtrap / Mailpit)

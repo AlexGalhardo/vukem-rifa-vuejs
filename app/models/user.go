@@ -14,6 +14,7 @@ type User struct {
 	Email           string       `json:"email"`
 	Password        string       `json:"-"`
 	EmailVerifiedAt orm.NullTime `json:"email_verified_at"`
+	IsAdmin         bool         `json:"is_admin"`
 }
 
 // AuthID implements auth.Authenticatable.
