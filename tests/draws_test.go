@@ -38,7 +38,11 @@ func (f numbersFixture) status(t *testing.T) string {
 func (f numbersFixture) moveDeadline(t *testing.T, d time.Duration) {
 	t.Helper()
 
-	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET ends_at = ? WHERE id = ?", f.clock.Now().Add(d), f.raffle.ID); err != nil {
+	p := f.svc.DB.Dialect().Placeholder
+	ends := f.clock.Now().Add(d)
+	// Postgres checks ends_at > starts_at.
+	if _, err := f.svc.DB.ExecContext(t.Context(), "UPDATE raffles SET starts_at = "+p(1)+", ends_at = "+p(2)+" WHERE id = "+p(3),
+		ends.Add(-thirtyDays), ends, f.raffle.ID); err != nil {
 		t.Fatal(err)
 	}
 }
