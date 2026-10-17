@@ -197,14 +197,32 @@ func TestSecurityAPI_RateLimitedPerKey(t *testing.T) {
 
 	f := newAPIFixture(t, "sec.api.ratelimit@example.com")
 
-	for range 120 {
-		f.api.Get("/api/v1/me/balance").AssertOK()
+	// 120 per minute; the bucket refills while the loop runs (slowly under
+	// -race), so allow some slack before the first 429.
+	var limited *vukemtest.Response
+
+	for i := range 200 {
+		res := f.api.Get("/api/v1/me/balance")
+		if res.Status() == http.StatusTooManyRequests {
+			if i < 120 {
+				t.Fatalf("limited after %d requests", i)
+			}
+
+			limited = res
+
+			break
+		}
+
+		res.AssertOK()
 	}
 
-	f.api.Get("/api/v1/me/balance").AssertStatus(http.StatusTooManyRequests).
-		AssertHeaderContains("Content-Type", "application/problem+json")
+	if limited == nil {
+		t.Fatal("200 requests in a row were never limited")
+	}
 
-	if f.api.Get("/api/v1/me/balance").Header("Retry-After") == "" {
+	limited.AssertHeaderContains("Content-Type", "application/problem+json")
+
+	if limited.Header("Retry-After") == "" {
 		t.Fatal("429 without Retry-After")
 	}
 

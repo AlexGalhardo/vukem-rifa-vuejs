@@ -33,10 +33,10 @@ type exportFixture struct {
 	raffle models.Raffle
 }
 
-func newExportFixture(t *testing.T) exportFixture {
+func newExportFixture(t *testing.T, opts ...vukemtest.Options) exportFixture {
 	t.Helper()
 
-	app := vukemtest.New(t, bootstrap.New)
+	app := vukemtest.New(t, bootstrap.New, opts...)
 	c := owner(t, app, "dona.export@example.com")
 
 	fields := validRaffle()
@@ -53,7 +53,22 @@ func newExportFixture(t *testing.T) exportFixture {
 	exec := func(query string, args ...any) {
 		t.Helper()
 
-		if _, err := db.ExecContext(t.Context(), query, args...); err != nil {
+		// Same fixture on SQLite and Postgres: number the ? placeholders.
+		var b strings.Builder
+
+		n := 0
+		for _, r := range query {
+			if r == '?' {
+				n++
+				b.WriteString(db.Dialect().Placeholder(n))
+
+				continue
+			}
+
+			b.WriteRune(r)
+		}
+
+		if _, err := db.ExecContext(t.Context(), b.String(), args...); err != nil {
 			t.Fatalf("%s: %v", query, err)
 		}
 	}

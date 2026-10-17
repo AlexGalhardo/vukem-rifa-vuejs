@@ -25,10 +25,10 @@ type apiFixture struct {
 	token    string
 }
 
-func newAPIFixture(t *testing.T, email string) apiFixture {
+func newAPIFixture(t *testing.T, email string, opts ...vukemtest.Options) apiFixture {
 	t.Helper()
 
-	app := vukemtest.New(t, bootstrap.New)
+	app := vukemtest.New(t, bootstrap.New, opts...)
 	web := owner(t, app, email)
 	token := newAPIKey(t, web, "full", "raffles:read", "raffles:write")
 	read := newAPIKey(t, web, "read", "raffles:read")

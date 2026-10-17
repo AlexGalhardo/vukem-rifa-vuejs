@@ -50,7 +50,7 @@ func TestCodegen_TypesUpToDate(t *testing.T) {
 		}
 	}
 
-	want, err := os.ReadFile(generatedTypes)
+	want, err := os.ReadFile(generatedTypes) //nolint:gosec // fixed repository path
 	if err != nil {
 		t.Fatal(err)
 	}
