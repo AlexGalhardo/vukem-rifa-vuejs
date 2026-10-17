@@ -9,9 +9,10 @@
 		"cta": "Criar minha rifa"
 	},
 	"theme": {
-		"toggle": "Alternar tema",
+		"toggle": "Tema de cores",
 		"light": "Claro",
-		"dark": "Escuro"
+		"dark": "Escuro",
+		"system": "Sistema"
 	},
 	"locale": {
 		"switch": "Idioma",

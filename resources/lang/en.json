@@ -9,9 +9,10 @@
 		"cta": "Create my raffle"
 	},
 	"theme": {
-		"toggle": "Toggle theme",
+		"toggle": "Color theme",
 		"light": "Light",
-		"dark": "Dark"
+		"dark": "Dark",
+		"system": "System"
 	},
 	"locale": {
 		"switch": "Language",

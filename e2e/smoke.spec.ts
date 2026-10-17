@@ -11,15 +11,29 @@ test("home renders in pt-BR by default", async ({ page }) => {
 	await expect(page.locator("html")).toHaveAttribute("lang", "pt-BR");
 });
 
-test("theme toggle switches and persists", async ({ page }) => {
+test("theme toggle: light, dark and system radios like the docs site", async ({ page }) => {
 	await page.emulateMedia({ colorScheme: "light" });
 	await page.goto("/");
 	const html = page.locator("html");
+	const group = page.getByTestId("theme-toggle");
+	await expect(group).toHaveAttribute("role", "radiogroup");
 	await expect(html).not.toHaveClass(/dark/);
+	await expect(group.getByRole("radio", { name: "Sistema" })).toHaveAttribute("aria-checked", "true");
 
-	await page.getByTestId("theme-toggle").click();
+	await group.getByRole("radio", { name: "Escuro" }).click();
+	await expect(html).toHaveClass(/dark/);
+	await expect(group.getByRole("radio", { name: "Escuro" })).toHaveAttribute("aria-checked", "true");
+
+	await page.reload();
 	await expect(html).toHaveClass(/dark/);
 
+	await page.getByTestId("theme-toggle").getByRole("radio", { name: "Claro" }).click();
+	await expect(html).not.toHaveClass(/dark/);
+
+	// System follows the OS preference, also when it changes.
+	await page.getByTestId("theme-toggle").getByRole("radio", { name: "Sistema" }).click();
+	await page.emulateMedia({ colorScheme: "dark" });
+	await expect(html).toHaveClass(/dark/);
 	await page.reload();
 	await expect(html).toHaveClass(/dark/);
 });
@@ -39,7 +53,7 @@ test("no console errors on home (CSP included)", async ({ page }) => {
 		if (msg.type() === "error") errors.push(msg.text());
 	});
 	await page.goto("/");
-	await page.getByTestId("theme-toggle").click();
+	await page.getByTestId("theme-toggle").getByRole("radio").nth(1).click();
 	expect(errors).toEqual([]);
 });
 
