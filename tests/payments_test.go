@@ -520,7 +520,7 @@ func TestWebhook_LastPaidNumberDispatchesTheDraw(t *testing.T) {
 	_, res := f.confirmed(t, 100)
 	deliverSigned(t, f.app, paidEvent("log_almost", *res.ChargeID, res.ID, 1000)).AssertOK()
 
-	if got := queue.Dispatched[jobs.RunDraw](fake); len(got) != 0 {
+	if got := soldOutDraws(fake); len(got) != 0 {
 		t.Fatalf("draw dispatched with numbers left: %+v", got)
 	}
 
@@ -536,8 +536,8 @@ func TestWebhook_LastPaidNumberDispatchesTheDraw(t *testing.T) {
 	_, last := f.confirmed(t, 99)
 	deliverSigned(t, f.app, paidEvent("log_last", *last.ChargeID, last.ID, 1000)).AssertOK()
 
-	got := queue.Dispatched[jobs.RunDraw](fake)
-	if len(got) != 1 || got[0].RaffleID != f.raffle.ID || got[0].Trigger != models.DrawSoldOut {
+	got := soldOutDraws(fake)
+	if len(got) != 1 || got[0].RaffleID != f.raffle.ID {
 		t.Fatalf("draw jobs = %+v", got)
 	}
 }
@@ -593,4 +593,18 @@ func TestWebhook_PaymentAfterTheRaffleClosedIsRefundDue(t *testing.T) {
 			}
 		})
 	}
+}
+
+// soldOutDraws are the sold-out draw jobs (creating a raffle also queues
+// its deadline draw).
+func soldOutDraws(fake *queue.Fake) []jobs.RunDraw {
+	var out []jobs.RunDraw
+
+	for _, j := range queue.Dispatched[jobs.RunDraw](fake) {
+		if j.Trigger == models.DrawSoldOut {
+			out = append(out, j)
+		}
+	}
+
+	return out
 }
