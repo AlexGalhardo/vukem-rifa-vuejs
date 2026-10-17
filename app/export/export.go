@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/AlexGalhardo/vukem/database"
+	vexport "github.com/AlexGalhardo/vukem/export"
 	"github.com/AlexGalhardo/vukem/orm"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
@@ -233,13 +234,34 @@ func WriteJSON(w io.Writer, e Export) error {
 	return enc.Encode(e)
 }
 
-// WriteCSV writes e as CSV sections separated by a blank line. The first
-// column of every row is the record type and each section starts with its
-// header row, so one file holds the whole export and still opens in a
-// spreadsheet. Text cells are guarded against formula injection (Text);
-// numbers and timestamps are written by the app and never start a formula.
+// WriteCSV writes e as CSV to w with every cell guarded (vexport.SafeCell),
+// byte for byte what the HTTP download streams.
 func WriteCSV(w io.Writer, e Export) error {
 	cw := csv.NewWriter(w)
+
+	err := Records(e, func(record []string) error {
+		safe := make([]string, len(record))
+		for i, c := range record {
+			safe[i] = vexport.SafeCell(c)
+		}
+
+		return cw.Write(safe)
+	})
+	if err != nil {
+		return err
+	}
+
+	cw.Flush()
+
+	return cw.Error()
+}
+
+// Records emits e as CSV records: sections separated by a blank row, the
+// first column of every row is the record type and each section starts with
+// its header row, so one file holds the whole export and still opens in a
+// spreadsheet. Cells are raw: the writer (vukem export) guards them against
+// formula injection.
+func Records(e Export, write func([]string) error) error {
 	r := e.Raffle
 
 	rows := [][]string{
@@ -249,7 +271,7 @@ func WriteCSV(w io.Writer, e Export) error {
 			"owner_share_cents", "platform_fee_cents", "refund_due_cents", "generated_at",
 		},
 		{
-			"raffle", itoa(r.ID), Text(r.Slug), Text(r.Title), Text(r.Description), Text(r.Status),
+			"raffle", itoa(r.ID), r.Slug, r.Title, r.Description, r.Status,
 			itoa(r.NumberCount), itoa(r.PriceCents), itoa(r.DurationDays), ts(r.StartsAt), ts(r.EndsAt),
 			tsPtr(r.LockedAt), tsPtr(r.ArchivedAt), itoa(r.Available), itoa(r.Reserved), itoa(r.Paid),
 			itoa(r.OwnerShareCents), itoa(r.PlatformFeeCents), itoa(r.RefundDueCents), ts(e.GeneratedAt),
@@ -259,7 +281,7 @@ func WriteCSV(w io.Writer, e Export) error {
 	}
 
 	for _, n := range e.Numbers {
-		rows = append(rows, []string{"number", itoa(n.Number), Text(n.Status), tsPtr(n.PaidAt), idPtr(n.ReservationID)})
+		rows = append(rows, []string{"number", itoa(n.Number), n.Status, tsPtr(n.PaidAt), idPtr(n.ReservationID)})
 	}
 
 	rows = append(rows, []string{}, []string{
@@ -274,8 +296,8 @@ func WriteCSV(w io.Writer, e Export) error {
 		}
 
 		rows = append(rows, []string{
-			"reservation", itoa(res.ID), itoa(res.Number), Text(res.BuyerName),
-			Text(res.BuyerEmail), Text(res.BuyerPhone), Text(res.Status), itoa(res.AmountCents), Text(charge),
+			"reservation", itoa(res.ID), itoa(res.Number), res.BuyerName,
+			res.BuyerEmail, res.BuyerPhone, res.Status, itoa(res.AmountCents), charge,
 			ts(res.ExpiresAt), tsPtr(res.PaidAt), ts(res.CreatedAt), strconv.FormatBool(res.RefundDue),
 		})
 	}
@@ -287,8 +309,8 @@ func WriteCSV(w io.Writer, e Export) error {
 
 	for _, l := range e.Ledger {
 		rows = append(rows, []string{
-			"ledger", itoa(l.ID), Text(l.Kind), itoa(l.AmountCents), idPtr(l.ReservationID),
-			Text(l.Note), strconv.FormatBool(l.RefundDue), ts(l.CreatedAt),
+			"ledger", itoa(l.ID), l.Kind, itoa(l.AmountCents), idPtr(l.ReservationID),
+			l.Note, strconv.FormatBool(l.RefundDue), ts(l.CreatedAt),
 		})
 	}
 
@@ -304,37 +326,23 @@ func WriteCSV(w io.Writer, e Export) error {
 		}
 
 		rows = append(rows, []string{
-			"draw", ts(d.DrawnAt), Text(d.Trigger), Text(d.Algorithm), Text(d.Seed),
-			itoa(d.ParticipantsCount), Text(d.ParticipantsSHA256), winner,
+			"draw", ts(d.DrawnAt), d.Trigger, d.Algorithm, d.Seed,
+			itoa(d.ParticipantsCount), d.ParticipantsSHA256, winner,
 		})
 	}
 
 	for _, row := range rows {
-		if err := cw.Write(row); err != nil {
+		if err := write(row); err != nil {
 			return err
 		}
 	}
 
-	cw.Flush()
-
-	return cw.Error()
+	return nil
 }
 
-// Text guards a CSV text cell against formula injection (OWASP CSV
-// injection): a cell starting with =, +, -, @, tab or carriage return gets
-// a leading apostrophe so spreadsheets show it as text.
-func Text(s string) string {
-	if s == "" {
-		return s
-	}
-
-	switch s[0] {
-	case '=', '+', '-', '@', '\t', '\r':
-		return "'" + s
-	}
-
-	return s
-}
+// Text guards a CSV cell against formula injection (OWASP CSV injection);
+// it is vukem's export.SafeCell, which also leaves plain numbers alone.
+func Text(s string) string { return vexport.SafeCell(s) }
 
 func itoa[N int | int64](n N) string { return strconv.FormatInt(int64(n), 10) }
 

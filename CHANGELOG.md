@@ -35,6 +35,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Bumped vukem to v0.25.0: the database queue worker runs in `serve` by vukem (`QUEUE_IN_SERVE`; `bootstrap.Background` removed), the queue follows `app.Now`, buyer error pages use `inertia.RenderStatus`, the REST API registers with `api.Register` + `ValidateResponse` and authenticates with `auth.Required` (APIGuard, 401 problem+json), API tokens use the app clock, generated types are zod 4, CSV downloads stream through vukem `export` (stronger formula guard; plain numbers such as E.164 phones and negative amounts are no longer prefixed).
 - Sign-up no longer reveals existing accounts: every attempt answers "check your email" (`/register/check-email`) without logging in; a new address gets the verification link, an existing one an "account exists" notice (at most one per hour) and nothing is created. The verification link now works signed out and leads to the login page. Verification and reset mails are queued.
 - Production refuses to boot with a non-HTTPS `APP_URL`.
 - Production refuses a non-HTTPS `ABACATEPAY_BASE_URL` (the API key never travels in clear text).

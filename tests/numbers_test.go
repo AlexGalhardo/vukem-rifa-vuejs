@@ -97,7 +97,8 @@ func TestNumbers_LinkIsShownOnceAndBuyerOnlyToOwner(t *testing.T) {
 	vukemtest.AssertDatabaseMissing(t, f.app, "reservations", map[string]any{"token_hash": token})
 
 	page := f.c.Get(f.path).AssertOK()
-	page.AssertDontSee(token).AssertDontSee(reservations.HashToken(token)).AssertDontSee("token")
+	// No token prop or column (shared catalogs may say "token" in prose).
+	page.AssertDontSee(token).AssertDontSee(reservations.HashToken(token)).AssertDontSee(`\"token\"`).AssertDontSee("token_hash")
 	page.AssertInertia("Raffles/Show").
 		PropEquals("numbers.6.status", "reserved").
 		HasProp("buyers", 1).

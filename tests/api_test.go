@@ -144,6 +144,9 @@ func TestAPI_ListIsPaginatedAndScoped(t *testing.T) {
 		AssertJSONCount("data", 1).AssertJSONPath("links.next", nil).AssertJSONPath("meta.page", 2)
 
 	f.api.Get("/api/v1/raffles?per_page=101").AssertUnprocessable().AssertMatchesOpenAPI()
+
+	// A page past the end is an empty list, still a valid response.
+	f.api.Get("/api/v1/raffles?page=9").AssertOK().AssertMatchesOpenAPI().AssertJSONCount("data", 0)
 }
 
 func TestAPI_NumbersAndPaymentLink(t *testing.T) {

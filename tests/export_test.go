@@ -205,26 +205,23 @@ func TestExport_CSVGolden(t *testing.T) {
 
 	for _, row := range rows {
 		for _, cell := range row {
-			if cell != "" && strings.ContainsRune("=+-@\t\r", rune(cell[0])) && !isInteger(cell) {
+			// Either already guarded (leading apostrophe) or nothing to guard.
+			if !strings.HasPrefix(cell, "'") && export.Text(cell) != cell {
 				t.Fatalf("unguarded formula cell %q in row %v", cell, row)
 			}
 		}
 	}
 }
 
-func isInteger(s string) bool {
-	var n int64
-	_, err := fmt.Sscan(s, &n)
-
-	return err == nil && fmt.Sprint(n) == s
-}
-
 func TestExport_TextGuardsFormulas(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]string{
-		"=1+1": "'=1+1", "+55 11": "'+55 11", "-2": "'-2", "@SUM(A1)": "'@SUM(A1)",
-		"\tx": "'\tx", "\rx": "'\rx", "Maria": "Maria", "": "", " =x": " =x",
+		"=1+1": "'=1+1", "+55 11": "'+55 11", "@SUM(A1)": "'@SUM(A1)",
+		"\tx": "'\tx", "\rx": "'\rx", "Maria": "Maria", "": "",
+		// vukem export.SafeCell (v0.25.0): spreadsheets skip leading spaces and
+		// quotes; plain numbers (negative amounts, E.164 phones) cannot run.
+		" =x": "' =x", "-2": "-2", "+5511987654321": "+5511987654321",
 	}
 	for in, want := range tests {
 		if got := export.Text(in); got != want {

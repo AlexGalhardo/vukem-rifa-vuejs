@@ -48,30 +48,30 @@ var security = []string{"bearer"}
 // Register adds the v1 endpoints to g (mounted at /api/v1).
 func (h *Handlers) Register(g *router.Group, mw Middleware) {
 	op := func(name, summary string) api.Op {
-		return api.Op{Name: name, Summary: summary, Tags: []string{"raffles"}, Security: security}
+		return api.Op{Name: name, Summary: summary, Tags: []string{"raffles"}, Security: security, ValidateResponse: true}
 	}
 
-	handle(g, http.MethodGet, "/raffles", op("raffles.index", "List your raffles (paginated)"), h.list).Use(mw.Read)
-	handle(g, http.MethodPost, "/raffles", op("raffles.store", "Create a raffle"), h.create).Use(mw.Write)
-	handle(g, http.MethodGet, "/raffles/{id}", op("raffles.show", "Show a raffle"), h.show).Use(mw.Read)
-	handle(g, http.MethodPatch, "/raffles/{id}", op("raffles.update", "Update a raffle"), h.update).Use(mw.Write)
-	handle(g, http.MethodDelete, "/raffles/{id}", op("raffles.destroy", "Delete a raffle without paid numbers"), h.destroy).
+	api.Register(g, "GET /raffles", op("raffles.index", "List your raffles (paginated)"), h.list).Use(mw.Read)
+	api.Register(g, "POST /raffles", op("raffles.store", "Create a raffle"), h.create).Use(mw.Write)
+	api.Register(g, "GET /raffles/{id}", op("raffles.show", "Show a raffle"), h.show).Use(mw.Read)
+	api.Register(g, "PATCH /raffles/{id}", op("raffles.update", "Update a raffle"), h.update).Use(mw.Write)
+	api.Register(g, "DELETE /raffles/{id}", op("raffles.destroy", "Delete a raffle without paid numbers"), h.destroy).
 		Use(mw.Write)
 
 	archive := op("raffles.archive", "Archive a raffle")
 	archive.Status = http.StatusOK
-	handle(g, http.MethodPost, "/raffles/{id}/archive", archive, h.archive).Use(mw.Write)
+	api.Register(g, "POST /raffles/{id}/archive", archive, h.archive).Use(mw.Write)
 
-	handle(g, http.MethodGet, "/raffles/{id}/numbers", op("raffles.numbers", "List every number of a raffle"), h.numbers).
+	api.Register(g, "GET /raffles/{id}/numbers", op("raffles.numbers", "List every number of a raffle"), h.numbers).
 		Use(mw.Read)
 
 	link := op("raffles.payment_links.store", "Reserve a number for 10 minutes and get its payment link")
 	link.Description = "Send an Idempotency-Key header to retry safely: the same key replays the first response."
-	handle(g, http.MethodPost, "/raffles/{id}/numbers/{number}/payment-links", link, h.paymentLink).
+	api.Register(g, "POST /raffles/{id}/numbers/{number}/payment-links", link, h.paymentLink).
 		Use(mw.Write, mw.LinkThrottle, mw.Idempotency)
 
 	exp := op("raffles.export", "Download the audit export (JSON or CSV)")
-	// Not handle(): the CSV variant is not JSON. The document describes the
+	// Not api.Register: the CSV variant is not JSON. The document describes the
 	// JSON variant.
 	rt := g.Get("/raffles/{id}/export", h.export).Name("raffles.export").Use(mw.Read)
 	rt.Doc(&api.Operation{
@@ -79,8 +79,11 @@ func (h *Handlers) Register(g *router.Group, mw Middleware) {
 		In: reflect.TypeFor[ExportQuery](), Out: reflect.TypeFor[export.Export](),
 	})
 
-	me := api.Op{Name: "me.balance", Summary: "Your balance (owner shares minus payouts and refunds)", Tags: []string{"account"}, Security: security}
-	handle(g, http.MethodGet, "/me/balance", me, h.balance).Use(mw.Read)
+	me := api.Op{
+		Name: "me.balance", Summary: "Your balance (owner shares minus payouts and refunds)",
+		Tags: []string{"account"}, Security: security, ValidateResponse: true,
+	}
+	api.Register(g, "GET /me/balance", me, h.balance).Use(mw.Read)
 }
 
 func (h *Handlers) owner(c *web.Ctx) (models.User, error) { return auth.User[models.User](c, Guard) }

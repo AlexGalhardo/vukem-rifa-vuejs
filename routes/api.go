@@ -17,7 +17,6 @@ import (
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/accounts"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/controllers/apiv1"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/export"
-	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/raffles"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/requests"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/reservations"
@@ -45,7 +44,7 @@ func API(r *router.Router, app *vukem.App) error {
 		return err
 	}
 
-	// workaround(vukem v0.23.0): OPENAPI_PREFIX can only come from the environment; the app pins it in code.
+	// The document covers /api/v1 only unless OPENAPI_PREFIX says otherwise.
 	if app.Config.OpenAPIPrefix == "" {
 		app.Config.OpenAPIPrefix = APIPrefix
 	}
@@ -77,7 +76,7 @@ func API(r *router.Router, app *vukem.App) error {
 	}).Name("api.v1.").Use(
 		// Bounds made-up tokens before they are checked, then each key.
 		ratelimit.Middleware(limiters("api-ip", 300, time.Minute), ratelimit.ByIP),
-		tokenOnly(acc.API),
+		auth.Required(acc.API),
 		ratelimit.Middleware(limiters("api-key", 120, time.Minute), byAPIKey),
 	)
 
@@ -98,23 +97,6 @@ func API(r *router.Router, app *vukem.App) error {
 	})
 
 	return nil
-}
-
-// tokenOnly authenticates with an API key and nothing else: a signed-in
-// browser session is never ambient authority for the API. Unlike
-// auth.Required it never redirects to the login page.
-func tokenOnly(guard *auth.TokenGuard[models.User]) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			c := web.NewCtx(w, r, web.ServicesFrom(r.Context()))
-			if !guard.Check(c) {
-				c.HandleError(auth.ErrUnauthenticated.WithHeader("WWW-Authenticate", `Bearer realm="api"`))
-				return
-			}
-
-			next.ServeHTTP(w, c.Request())
-		})
-	}
 }
 
 // byAPIKey keys rate limits and idempotency records by the API key id

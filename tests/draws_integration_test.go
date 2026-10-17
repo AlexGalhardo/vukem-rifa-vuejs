@@ -69,7 +69,7 @@ func TestPostgres_ConcurrentDrawRunsOnce(t *testing.T) {
 }
 
 // PLAN Phase 3 (D15): "serve" runs the database queue worker in-process
-// (bootstrap.Background) and it processes the delayed ExpireReservation
+// (vukem QUEUE_IN_SERVE) and it processes the delayed ExpireReservation
 // and RunDraw jobs.
 func TestPostgres_BackgroundWorkerProcessesDelayedJobs(t *testing.T) {
 	t.Parallel()
@@ -106,15 +106,10 @@ func TestPostgres_BackgroundWorkerProcessesDelayedJobs(t *testing.T) {
 	time.Sleep(1500 * time.Millisecond)
 	f.show(t).PropEquals("numbers.1.status", "reserved")
 
-	// Ten minutes later. workaround(vukem v0.22.0): queue.Delay and the
-	// database driver use the wall clock, not app.Now, so the test makes
-	// the jobs due by hand while the domain sees the fake clock.
-	f.clock.Advance(10 * time.Minute)
-	f.moveDeadline(t, 0)
-
-	if _, err := db.ExecContext(ctx, "UPDATE jobs SET available_at = $1", time.Now().UnixMilli()); err != nil {
-		t.Fatal(err)
-	}
+	// Past the deadline: the queue follows app.Now (vukem v0.25.0), so both
+	// delayed jobs (the link expiry and the deadline draw) become due on the
+	// fake clock and the in-process worker runs them.
+	f.clock.Advance(31 * 24 * time.Hour)
 
 	waitFor(t, 15*time.Second, func() bool {
 		var draws, live int
@@ -124,8 +119,9 @@ func TestPostgres_BackgroundWorkerProcessesDelayedJobs(t *testing.T) {
 		return draws == 1 && live == 0
 	})
 
-	f.show(t).PropEquals("numbers.1.status", "available").PropEquals("draw.winning_number", float64(1)).
-		PropEquals("winner.buyer_name", buyer.Name)
+	// The session expired with the clock jump: check the database.
+	vukemtest.AssertDatabaseHas(t, f.app, "raffle_numbers", map[string]any{"raffle_id": f.raffle.ID, "number": 2, "status": "available"})
+	vukemtest.AssertDatabaseHas(t, f.app, "draws", map[string]any{"raffle_id": f.raffle.ID, "winning_number": 1})
 	vukemtest.AssertDatabaseHas(t, f.app, "reservations", map[string]any{"number": 2, "status": "expired"})
 }
 

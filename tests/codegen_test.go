@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/AlexGalhardo/vukem/openapi"
@@ -15,10 +14,8 @@ import (
 
 var generatedTypes = filepath.Join("..", "resources", "js", "generated", "api.ts")
 
-// generatedTS returns what `vukem codegen:types -zod` emits for the API,
-// made to compile against the app's zod 4.
-//
-// workaround(vukem v0.23.0): codegen:types -zod emits zod 3 code (z.ZodTypeDef), so it imports zod's bundled zod/v3.
+// generatedTS returns what `vukem codegen:types -zod` emits for the API
+// (zod 4 since vukem v0.25.0).
 func generatedTS(t *testing.T) []byte {
 	t.Helper()
 
@@ -34,7 +31,7 @@ func generatedTS(t *testing.T) []byte {
 		t.Fatal(err)
 	}
 
-	return []byte(strings.Replace(ts, `import { z } from "zod";`, `import { z } from "zod/v3";`, 1))
+	return []byte(ts)
 }
 
 // The committed TypeScript types and zod schemas match the API. Regenerate

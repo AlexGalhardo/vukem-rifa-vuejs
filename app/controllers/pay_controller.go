@@ -35,7 +35,7 @@ func (pc *PayController) Show(c *web.Ctx) error {
 	}
 
 	if co.State == payments.StateExpired {
-		return renderStatus(c, http.StatusGone, "Pay/Show", expiredProps())
+		return inertia.RenderStatus(c, http.StatusGone, "Pay/Show", expiredProps())
 	}
 
 	return inertia.Render(c, "Pay/Show", checkoutProps(co, ""))
@@ -51,7 +51,7 @@ func (pc *PayController) Confirm(c *web.Ctx) error {
 		if errs.Status(err) == http.StatusServiceUnavailable && !c.WantsJSON() {
 			var he *errs.HTTPError
 			if errors.As(err, &he) {
-				return renderStatus(c, http.StatusServiceUnavailable, "Pay/Show", checkoutProps(co, he.Message))
+				return inertia.RenderStatus(c, http.StatusServiceUnavailable, "Pay/Show", checkoutProps(co, he.Message))
 			}
 		}
 
@@ -76,7 +76,7 @@ func (pc *PayController) Status(c *web.Ctx) error {
 func expiredOr(c *web.Ctx, err error) error {
 	status := errs.Status(err)
 	if (status == http.StatusNotFound || status == http.StatusGone) && !c.WantsJSON() {
-		return renderStatus(c, status, "Pay/Show", expiredProps())
+		return inertia.RenderStatus(c, status, "Pay/Show", expiredProps())
 	}
 
 	return err
@@ -118,40 +118,6 @@ func checkoutProps(co payments.Checkout, errMsg string) inertia.Props {
 		"error": errProp,
 	}
 }
-
-// renderStatus renders an Inertia page with a status other than 200.
-//
-// workaround(vukem v0.23.0): inertia.Render always answers 200 and c.Status writes the header before Render sets its own.
-func renderStatus(c *web.Ctx, status int, component string, props inertia.Props) error {
-	w := &statusWriter{ResponseWriter: c.Writer(), status: status}
-	return inertia.Render(web.NewCtx(w, c.Request(), c.Services()), component, props)
-}
-
-type statusWriter struct {
-	http.ResponseWriter
-
-	status int
-	wrote  bool
-}
-
-func (w *statusWriter) WriteHeader(code int) {
-	if !w.wrote && code == http.StatusOK {
-		code = w.status
-	}
-
-	w.wrote = true
-	w.ResponseWriter.WriteHeader(code)
-}
-
-func (w *statusWriter) Write(b []byte) (int, error) {
-	if !w.wrote {
-		w.WriteHeader(http.StatusOK)
-	}
-
-	return w.ResponseWriter.Write(b)
-}
-
-func (w *statusWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 // DevPay holds the development-only helpers of the fake gateway (never
 // registered in production: the fake refuses to boot there).

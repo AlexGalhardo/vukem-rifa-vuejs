@@ -87,6 +87,7 @@ func New(app *vukem.App) (*Accounts, error) {
 
 	users := auth.NewORMProvider[models.User](db)
 	tokens := auth.NewTokens(db)
+	tokens.Now = app.Now // fake clocks drive token expiry and last use
 
 	web := auth.NewSessionGuard("web", users, hasher, auth.NewRememberStore(db))
 	web.InsecureCookies = !app.Config.IsProduction() && !strings.HasPrefix(app.Config.URL, "https://")

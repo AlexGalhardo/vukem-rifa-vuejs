@@ -71,6 +71,6 @@ Buyers receive no email in this mode either; owners share the payment link manua
 
 ## Deploy notes (Railway)
 
-- One service runs HTTP, the database queue worker (`BACKGROUND_IN_SERVE`) and the scheduler (`SCHEDULE_IN_SERVE`, vukem default). If a separate `schedule:work` or `queue:work` service is ever added, set the matching flag to `false` on the web service, never both.
+- One service runs HTTP, the database queue worker (`QUEUE_IN_SERVE`) and the scheduler (`SCHEDULE_IN_SERVE`), both vukem defaults. If a separate `schedule:work` or `queue:work` service is ever added, set the matching flag to `false` on the web service, never both.
 - Client IP: until `TRUSTED_PROXIES` is set, `c.IP()` is Railway's edge address, so per-IP limits (login, password reset mails, payment confirm, API by IP) share one bucket for everyone; per-account, per-owner and per-key limits are unaffected. To fix, log `r.RemoteAddr` of a few production requests, set `TRUSTED_PROXIES` to the narrowest verified range, `CLIENT_IP_HEADER=X-Real-IP` and `TRUST_FORWARDED_PROTO=true`. Never trust `0.0.0.0/0`.
 - vukem v0.24.0 refuses clear-text queued mail jobs from older releases: deploy when the `jobs` table has no pending `vukem.mail` rows, or set `QUEUE_ALLOW_LEGACY_MAIL=true` for one deploy.

@@ -85,11 +85,10 @@ type Raffle struct {
 	CreatedAt    time.Time  `json:"created_at"    validate:"required"`
 }
 
-// RafflePage is one page of raffles.
-//
-// workaround(vukem v0.23.0): z "required" on a slice also means "at least one item", so data lists have no required tag.
+// RafflePage is one page of raffles (data may be empty: z "required"
+// means present since vukem v0.25.0).
 type RafflePage struct {
-	Data  []Raffle  `json:"data"`
+	Data  []Raffle  `json:"data"  validate:"required"`
 	Meta  PageMeta  `json:"meta"  validate:"required"`
 	Links PageLinks `json:"links" validate:"required"`
 }
@@ -118,7 +117,7 @@ type RaffleNumber struct {
 
 // NumberList is every number of a raffle, in order.
 type NumberList struct {
-	Data []RaffleNumber `json:"data"`
+	Data []RaffleNumber `json:"data" validate:"required"`
 }
 
 // PaymentLink is a new payment link: the buyer pays at URL until
