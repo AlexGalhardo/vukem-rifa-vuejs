@@ -6,6 +6,13 @@ import (
 	"github.com/AlexGalhardo/vukem/orm"
 )
 
+// Reservation origins: who generated the payment link.
+const (
+	OriginOwner  = "owner"
+	OriginPublic = "public"
+	OriginAPI    = "api"
+)
+
 // Reservation statuses.
 const (
 	ReservationPending         = "pending"          // link generated, buyer has not confirmed
@@ -39,6 +46,11 @@ type Reservation struct {
 	PaidAt       orm.NullTime          `json:"paid_at"`
 	// Locale is the buyer's page locale, set on confirm ("" = APP_LOCALE).
 	Locale string `json:"-"`
+	// Origin is who generated the link (OriginOwner, OriginPublic, OriginAPI).
+	Origin string `json:"origin"`
+	// BuyerUserID links the reservation to the buyer's account (purchase
+	// history): the signed-in buyer, or a verified account with the email.
+	BuyerUserID *int64 `json:"-"`
 }
 
 // Live reports whether the reservation still holds its number at now.

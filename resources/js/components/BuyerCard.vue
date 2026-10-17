@@ -35,6 +35,13 @@ function cancel(): void {
 			</button>
 		</div>
 		<p class="text-sm font-medium" data-testid="buyer-status">{{ t(`link.details.status.${buyer.status}`) }}</p>
+		<p
+			v-if="buyer.origin === 'public'"
+			class="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+			data-testid="buyer-origin"
+		>
+			{{ t("link.details.origin_public") }}
+		</p>
 		<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
 			<dt class="text-zinc-600 dark:text-zinc-400">{{ t("link.form.buyer_name") }}</dt>
 			<dd data-testid="buyer-card-name">{{ buyer.buyer_name }}</dd>

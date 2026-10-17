@@ -45,3 +45,31 @@ var BuyerSchema = z.Struct[Buyer](z.Shape{
 	"buyer_email": z.String().Trim().ToLower().Max(255).Email(),
 	"buyer_phone": z.String().Preprocess(NormalizePhone).Regex(brPhone),
 })
+
+// PublicBuyer is the buyer form on the public raffle page: the Buyer fields,
+// the LGPD consent and a honeypot field that people never see.
+type PublicBuyer struct {
+	Name    string `json:"buyer_name"  form:"buyer_name"`
+	Email   string `json:"buyer_email" form:"buyer_email"`
+	Phone   string `json:"buyer_phone" form:"buyer_phone"`
+	Consent bool   `json:"consent"     form:"consent"`
+	Website string `json:"website"     form:"website"`
+}
+
+// Buyer returns the buyer data of the form.
+func (b PublicBuyer) Buyer() Buyer { return Buyer{Name: b.Name, Email: b.Email, Phone: b.Phone} }
+
+// PublicBuyerSchema validates PublicBuyer; consent must be given.
+var PublicBuyerSchema = z.Struct[PublicBuyer](z.Shape{
+	"buyer_name":  z.String().Trim().Min(2).Max(100),
+	"buyer_email": z.String().Trim().ToLower().Max(255).Email(),
+	"buyer_phone": z.String().Preprocess(NormalizePhone).Regex(brPhone),
+	"consent":     z.Bool(),
+	"website":     z.String().Max(200).Optional(),
+}).Refine(func(b PublicBuyer) error {
+	if !b.Consent {
+		return z.FieldErrorKey("consent", "consent_required", "Accept the privacy notice to continue.", nil)
+	}
+
+	return nil
+})

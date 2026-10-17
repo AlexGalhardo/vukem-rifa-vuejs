@@ -17,5 +17,6 @@ func All() []schema.Migration {
 		m20261017190000AddLocaleToReservations(),
 		m20261017210000AddTokenSealedToReservations(),
 		m20261017230000AddRevokedAtToAccessTokens(),
+		m20261017240000AddOriginAndBuyerUserToReservations(),
 	}
 }

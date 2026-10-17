@@ -3,6 +3,7 @@
 package tests
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"testing"
@@ -10,6 +11,8 @@ import (
 	"github.com/AlexGalhardo/vukem/errs"
 	"github.com/AlexGalhardo/vukem/vukemtest"
 
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
+	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/reservations"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/tests/pgtest"
 )
 
@@ -136,5 +139,70 @@ func TestPostgres_PaymentSchemaConstraints(t *testing.T) {
 		if _, err := db.ExecContext(ctx, tc.sql, tc.args...); err == nil {
 			t.Errorf("%s: accepted, want a constraint error", tc.name)
 		}
+	}
+}
+
+// Public checkout on Postgres: twenty buyers racing for one free number get
+// exactly one link, and one email racing for twenty numbers never passes
+// the cap of five live links (the raffle row lock serializes the count).
+func TestPostgres_PublicCheckoutRacesAndCap(t *testing.T) {
+	t.Parallel()
+
+	f := newReservationFixture(t, postgresEnv(t))
+	opts := reservations.ReserveOptions{Origin: models.OriginPublic, MaxLivePerEmail: 5}
+
+	race := func(n int, reserve func(i int) error) (ok int) {
+		var (
+			wg sync.WaitGroup
+			mu sync.Mutex
+		)
+
+		start := make(chan struct{})
+
+		for i := range n {
+			wg.Go(func() {
+				<-start
+
+				err := reserve(i)
+
+				mu.Lock()
+				defer mu.Unlock()
+
+				switch {
+				case err == nil:
+					ok++
+				case errs.Status(err) == http.StatusConflict, errs.Status(err) == http.StatusTooManyRequests:
+				default:
+					t.Errorf("reserve: %v", err)
+				}
+			})
+		}
+
+		close(start)
+		wg.Wait()
+
+		return ok
+	}
+
+	sameNumber := race(20, func(i int) error {
+		b := buyer
+		b.Email = fmt.Sprintf("racer%d@example.com", i)
+		_, err := f.svc.ReserveWith(t.Context(), f.raffle, 50, b, opts)
+
+		return err
+	})
+	if sameNumber != 1 {
+		t.Fatalf("same number: %d links, want 1", sameNumber)
+	}
+
+	sameEmail := race(20, func(i int) error {
+		b := buyer
+		b.Email = "greedy@example.com"
+		_, err := f.svc.ReserveWith(t.Context(), f.raffle, 60+i, b, opts)
+
+		return err
+	})
+	if sameEmail != 5 {
+		t.Fatalf("same email: %d links, want the cap of 5", sameEmail)
 	}
 }

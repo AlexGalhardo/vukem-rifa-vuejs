@@ -91,6 +91,7 @@ export interface Buyer {
 	buyer_phone: string;
 	expires_at: string;
 	paid_at: string | null;
+	origin: "owner" | "public" | "api";
 }
 
 /** A payment link (POST /raffles/{id}/numbers/{n}/link, and the live ones in the Show props). */
@@ -143,4 +144,16 @@ export interface OwnerBalance {
 	name: string;
 	email: string;
 	balance_cents: number;
+}
+
+/** GET /account/purchases: one number the signed-in user bought or tried to buy. */
+export interface Purchase {
+	raffle_title: string;
+	raffle_slug: string;
+	number: number;
+	amount_cents: number;
+	status: ReservationStatus;
+	created_at: string;
+	expires_at: string;
+	paid_at: string | null;
 }

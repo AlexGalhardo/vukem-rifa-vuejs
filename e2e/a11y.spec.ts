@@ -158,6 +158,11 @@ for (const v of variants) {
 			expect(publicHref).toMatch(/^\/r\//);
 			await page.goto(publicHref ?? "/");
 			await expectAccessible(page, `public raffle (${name})`);
+			await page.getByTestId("number-10").click();
+			await expect(page.getByTestId("public-buy-form")).toBeVisible();
+			await expectAccessible(page, `public buy form (${name})`);
+			await page.goto(lang("/account/purchases", v));
+			await expectAccessible(page, `my purchases (${name})`);
 		});
 	});
 }

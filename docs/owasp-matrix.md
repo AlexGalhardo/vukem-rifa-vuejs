@@ -18,9 +18,10 @@ New tests written for the consolidated suite live in `tests/security_owasp_test.
 | IDOR on numbers / payment links / cancel | `TestSecurity_NumbersOtherOwnersGet404`, `TestSecurity_NumbersGuestsAndUnverifiedBlocked` |
 | IDOR on exports | `TestExport_OtherOwnerGetsNotFound` |
 | IDOR on API keys (revoke another user's key) and API `{id}` routes | `TestAPIKeys_RevokeIsOwnerChecked`, `TestSecurityAPI_OtherOwnersRafflesAreNotFound` |
-| Buyer sees only their own masked data; public page has no personal data | `TestPay_ShowsOnlyTheBuyersOwnMaskedData`, `TestRaffle_PublicPageHasNoPersonalData`, `TestNumbers_LinkIsShownOnceAndBuyerOnlyToOwner` |
+| Buyer sees only their own masked data; public page has no personal data | `TestPay_ShowsOnlyTheBuyersOwnMaskedData`, `TestRaffle_PublicPageHasNoPersonalData`, `TestNumbers_LiveLinksStayVisibleToTheOwnerForTenMinutes` |
 | Vertical escalation: non-admin on payouts (GET and POST) | `TestAdminPayouts_HiddenFromNonAdmins`, `TestRegister_IsNotAdmin` |
 | Mass assignment (`user_id`, `status`, `slug`, `locked_at`, `is_admin` in bodies) | `TestOWASP_A01_MassAssignmentIsIgnored` |
+| Public checkout: only free numbers, closed raffles refuse, purchase history shows only my own reservations, no buyer data on the public page | `TestPublicCheckout_OnlyFreeNumbers`, `TestPublicCheckout_ClosedRafflesRefuse`, `TestPublicCheckout_PurchaseHistoryShowsOnlyMyPurchases`, `TestPublicCheckout_FreeNumberGoesToThePayPage` |
 | Read-only API key on write endpoints | `TestSecurityAPI_ReadOnlyKeyCannotWrite` |
 
 ## A02 Cryptographic failures
@@ -49,7 +50,9 @@ On Railway HSTS is sent by `HSTS_FORCE` (README "Deploy notes").
 
 | Abuse case | Tests |
 | --- | --- |
-| Concurrent reservation of the same number → exactly one link | `TestPostgres_ConcurrentReserveSameNumber` |
+| Concurrent reservation of the same number → exactly one link (owner and public) | `TestPostgres_ConcurrentReserveSameNumber`, `TestPostgres_PublicCheckoutRacesAndCap` |
+| Public checkout abuse: honeypot, LGPD consent, per-IP rate limit, cap of 5 live links per email (race-safe) | `TestPublicCheckout_RefusesBotsAndMissingConsent`, `TestPublicCheckout_RateLimitedPerIP`, `TestPublicCheckout_CapsLiveLinksPerEmail`, `TestPostgres_PublicCheckoutRacesAndCap` |
+| Purchase history linking: signed-in buyer or verified email only; unverified emails link on verification | `TestPublicCheckout_LinksTheBuyerAccount` |
 | Expired / cancelled link reuse (page 410, confirm refused) | `TestPay_ExpiredCancelledAndUnknownLinks`, `e2e/security.spec.ts` |
 | Link expiry and sweeper; expiry never releases a paid number | `TestNumbers_LinkExpiresAfterTenMinutes`, `TestReservation_ExpiryNeverReleasesPaidNumbers`, `TestPostgres_SweepersExpireLinksAndDraw` |
 | PIX never outlives the reservation or the raffle | `TestPay_ConfirmChargesTheRemainingTime`, `TestPay_ConfirmNeverOutlivesTheRaffle` |

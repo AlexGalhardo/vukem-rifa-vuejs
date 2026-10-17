@@ -23,7 +23,9 @@
 		"login": "Entrar",
 		"register": "Criar conta",
 		"dashboard": "Painel",
-		"logout": "Sair"
+		"logout": "Sair",
+		"menu": "Menu",
+		"main": "Principal"
 	},
 	"auth": {
 		"email": "E-mail",
@@ -132,7 +134,8 @@
 			"price_reais": "preço",
 			"duration_days": "duração"
 		},
-		"password_mismatch": "A confirmação da senha não confere."
+		"password_mismatch": "A confirmação da senha não confere.",
+		"consent_required": "Aceite o aviso de privacidade para continuar."
 	},
 	"mail": {
 		"greeting": "Olá, {name}!",
@@ -269,12 +272,26 @@
 				"pending": "Link enviado, aguardando o comprador",
 				"awaiting_payment": "PIX gerado, aguardando pagamento",
 				"paid": "Pago"
-			}
+			},
+			"origin_public": "Comprado pela página pública"
 		},
 		"active": {
 			"title": "Links de pagamento ativos",
 			"lead": "Cada link fica listado aqui até terminarem os 10 minutos, mesmo depois de você gerar links para outros números."
-		}
+		},
+		"public": {
+			"taken": "Este número acabou de ser reservado. Escolha outro número livre.",
+			"refused": "Não foi possível reservar este número. Tente novamente.",
+			"title": "Comprar o número {number}",
+			"name": "Seu nome",
+			"email": "Seu e-mail",
+			"phone": "Seu celular (com DDD)",
+			"consent": "Concordo que o organizador da rifa e a Vukem Rifa usem meu nome, e-mail e telefone para processar esta compra e falar comigo sobre ela (LGPD). Eles nunca aparecem na página pública.",
+			"submit": "Continuar para o pagamento PIX",
+			"hint": "Escolha um número livre para comprar. Números reservados e pagos não podem ser escolhidos.",
+			"consent_required": "Aceite o aviso de privacidade para continuar."
+		},
+		"too_many_for_email": "Este e-mail já tem o máximo de 5 links de pagamento abertos nesta rifa. Pague ou espere eles expirarem."
 	},
 	"apikeys": {
 		"nav": "API",
@@ -379,6 +396,28 @@
 			"owner_not_found": "Dono não encontrado.",
 			"invalid": "Valor inválido para este campo.",
 			"nav": "Repasses"
+		}
+	},
+	"purchases": {
+		"nav": "Minhas compras",
+		"title": "Minhas compras",
+		"paid": "Números pagos",
+		"unpaid": "Não pagos (abertos, expirados ou cancelados)",
+		"none_paid": "Nenhum número pago ainda.",
+		"none_unpaid": "Nada por aqui.",
+		"raffle": "Rifa",
+		"number": "Número",
+		"amount": "Valor",
+		"paid_at": "Pago em",
+		"status": "Situação",
+		"created_at": "Criado em",
+		"expires_at": "Link expira em",
+		"statuses": {
+			"pending": "Aguardando pagamento",
+			"awaiting_payment": "PIX gerado, aguardando pagamento",
+			"expired": "Expirado",
+			"cancelled": "Cancelado",
+			"paid": "Pago"
 		}
 	}
 }

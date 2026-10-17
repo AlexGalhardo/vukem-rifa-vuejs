@@ -20,6 +20,7 @@ type Buyer struct {
 	Phone     string       `json:"buyer_phone"`
 	ExpiresAt time.Time    `json:"expires_at"`
 	PaidAt    orm.NullTime `json:"paid_at"`
+	Origin    string       `json:"origin"`
 }
 
 // Buyers lists the live and paid reservations of raffleID by number. Only
@@ -36,7 +37,7 @@ func (s *Service) Buyers(ctx context.Context, raffleID int64) ([]Buyer, error) {
 	for i, r := range list {
 		out[i] = Buyer{
 			Number: r.Number, Status: r.Status, Name: r.BuyerName, Email: r.BuyerEmail, Phone: r.BuyerPhone,
-			ExpiresAt: r.ExpiresAt, PaidAt: r.PaidAt,
+			ExpiresAt: r.ExpiresAt, PaidAt: r.PaidAt, Origin: r.Origin,
 		}
 	}
 

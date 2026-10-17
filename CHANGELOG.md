@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Public checkout (owner request): visitors pick a free number on `/r/{slug}`, give name, email, phone and LGPD consent, and pay on the same PIX page; rate limits, honeypot, a cap of 5 live links per email; the owner sees the origin; signed-in (or verified-email) buyers get `/account/purchases` with paid and unpaid numbers. The navbar collapses into a menu on phones.
 - Owner requests (2026-10-17): the navbar uses the vukem docs container (sticky, 90rem, same gutters); the theme toggle is a light/dark/system radiogroup with sun, moon and monitor icons; the buyer page shows the PIX QR code inline (no modal) with a "Copiar código" button (clipboard.js 2.0.11) and a toast; every live payment link stays listed for the owner for its 10 minutes (token sealed with APP_KEY in `reservations.token_sealed`).
 - Security tests: argon2id password hashes, production HSTS and http `APP_URL` refusal, failed-login and payout security events without secrets, enumeration-safe sign-up (`docs/owasp-matrix.md`).
 - Consolidated OWASP Top 10 suite (`docs/owasp-matrix.md`): new tests for mass assignment, session cookie flags, injection payloads, security headers, security-event logging without secrets, gateway URL hardening, logout killing copied session cookies and reset-mail timing; `e2e/security.spec.ts` (no CSP violations, cancelled link reuse).

@@ -100,7 +100,15 @@ func (a *Accounts) MarkVerified(ctx context.Context, ex database.Executor, u *mo
 	u.EmailVerifiedAt = orm.NullTime{}
 	u.EmailVerifiedAt.V, u.EmailVerifiedAt.Valid = a.now().UTC(), true
 
-	_, err := orm.QueryOf[models.User](ex).Where("id", u.ID).Update(ctx, orm.Set{"email_verified_at": u.EmailVerifiedAt.V})
+	if _, err := orm.QueryOf[models.User](ex).Where("id", u.ID).Update(ctx, orm.Set{"email_verified_at": u.EmailVerifiedAt.V}); err != nil {
+		return err
+	}
+
+	// Purchases made with this email before it was verified (public checkout)
+	// join the purchase history now that the mailbox is proven.
+	p := ex.Dialect().Placeholder
+	_, err := ex.ExecContext(ctx, "UPDATE reservations SET buyer_user_id = "+p(1)+" WHERE buyer_email = "+p(2)+" AND buyer_user_id IS NULL",
+		u.ID, u.Email)
 
 	return err
 }

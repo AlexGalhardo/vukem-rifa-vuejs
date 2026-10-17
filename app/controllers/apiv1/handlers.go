@@ -292,7 +292,7 @@ func (h *Handlers) paymentLink(c *web.Ctx, in CreatePaymentLink) (PaymentLink, e
 		return PaymentLink{}, err
 	}
 
-	link, err := h.Reservations.Reserve(c.Context(), r, in.Number, buyer)
+	link, err := h.Reservations.ReserveWith(c.Context(), r, in.Number, buyer, reservations.ReserveOptions{Origin: models.OriginAPI})
 	if err != nil {
 		return PaymentLink{}, err
 	}

@@ -65,9 +65,34 @@ func newToken() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
+// ReserveOptions describe who creates a link.
+type ReserveOptions struct {
+	// Origin is models.OriginOwner (default), OriginPublic or OriginAPI.
+	Origin string
+	// BuyerUserID links the reservation to the buyer's account.
+	BuyerUserID *int64
+	// MaxLivePerEmail caps the live links of one buyer email in the raffle
+	// (0 = no cap); checked in the reserve transaction.
+	MaxLivePerEmail int
+}
+
+// ErrTooManyLinks is a 429 for a buyer email over ReserveOptions.MaxLivePerEmail.
+func errTooManyLinks(ctx context.Context) error {
+	return errs.New(http.StatusTooManyRequests, i18n.T(ctx, "link.too_many_for_email"))
+}
+
 // Reserve moves number of raffle r from available to reserved and creates
-// its payment link. A number that is not available is a 409.
+// its payment link (owner origin). A number that is not available is a 409.
 func (s *Service) Reserve(ctx context.Context, r models.Raffle, number int, in requests.Buyer) (Link, error) {
+	return s.ReserveWith(ctx, r, number, in, ReserveOptions{})
+}
+
+// ReserveWith is Reserve with an origin, a buyer account and a per-email cap.
+func (s *Service) ReserveWith(ctx context.Context, r models.Raffle, number int, in requests.Buyer, o ReserveOptions) (Link, error) {
+	if o.Origin == "" {
+		o.Origin = models.OriginOwner
+	}
+
 	now := s.Now().UTC()
 	if r.Status != models.RaffleActive || !now.Before(r.EndsAt) {
 		return Link{}, errs.New(http.StatusConflict, i18n.T(ctx, "link.not_on_sale"))
@@ -89,12 +114,33 @@ func (s *Service) Reserve(ctx context.Context, r models.Raffle, number int, in r
 		Status:      models.ReservationPending,
 		ExpiresAt:   now.Add(models.ReservationTTL),
 		AmountCents: r.PriceReais * 100,
+		Origin:      o.Origin,
+		BuyerUserID: o.BuyerUserID,
 	}
 
 	q, queued := s.queue()
 
 	err := s.DB.Tx(ctx, func(tx *database.Tx) error {
 		p := tx.Dialect().Placeholder
+
+		if o.MaxLivePerEmail > 0 {
+			// Serializes this raffle's capped reserves so two concurrent
+			// requests cannot both pass the count (no-op on SQLite).
+			if _, err := orm.QueryOf[models.Raffle](tx).Where("id", r.ID).LockForUpdate().First(ctx); err != nil {
+				return fmt.Errorf("lock raffle %d: %w", r.ID, err)
+			}
+
+			var live int
+			if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM reservations WHERE raffle_id = "+p(1)+" AND buyer_email = "+p(2)+
+				" AND status IN ('"+models.ReservationPending+"','"+models.ReservationAwaitingPayment+"') AND expires_at > "+p(3),
+				r.ID, in.Email, now).Scan(&live); err != nil {
+				return fmt.Errorf("count live links: %w", err)
+			}
+
+			if live >= o.MaxLivePerEmail {
+				return errTooManyLinks(ctx)
+			}
+		}
 
 		var numberID int64
 		if err := tx.QueryRowContext(ctx, "SELECT id FROM raffle_numbers WHERE raffle_id = "+p(1)+" AND number = "+p(2),

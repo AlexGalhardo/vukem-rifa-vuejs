@@ -23,7 +23,9 @@
 		"login": "Log in",
 		"register": "Sign up",
 		"dashboard": "Dashboard",
-		"logout": "Log out"
+		"logout": "Log out",
+		"menu": "Menu",
+		"main": "Main"
 	},
 	"auth": {
 		"email": "Email",
@@ -132,7 +134,8 @@
 			"price_reais": "price",
 			"duration_days": "duration"
 		},
-		"password_mismatch": "The password confirmation does not match."
+		"password_mismatch": "The password confirmation does not match.",
+		"consent_required": "Accept the privacy notice to continue."
 	},
 	"mail": {
 		"greeting": "Hello {name},",
@@ -269,12 +272,26 @@
 				"pending": "Link sent, waiting for the buyer",
 				"awaiting_payment": "PIX created, waiting for payment",
 				"paid": "Paid"
-			}
+			},
+			"origin_public": "Bought on the public page"
 		},
 		"active": {
 			"title": "Active payment links",
 			"lead": "Each link is listed here until its 10 minutes end, even after you create links for other numbers."
-		}
+		},
+		"public": {
+			"taken": "This number was just taken. Pick another free number.",
+			"refused": "We could not reserve this number. Please try again.",
+			"title": "Buy number {number}",
+			"name": "Your name",
+			"email": "Your email",
+			"phone": "Your phone (with area code)",
+			"consent": "I agree that the raffle organizer and Vukem Rifa use my name, email and phone to process this purchase and contact me about it (LGPD). They are never shown on the public page.",
+			"submit": "Continue to PIX payment",
+			"hint": "Pick a free number to buy it. Reserved and paid numbers cannot be chosen.",
+			"consent_required": "Accept the privacy notice to continue."
+		},
+		"too_many_for_email": "This email already holds the maximum of 5 open payment links in this raffle. Pay or wait for them to expire."
 	},
 	"apikeys": {
 		"nav": "API",
@@ -379,6 +396,28 @@
 			"owner_not_found": "Owner not found.",
 			"invalid": "Invalid value for this field.",
 			"nav": "Payouts"
+		}
+	},
+	"purchases": {
+		"nav": "My purchases",
+		"title": "My purchases",
+		"paid": "Paid numbers",
+		"unpaid": "Not paid (open, expired or cancelled)",
+		"none_paid": "No paid numbers yet.",
+		"none_unpaid": "Nothing here.",
+		"raffle": "Raffle",
+		"number": "Number",
+		"amount": "Amount",
+		"paid_at": "Paid on",
+		"status": "Status",
+		"created_at": "Created",
+		"expires_at": "Link expires",
+		"statuses": {
+			"pending": "Waiting for payment",
+			"awaiting_payment": "PIX created, waiting for payment",
+			"expired": "Expired",
+			"cancelled": "Cancelled",
+			"paid": "Paid"
 		}
 	}
 }
