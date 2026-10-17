@@ -235,7 +235,8 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 - [x] Run `vukem install:auth --social google` in a scratch copy, port the generated files, adapt migrations to Postgres → verify: `go test ./...` and integration green.
 - [x] Add `users.is_admin` (default false) → verify: `TestRegister_IsNotAdmin` (SQLite + Postgres).
 - [x] Translate auth pages, flashes and auth errors (pt-BR/en) + Google button + nav → verify: `TestLangCatalogs_SameKeys`, `TestForgotPassword_FlashIsLocalized`.
-- [ ] Translate validation messages (`i18n` `validation.*` catalog) and auth emails (subject + views) → verify: tests on errors/mails per locale.
+- [x] Translate validation messages (`validation.*` + `validation.attributes.*` catalogs) → verify: `TestRegister_ValidationIsLocalized`.
+- [ ] Translate auth emails (subject + views) and the custom password-confirmation message → verify: array-mailer test per locale.
 
 #### 1.2 Email (Mailtrap / Mailpit)
 

@@ -86,3 +86,18 @@ func TestForgotPassword_FlashIsLocalized(t *testing.T) {
 		})
 	}
 }
+
+func TestRegister_ValidationIsLocalized(t *testing.T) {
+	t.Parallel()
+
+	app := vukemtest.New(t, bootstrap.New)
+	c := app.Client(t).Inertia(app.Inertia.Version()).WithCookie("lang", "pt-BR").WithHeader("Referer", "/register")
+
+	c.PostJSON("/register", map[string]any{
+		"name": "", "email": "not-an-email", "password": "short", "password_confirmation": "short",
+	}).AssertRedirect("/register")
+
+	c.Get("/register").AssertInertia("Auth/Register").
+		PropEquals("errors.email", "O campo e-mail deve ser um e-mail válido.").
+		PropEquals("errors.password", "O campo senha deve ter pelo menos 12 caracteres.")
+}

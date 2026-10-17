@@ -73,5 +73,52 @@
 	"dashboard": {
 		"title": "Painel",
 		"hello": "Olá, {name}"
+	},
+	"validation": {
+		"required": "O campo {field} é obrigatório.",
+		"invalid_type": "O campo {field} deve ser {expected}.",
+		"invalid_enum": "O valor selecionado para {field} é inválido.",
+		"unrecognized_keys": "O campo {field} não é permitido.",
+		"not_multiple_of": "O campo {field} deve ser múltiplo de {multiple}.",
+		"invalid_date": "O campo {field} deve ser uma data válida.",
+		"not_unique": "O campo {field} não pode conter itens repetidos.",
+		"too_small": {
+			"string": "O campo {field} deve ter pelo menos {min} caracteres.",
+			"number": "O campo {field} deve ser no mínimo {min}.",
+			"positive": "O campo {field} deve ser maior que 0.",
+			"array": "O campo {field} deve ter pelo menos {min} itens.",
+			"date": "O campo {field} deve ser posterior a {min}."
+		},
+		"too_big": {
+			"string": "O campo {field} não pode ter mais de {max} caracteres.",
+			"number": "O campo {field} não pode ser maior que {max}.",
+			"array": "O campo {field} não pode ter mais de {max} itens.",
+			"date": "O campo {field} deve ser anterior a {max}."
+		},
+		"exact": {
+			"string": "O campo {field} deve ter {len} caracteres.",
+			"array": "O campo {field} deve ter {len} itens."
+		},
+		"string": {
+			"email": "O campo {field} deve ser um e-mail válido.",
+			"url": "O campo {field} deve ser uma URL válida.",
+			"uuid": "O campo {field} deve ser um UUID válido.",
+			"ulid": "O campo {field} deve ser um ULID válido.",
+			"regex": "O formato do campo {field} é inválido.",
+			"alpha": "O campo {field} deve conter apenas letras.",
+			"alphanum": "O campo {field} deve conter apenas letras e números.",
+			"numeric": "O campo {field} deve ser um número.",
+			"starts_with": "O campo {field} deve começar com {prefix}.",
+			"ends_with": "O campo {field} deve terminar com {suffix}.",
+			"includes": "O campo {field} deve conter {substring}.",
+			"utf8": "O campo {field} deve ser um texto válido."
+		},
+		"attributes": {
+			"name": "nome",
+			"email": "e-mail",
+			"password": "senha",
+			"password_confirmation": "confirmação de senha",
+			"token": "token"
+		}
 	}
 }
