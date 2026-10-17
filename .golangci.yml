@@ -1,0 +1,35 @@
+version: "2"
+
+run:
+  tests: true
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - noctx
+    - rowserrcheck
+    - sqlclosecheck
+    - unconvert
+    - usestdlibvars
+  settings:
+    gosec:
+      excludes:
+        - G104 # covered by errcheck
+  exclusions:
+    presets:
+      - std-error-handling
+
+formatters:
+  enable:
+    - gofumpt
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/AlexGalhardo/vukem-rifa-vuejs)

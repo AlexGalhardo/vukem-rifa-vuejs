@@ -1,0 +1,30 @@
+export default {
+	extends: ["@commitlint/config-conventional"],
+	rules: {
+		"scope-enum": [
+			2,
+			"always",
+			[
+				"auth",
+				"raffle",
+				"numbers",
+				"payments",
+				"draw",
+				"ledger",
+				"api",
+				"ui",
+				"i18n",
+				"mail",
+				"db",
+				"deps",
+				"ci",
+				"docker",
+				"docs",
+				"repo",
+				"test",
+				"security",
+			],
+		],
+		"body-max-line-length": [0],
+	},
+};
