@@ -50,7 +50,7 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | TypeScript / vue-tsc | 6.0.3 / 3.3.13 | see D3 |
 | Biome | 2.5.15 | `biome.json` |
 | Playwright | 1.64.1 | |
-| zod (frontend forms, Phase 1+) | 4.6.7 | add when first form lands |
+| zod | 4.6.7 | e2e helpers now; forms next |
 | commitlint | 21.2.3 | |
 | markdownlint-cli2 | 0.23.3 | |
 | lefthook | 2.2.2 | |
@@ -239,7 +239,7 @@ Errors are `application/problem+json`; every body validated by `z` and documente
 
 #### 1.2 Email (Mailtrap / Mailpit)
 
-- [ ] SMTP config documented and wired (`MAIL_MAILER=smtp`) → verify: compose sends verification mail visible in Mailpit (`GET :8025/api/v1/messages`).
+- [x] SMTP config documented and wired (`MAIL_MAILER=smtp`) → verify: e2e `auth.spec.ts` registers, reads the verification mail from Mailpit (`/api/v1/search`), verifies, logs out and in.
 - [ ] `tests/mailtrap` helper (net/http): list sandbox messages by recipient, read `body.html`/`body.txt`, extract links, clean sandbox; skip without `MAILTRAP_API_TOKEN` → verify: `go test -tags=mailtrap ./tests/...` with owner creds.
 - [x] Email verification required for the dashboard → verify: unverified user redirected (test `TestDashboard_RequiresVerifiedEmail`).
 - [ ] Password reset end-to-end → verify: integration test with array mailer + Mailtrap e2e.
