@@ -18,9 +18,9 @@ New tests written for the consolidated suite live in `tests/security_owasp_test.
 | IDOR on numbers / payment links / cancel | `TestSecurity_NumbersOtherOwnersGet404`, `TestSecurity_NumbersGuestsAndUnverifiedBlocked` |
 | IDOR on exports | `TestExport_OtherOwnerGetsNotFound` |
 | IDOR on API keys (revoke another user's key) and API `{id}` routes | `TestAPIKeys_RevokeIsOwnerChecked`, `TestSecurityAPI_OtherOwnersRafflesAreNotFound` |
-| Organizer contact is opt-in (defaults off), validated, never leaks across owners; email split against scrapers | `TestOrganizer_PublicPageShowsTheOrganizerButNoContactByDefault`, `TestOrganizer_ContactTogglesShowExactlyWhatWasChosen`, `TestOrganizer_InvalidContactsAreRejected`, `TestOrganizer_OtherOwnersNeverLeak` |
+| Organizer contact is opt-in (defaults off), validated, never leaks across owners; email only via a rate-limited click endpoint, never in props | `TestOrganizer_PublicPageShowsTheOrganizerButNoContactByDefault`, `TestOrganizer_ContactTogglesShowExactlyWhatWasChosen`, `TestOrganizer_InvalidContactsAreRejected`, `TestOrganizer_OtherOwnersNeverLeak` |
 | Buyer sees only their own masked data; public page has no personal data | `TestPay_ShowsOnlyTheBuyersOwnMaskedData`, `TestRaffle_PublicPageHasNoPersonalData`, `TestNumbers_LiveLinksStayVisibleToTheOwnerForTenMinutes` |
-| Vertical escalation: non-admin on payouts (GET and POST) | `TestAdminPayouts_HiddenFromNonAdmins`, `TestRegister_IsNotAdmin` |
+| Vertical escalation: non-admin on payouts and refunds (GET and POST) | `TestAdminPayouts_HiddenFromNonAdmins`, `TestAdminRefunds_ListAndMarkRefunded`, `TestRegister_IsNotAdmin` |
 | Mass assignment (`user_id`, `status`, `slug`, `locked_at`, `is_admin` in bodies) | `TestOWASP_A01_MassAssignmentIsIgnored` |
 | Public checkout: only free numbers, closed raffles refuse, purchase history shows only my own reservations, no buyer data on the public page | `TestPublicCheckout_OnlyFreeNumbers`, `TestPublicCheckout_ClosedRafflesRefuse`, `TestPublicCheckout_PurchaseHistoryShowsOnlyMyPurchases`, `TestPublicCheckout_FreeNumberGoesToThePayPage` |
 | Read-only API key on write endpoints | `TestSecurityAPI_ReadOnlyKeyCannotWrite` |
@@ -29,7 +29,7 @@ New tests written for the consolidated suite live in `tests/security_owasp_test.
 
 | Abuse case | Tests |
 | --- | --- |
-| Payment-link tokens are 256-bit, looked up by SHA-256 and sealed with APP_KEY for the owner view (never stored in clear, never on public pages) | `TestReservation_ReserveCreatesHashedLink`, `TestNumbers_LiveLinksStayVisibleToTheOwnerForTenMinutes` |
+| Payment-link tokens are 256-bit, looked up by SHA-256 and sealed with APP_KEY for the owner view only while live (never stored in clear, never on public pages, erased when the link ends) | `TestReservation_ReserveCreatesHashedLink`, `TestNumbers_LiveLinksStayVisibleToTheOwnerForTenMinutes`, `TestReservation_SealedTokenIsErasedWhenTheLinkEnds` |
 | Session cookie HttpOnly + SameSite | `TestOWASP_A02_SessionCookieFlags` |
 | Passwords hashed with salted argon2id (m=64 MiB, t=1, p=4) outside tests | `TestOWASP_A02_PasswordsAreArgon2id` |
 | Production refuses an http `APP_URL`; HSTS over HTTPS | `TestOWASP_A05_ProductionRefusesHTTPAppURL`, `TestOWASP_A05_ProductionSendsHSTS` |
@@ -52,12 +52,13 @@ On Railway HSTS is sent by `HSTS_FORCE` (README "Deploy notes").
 | Abuse case | Tests |
 | --- | --- |
 | Concurrent reservation of the same number → exactly one link (owner and public) | `TestPostgres_ConcurrentReserveSameNumber`, `TestPostgres_PublicCheckoutRacesAndCap` |
-| Public checkout abuse: honeypot, LGPD consent, per-IP rate limit, cap of 5 live links per email (race-safe) | `TestPublicCheckout_RefusesBotsAndMissingConsent`, `TestPublicCheckout_RateLimitedPerIP`, `TestPublicCheckout_CapsLiveLinksPerEmail`, `TestPostgres_PublicCheckoutRacesAndCap` |
+| Public checkout abuse: honeypot, LGPD consent recorded with version, per-IP (IPv6 /64) rate limit, cap of 5 live links per mailbox (+tags and Gmail dots folded), global cap of max(5, 20%) live public links per raffle, one generic refusal (race-safe) | `TestPublicCheckout_RefusesBotsAndMissingConsent`, `TestPublicCheckout_RateLimitedPerIP`, `TestPublicCheckout_CapsLiveLinksPerEmail`, `TestPublicCheckout_GlobalCapOfLivePublicLinks`, `TestPublicCheckout_EmailCapIgnoresPlusTagsAndGmailDots`, `TestLimitKeys_EmailNormalization`, `TestPostgres_PublicCheckoutRacesAndCap` |
+| Stale raffle data: edits lock the raffle row before reservations (no deadlock with the webhook) and check the paid lock on it; reserving reads status, deadline, size and price under lock | `TestPostgres_EditRacingAPaymentKeepsTheRules`, `TestPostgres_EditWithAStaleRaffleSeesTheNewLock`, `TestReservation_UsesTheCurrentRaffleNotTheCallersCopy` |
 | Purchase history linking: signed-in buyer or verified email only; unverified emails link on verification | `TestPublicCheckout_LinksTheBuyerAccount` |
 | Expired / cancelled link reuse (page 410, confirm refused) | `TestPay_ExpiredCancelledAndUnknownLinks`, `e2e/security.spec.ts` |
 | Link expiry and sweeper; expiry never releases a paid number | `TestNumbers_LinkExpiresAfterTenMinutes`, `TestReservation_ExpiryNeverReleasesPaidNumbers`, `TestPostgres_SweepersExpireLinksAndDraw` |
 | PIX never outlives the reservation or the raffle | `TestPay_ConfirmChargesTheRemainingTime`, `TestPay_ConfirmNeverOutlivesTheRaffle` |
-| Late / mismatched payments never assign a number (`refund_due`) | `TestWebhook_LatePaymentIsFlaggedForRefund`, `TestWebhook_PaymentAfterTheNumberWasReReserved`, `TestWebhook_PaymentAfterTheRaffleClosedIsRefundDue`, `TestWebhook_AmountMismatchIsNotAPayment` |
+| Late / mismatched payments never assign a number (`refund_due`); admins list and mark them refunded | `TestAdminRefunds_ListAndMarkRefunded`, `TestWebhook_LatePaymentIsFlaggedForRefund`, `TestWebhook_PaymentAfterTheNumberWasReReserved`, `TestWebhook_PaymentAfterTheRaffleClosedIsRefundDue`, `TestWebhook_AmountMismatchIsNotAPayment` |
 | Draw runs exactly once; payouts never exceed the balance under races | `TestPostgres_ConcurrentDrawRunsOnce`, `TestPostgres_ConcurrentPayoutsNeverExceedTheBalance` |
 | Price/count/duration locked after the first payment | `TestRaffle_LockedAfterFirstPaidNumber` |
 

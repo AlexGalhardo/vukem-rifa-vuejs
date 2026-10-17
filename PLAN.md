@@ -36,7 +36,8 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | D20 | AbacatePay webhook authenticity = `webhookSecret` query parameter (constant-time); `X-Webhook-Signature` (HMAC with AbacatePay's published public key) only proves body integrity. Registered URL: `https://rifa.vukem.dev/webhooks/abacatepay?webhookSecret=…`. | docs.abacatepay.com/pages/webhooks (security). |
 | D21 | Archived raffles are never drawn; a draw expires every live link in its transaction; payments on non-active raffles become `refund_due`. | Raffles/payments stream decisions. |
 | D22 | Public checkout (owner request): anyone with `/r/{slug}` buys one free number per checkout (name, email, BR phone, LGPD consent, honeypot) on the same `/pay/{token}` flow (`reservations.origin=public`); 10 per 10 min per IP and per email hash, at most 5 live links per email per raffle (raffle row lock); purchases join the buyer account when signed in, or by email once verified (`buyer_user_id`); `/account/purchases` lists paid and unpaid numbers. | One number per checkout keeps one PIX per reservation (multi-number cart would need a checkout entity). |
-| D23 | Organizer card on `/r/{slug}` (owner request): name, member since, raffles created/finished and the raffle date always; email, WhatsApp (E.164 → wa.me) and Telegram (→ t.me) only when opted in at `/settings/contact` (all off by default, audit event `contact.updated` with field names only); the email is sent split and joined on a click. | Buyers confirm the organizer without exposing data by default (LGPD). |
+| D23 | Organizer card on `/r/{slug}` (owner request): name, member since, raffles created/finished and the raffle date always; email, WhatsApp (E.164 → wa.me) and Telegram (→ t.me) only when opted in at `/settings/contact` (all off by default, audit event `contact.updated` with field names only); the email is fetched on a click from `POST /r/{slug}/organizer-email` (rate limited; never in the page props). | Buyers confirm the organizer without exposing data by default (LGPD). |
+| D24 | Security review fixes: raffle row locked first in every write path (edit, reserve, webhook, draw); global cap of max(5, 20%) live public links per raffle; limiter keys fold email aliases and IPv6 /64; LGPD consent stored with a version; refunds of late payments are manual (AbacatePay has no refund API) and tracked at `/admin/refunds`. | One lock order prevents deadlocks and stale reads; caps stop one actor from holding the grid; consent must be provable. |
 | D17 | Local `.claude/settings.local.json` (`disableAllHooks: true`) is owner-managed and git-ignored. | Owner. |
 
 ## 3. Versions (verified 2026-10-17, exact pins)
@@ -160,6 +161,8 @@ All timestamps `timestamptz`; money in integer **centavos** except `raffles.pric
 | `GET /raffles/{id}/export.json`, `.csv` | Audit export (numbers, buyers, payments, ledger) | owner |
 | `GET /settings/api-keys`, `POST`, `DELETE /settings/api-keys/{id}` | API keys | owner |
 | `GET /admin/payouts`, `POST /admin/payouts` | Balances + record payouts | admin |
+| `GET /admin/refunds`, `POST /admin/refunds/{id}` | Late payments (`refund_due`) + mark refunded | admin |
+| `POST /r/{slug}/organizer-email` | Organizer email for the card click (opt-in, rate limited) | public |
 | `GET /api/docs`, `GET /api/openapi.json` | Scalar + OpenAPI | public |
 
 ### REST API v1 (`Authorization: Bearer <api key>`)

@@ -4,7 +4,24 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Security
+
+- Security review fixes (191bf94..cba34e7):
+  - Public reservations record LGPD consent (`consent_at`, `consent_version`); the notice says the organizer sees name, email and phone.
+  - Raffle edits lock the raffle row first (same order as webhook and draw) and check the paid-number lock on that row: no deadlock, no price change racing a payment.
+  - Reserving uses the raffle read under lock (status, deadline, size, price); a number past a reduced size is 404.
+  - A raffle holds at most max(5, 20% of numbers) live public links; per-email caps and limits fold `+tags` and Gmail dots; IPv6 clients are limited per /64; every refusal shows one generic message.
+  - Tests prove spoofed `X-Forwarded-For`/`X-Real-IP` from untrusted peers are ignored.
+  - The sealed link token is erased when the link ends (expiry, cancel, edit, draw, payment).
+  - The organizer email is no longer in the page props; a click POSTs `/r/{slug}/organizer-email` (rate limited, no-store, 404 unless opted in).
+
+### Changed
+
+- `/account/purchases` loads raffles in one query (was one per reservation).
+
 ### Added
+
+- Admin refunds page `/admin/refunds`: late payments (`refund_due`) with a mark-refunded action (reference, audit event `refund.recorded`) and an hourly `refunds:pending` warning. AbacatePay has no refund API, so the PIX is returned in its dashboard.
 
 - Organizer card on the public raffle page (owner request): name, member since and raffle counts; opt-in email (click to reveal), WhatsApp and Telegram contacts from `/settings/contact`, all off by default.
 - Public checkout (owner request): visitors pick a free number on `/r/{slug}`, give name, email, phone and LGPD consent, and pay on the same PIX page; rate limits, honeypot, a cap of 5 live links per email; the owner sees the origin; signed-in (or verified-email) buyers get `/account/purchases` with paid and unpaid numbers. The navbar collapses into a menu on phones.

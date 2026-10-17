@@ -24,7 +24,7 @@ Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go ba
 | Security suite | `go test ./tests -run 'Security\|OWASP'` + `TestPostgres_OWASP_*` (integration) + `bunx playwright test e2e/security.spec.ts`; category map in `docs/owasp-matrix.md` (add new abuse tests there) |
 | Docs | `bun run lint:md` |
 | AbacatePay sandbox | `ABACATEPAY_API_KEY=abc_dev_… go test -tags=abacatepay -p 1 -run AbacatePaySandbox ./...` (real dev mode, opt-in) |
-| Admin | `go run ./cmd/app make:admin <email>` grants the payouts page (`/admin/payouts`) |
+| Admin | `go run ./cmd/app make:admin <email>` grants the payouts and refunds pages (`/admin/payouts`, `/admin/refunds`) |
 | CI status | `gh run list --limit 5`, `gh run view <id> --log-failed` |
 
 ## Rules
@@ -35,6 +35,7 @@ Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go ba
 - Conventional Commits in English; SemVer; Keep a Changelog. Bun only for JS; exact stable versions; pinned Docker tags.
 - Framework pin: bump vukem only when the coordinator announces a release (flow in PLAN.md §9).
 - Payments: `ABACATEPAY_FAKE=true` (compose, e2e) uses an in-memory gateway plus `/dev/*` helpers and is refused in production; without `ABACATEPAY_API_KEY` the app boots and confirming a link answers 503. The webhook requires `?webhookSecret=` **and** a valid `X-Webhook-Signature`.
+- Lock order: any transaction that writes reservations or numbers locks the raffle row first (`LockForUpdate`) and reads status/price/size from that row, never from a copy loaded before the transaction.
 - No git worktrees without explicit owner confirmation.
 - `.claude/settings.local.json` (`disableAllHooks: true`) belongs to the owner: git-ignored, never commit or edit it.
 
