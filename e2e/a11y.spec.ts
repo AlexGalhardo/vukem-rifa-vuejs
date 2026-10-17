@@ -149,21 +149,46 @@ for (const v of variants) {
 			await page.goto(publicHref ?? "/");
 			await expectAccessible(page, `public raffle (${name})`);
 		});
-
-		test("admin payouts", async ({ page }) => {
-			const email = process.env.E2E_ADMIN_EMAIL;
-			const password = process.env.E2E_ADMIN_PASSWORD;
-			test.skip(!email || !password, "set E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD and run db:seed (CI does)");
-
-			await page.goto("/login?lang=pt-BR");
-			await page.getByLabel("E-mail").fill(email ?? "");
-			await page.getByLabel("Senha", { exact: true }).fill(password ?? "");
-			await page.getByRole("button", { name: "Entrar" }).click();
-			await expect(page).toHaveURL(/\/dashboard$/);
-
-			await page.goto(lang("/admin/payouts", v));
-			await expect(page.getByTestId("nav-payouts")).toBeVisible();
-			await expectAccessible(page, `admin payouts (${name})`);
-		});
 	});
 }
+
+// One login for every variant: the login throttle (5/min per email and IP)
+// would refuse eight parallel logins of the same admin.
+test("admin payouts in every variant", async ({ browser }) => {
+	const email = process.env.E2E_ADMIN_EMAIL;
+	const password = process.env.E2E_ADMIN_PASSWORD;
+	test.skip(!email || !password, "set E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD and run db:seed (CI does)");
+	test.setTimeout(180_000);
+
+	const login = await browser.newContext({ locale: "pt-BR" });
+	const page = await login.newPage();
+	await page.goto("/login?lang=pt-BR");
+	await page.getByLabel("E-mail").fill(email ?? "");
+	await page.getByLabel("Senha", { exact: true }).fill(password ?? "");
+	await page.getByRole("button", { name: "Entrar" }).click();
+	await expect(page).toHaveURL(/\/dashboard$/);
+	const storageState = await login.storageState();
+	await login.close();
+
+	for (const v of variants) {
+		const name = `${v.theme} · ${v.locale} · ${v.mobile ? "mobile" : "desktop"}`;
+		const ctx = await browser.newContext({
+			storageState,
+			locale: v.locale,
+			colorScheme: v.theme,
+			...(v.mobile ? { viewport: devices["Pixel 7"].viewport, isMobile: true, hasTouch: true } : {}),
+		});
+		await ctx.addInitScript((theme) => {
+			try {
+				localStorage.setItem("theme", theme);
+			} catch {
+				// Storage blocked: the OS preference (colorScheme) still applies.
+			}
+		}, v.theme);
+		const admin = await ctx.newPage();
+		await admin.goto(lang("/admin/payouts", v));
+		await expect(admin.getByTestId("nav-payouts")).toBeAttached();
+		await expectAccessible(admin, `admin payouts (${name})`);
+		await ctx.close();
+	}
+});
