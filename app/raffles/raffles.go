@@ -228,7 +228,7 @@ func (s *Service) Numbers(ctx context.Context, raffleID int64) ([]models.RaffleN
 // Update applies in to r. Title and description always change; number
 // count, price and duration only while no number is paid.
 func (s *Service) Update(ctx context.Context, r *models.Raffle, in requests.Raffle) error {
-	if r.Status == models.RaffleArchived || r.Status == models.RaffleDrawn {
+	if r.Status != models.RaffleActive {
 		return errs.New(http.StatusConflict, i18n.T(ctx, "raffle.finished"))
 	}
 

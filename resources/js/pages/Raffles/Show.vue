@@ -22,7 +22,7 @@ const props = defineProps<{
 const { t, locale } = useI18n();
 const statuses = computed(() => props.numbers.map((n) => n.status));
 const paid = computed(() => props.numbers.filter((n) => n.status === "paid").map((n) => n.number));
-const finished = computed(() => props.raffle.status === "archived" || props.raffle.status === "drawn");
+const finished = computed(() => props.raffle.status !== "active");
 const onSale = computed(() => props.raffle.status === "active" && Date.parse(props.raffle.ends_at) > Date.now());
 const button =
 	"rounded-md border border-zinc-300 px-3 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800";

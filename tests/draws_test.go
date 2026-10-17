@@ -125,6 +125,11 @@ func TestDraw_ZeroPaidClosesWithoutWinner(t *testing.T) {
 	if got := f.status(t); got != models.RaffleClosed {
 		t.Fatalf("raffle status = %q, want closed", got)
 	}
+
+	// A closed raffle is finished: no edits, no links.
+	f.clock.Set(f.raffle.CreatedAt.Add(time.Minute))
+	f.c.PutJSON(f.path, validRaffle()).AssertStatus(409)
+	postLink(f.c, f.path, 1, buyerForm()).AssertStatus(409)
 }
 
 func TestDraw_SoldOutNeedsEveryNumberPaid(t *testing.T) {
