@@ -47,8 +47,9 @@ func (r Raffle) Locked() bool { return r.LockedAt.Valid }
 type RaffleNumber struct {
 	orm.Model
 
-	RaffleID int64        `json:"-"`
-	Number   int          `json:"number"`
-	Status   string       `json:"status"`
-	PaidAt   orm.NullTime `json:"paid_at"`
+	RaffleID      int64        `json:"-"`
+	Number        int          `json:"number"`
+	Status        string       `json:"status"`
+	PaidAt        orm.NullTime `json:"paid_at"`
+	ReservationID *int64       `json:"-"`
 }

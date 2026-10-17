@@ -11,5 +11,8 @@ func All() []schema.Migration {
 		m20261017124835CreateSocialAccountsTable(),
 		m20261017130000AddIsAdminToUsers(),
 		m20261017140000CreateRafflesTables(),
+		m20261017150000CreateReservationsTable(),
+		m20261017160000CreatePaymentsTables(),
+		m20261017170000CreateDrawsTable(),
 	}
 }
