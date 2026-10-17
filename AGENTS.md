@@ -18,6 +18,8 @@ Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go ba
 | Go lint | `golangci-lint fmt` then `golangci-lint run ./...` |
 | Frontend | `bun run lint`, `bun run typecheck`, `bun run build` |
 | E2E | `bun run test:e2e` (stack running, `BASE_URL` default `http://localhost:3000`) |
+| API types | `UPDATE_GOLDEN=1 go test ./tests -run TestCodegen_TypesUpToDate` regenerates `resources/js/generated/api.ts` (OpenAPI → TS + zod); the same test fails in CI when it is stale |
+| Golden files | `UPDATE_GOLDEN=1 go test ./tests -run TestExport` rewrites `tests/testdata/*.golden` |
 | Docs | `bun run lint:md` |
 | CI status | `gh run list --limit 5`, `gh run view <id> --log-failed` |
 
