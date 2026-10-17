@@ -1,6 +1,7 @@
 package account
 
 import (
+	"github.com/AlexGalhardo/vukem/i18n"
 	"github.com/AlexGalhardo/vukem/inertia"
 	"github.com/AlexGalhardo/vukem/web"
 
@@ -22,7 +23,7 @@ func (h *Handlers) SendResetLink(c *web.Ctx) error {
 		return err
 	}
 
-	inertia.Flash(c, "status", "If that email has an account, we sent a password reset link.")
+	inertia.Flash(c, "status", i18n.T(c.Context(), "auth.forgot.sent"))
 
 	return c.Redirect("/forgot-password")
 }
@@ -43,7 +44,7 @@ func (h *Handlers) Reset(c *web.Ctx) error {
 		return err
 	}
 
-	inertia.Flash(c, "status", "Your password was reset. You can log in now.")
+	inertia.Flash(c, "status", i18n.T(c.Context(), "auth.reset.done"))
 
 	return c.Redirect("/login")
 }

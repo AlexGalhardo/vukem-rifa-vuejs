@@ -17,5 +17,61 @@
 		"switch": "Language",
 		"pt-BR": "Português",
 		"en": "English"
+	},
+	"nav": {
+		"login": "Log in",
+		"register": "Sign up",
+		"dashboard": "Dashboard",
+		"logout": "Log out"
+	},
+	"auth": {
+		"email": "Email",
+		"password": "Password",
+		"name": "Name",
+		"remember": "Remember me",
+		"password_hint": "Password (at least 12 characters)",
+		"new_password_hint": "New password (at least 12 characters)",
+		"confirm_password": "Confirm password",
+		"or": "or",
+		"google": "Continue with Google",
+		"login": {
+			"title": "Log in",
+			"submit": "Log in",
+			"forgot": "Forgot your password?",
+			"register": "Create an account"
+		},
+		"register": {
+			"title": "Create an account",
+			"submit": "Create account",
+			"login": "Already registered?"
+		},
+		"forgot": {
+			"title": "Forgot your password?",
+			"lead": "We will email you a link to choose a new one.",
+			"submit": "Email me a reset link",
+			"sent": "If that email has an account, we sent a password reset link."
+		},
+		"reset": {
+			"title": "Choose a new password",
+			"submit": "Reset password",
+			"done": "Your password was reset. You can log in now.",
+			"invalid": "This password reset link is invalid or has expired."
+		},
+		"verify": {
+			"title": "Verify your email",
+			"lead": "We sent a link to {email}. Open it to verify your address.",
+			"resend": "Send the link again",
+			"resent": "A new verification link was sent.",
+			"done": "Your email address is verified.",
+			"wrong_account": "This verification link belongs to another account."
+		},
+		"social": {
+			"no_email": "Your {provider} account did not share an email address.",
+			"exists": "An account with this email already exists. Log in with your password first."
+		}
+	},
+	"dashboard": {
+		"title": "Dashboard",
+		"hello": "Hello, {name}"
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/AlexGalhardo/vukem/auth"
 	"github.com/AlexGalhardo/vukem/database"
 	"github.com/AlexGalhardo/vukem/errs"
+	"github.com/AlexGalhardo/vukem/i18n"
 
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/mail"
 	"github.com/AlexGalhardo/vukem-rifa-vuejs/app/models"
@@ -50,7 +51,10 @@ func (a *Accounts) SendResetLink(ctx context.Context, email string) error {
 	return a.Mailer.Send(ctx, mail.ResetPassword{User: u, Link: link})
 }
 
-var errInvalidReset = errs.NewValidation().Add("email", "This password reset link is invalid or has expired.")
+// invalidReset is the same answer for every bad token, in the request locale.
+func invalidReset(ctx context.Context) error {
+	return errs.NewValidation().Add("email", i18n.T(ctx, "auth.reset.invalid"))
+}
 
 // ResetPassword checks the token (constant time, single use, ResetTTL) and
 // sets the new password, ending every remembered session and API token.
@@ -66,12 +70,12 @@ func (a *Accounts) ResetPassword(ctx context.Context, email, token, password str
 	err := a.DB.QueryRowContext(ctx, "SELECT hash, created_at FROM password_resets WHERE email = "+d.Placeholder(1), email).
 		Scan(&stored, &created)
 	if err != nil || subtle.ConstantTimeCompare([]byte(stored), []byte(digest(token))) != 1 || a.expired(created, a.ResetTTL) {
-		return models.User{}, errInvalidReset
+		return models.User{}, invalidReset(ctx)
 	}
 
 	u, err := a.Users.ByCredentials(ctx, map[string]string{"email": email})
 	if err != nil {
-		return models.User{}, errInvalidReset
+		return models.User{}, invalidReset(ctx)
 	}
 
 	err = a.DB.Tx(ctx, func(tx *database.Tx) error {
@@ -82,7 +86,7 @@ func (a *Accounts) ResetPassword(ctx context.Context, email, token, password str
 
 		// A concurrent reset with the same token already used it.
 		if n, err := res.RowsAffected(); err != nil || n != 1 {
-			return errInvalidReset
+			return invalidReset(ctx)
 		}
 
 		// A new password ends every other way in: remembered sessions and

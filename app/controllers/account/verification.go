@@ -3,6 +3,7 @@ package account
 import (
 	"github.com/AlexGalhardo/vukem/auth"
 	"github.com/AlexGalhardo/vukem/errs"
+	"github.com/AlexGalhardo/vukem/i18n"
 	"github.com/AlexGalhardo/vukem/inertia"
 	"github.com/AlexGalhardo/vukem/web"
 
@@ -31,14 +32,14 @@ func (h *Handlers) Verify(c *web.Ctx) error {
 	}
 
 	if c.Param("id") != u.AuthID() {
-		return errs.New(403, "This verification link belongs to another account.")
+		return errs.New(403, i18n.T(c.Context(), "auth.verify.wrong_account"))
 	}
 
 	if err := h.a.MarkVerified(c.Context(), h.a.DB, &u); err != nil {
 		return err
 	}
 
-	inertia.Flash(c, "status", "Your email address is verified.")
+	inertia.Flash(c, "status", i18n.T(c.Context(), "auth.verify.done"))
 
 	return c.Redirect("/dashboard")
 }
@@ -54,7 +55,7 @@ func (h *Handlers) Resend(c *web.Ctx) error {
 		return err
 	}
 
-	inertia.Flash(c, "status", "A new verification link was sent.")
+	inertia.Flash(c, "status", i18n.T(c.Context(), "auth.verify.resent"))
 
 	return c.Redirect("/email/verify")
 }

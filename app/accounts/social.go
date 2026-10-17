@@ -10,6 +10,7 @@ import (
 	"github.com/AlexGalhardo/vukem"
 	"github.com/AlexGalhardo/vukem/database"
 	"github.com/AlexGalhardo/vukem/errs"
+	"github.com/AlexGalhardo/vukem/i18n"
 	"github.com/AlexGalhardo/vukem/orm"
 	"github.com/AlexGalhardo/vukem/social"
 
@@ -102,7 +103,7 @@ func (a *Accounts) FindOrCreateFromSocial(ctx context.Context, su social.User) (
 
 	email := strings.ToLower(su.Email)
 	if email == "" {
-		return models.User{}, errs.New(422, "Your "+su.Provider+" account did not share an email address.")
+		return models.User{}, errs.New(422, i18n.T(ctx, "auth.social.no_email", "provider", su.Provider))
 	}
 
 	var u models.User
@@ -115,7 +116,7 @@ func (a *Accounts) FindOrCreateFromSocial(ctx context.Context, su social.User) (
 			u = existing
 		case err == nil:
 			// An unverified email must never take over an existing account.
-			return errs.New(409, "An account with this email already exists. Log in with your password first.")
+			return errs.New(409, i18n.T(ctx, "auth.social.exists"))
 		case errors.Is(err, orm.ErrNotFound):
 			if u, err = a.createSocialUser(ctx, tx, su, email); err != nil {
 				return err

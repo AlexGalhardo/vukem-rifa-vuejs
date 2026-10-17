@@ -10,6 +10,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # TypeScript 7 (native compiler) lacks the API vue-tsc needs (PLAN.md D3).
+      - dependency-name: typescript
+        versions: [">=7.0.0"]
     commit-message:
       prefix: build(deps)
   - package-ecosystem: github-actions

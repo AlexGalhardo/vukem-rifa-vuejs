@@ -17,5 +17,61 @@
 		"switch": "Idioma",
 		"pt-BR": "Português",
 		"en": "English"
+	},
+	"nav": {
+		"login": "Entrar",
+		"register": "Criar conta",
+		"dashboard": "Painel",
+		"logout": "Sair"
+	},
+	"auth": {
+		"email": "E-mail",
+		"password": "Senha",
+		"name": "Nome",
+		"remember": "Lembrar de mim",
+		"password_hint": "Senha (mínimo de 12 caracteres)",
+		"new_password_hint": "Nova senha (mínimo de 12 caracteres)",
+		"confirm_password": "Confirme a senha",
+		"or": "ou",
+		"google": "Entrar com Google",
+		"login": {
+			"title": "Entrar",
+			"submit": "Entrar",
+			"forgot": "Esqueceu a senha?",
+			"register": "Criar uma conta"
+		},
+		"register": {
+			"title": "Criar uma conta",
+			"submit": "Criar conta",
+			"login": "Já tem conta?"
+		},
+		"forgot": {
+			"title": "Esqueceu a senha?",
+			"lead": "Enviaremos um link para você escolher uma nova senha.",
+			"submit": "Enviar link de redefinição",
+			"sent": "Se esse e-mail tiver uma conta, enviamos um link para redefinir a senha."
+		},
+		"reset": {
+			"title": "Escolha uma nova senha",
+			"submit": "Redefinir senha",
+			"done": "Sua senha foi redefinida. Você já pode entrar.",
+			"invalid": "Este link de redefinição é inválido ou expirou."
+		},
+		"verify": {
+			"title": "Confirme seu e-mail",
+			"lead": "Enviamos um link para {email}. Abra-o para confirmar seu endereço.",
+			"resend": "Enviar o link novamente",
+			"resent": "Enviamos um novo link de confirmação.",
+			"done": "Seu e-mail foi confirmado.",
+			"wrong_account": "Este link de confirmação pertence a outra conta."
+		},
+		"social": {
+			"no_email": "Sua conta {provider} não compartilhou um endereço de e-mail.",
+			"exists": "Já existe uma conta com este e-mail. Entre com sua senha primeiro."
+		}
+	},
+	"dashboard": {
+		"title": "Painel",
+		"hello": "Olá, {name}"
 	}
 }

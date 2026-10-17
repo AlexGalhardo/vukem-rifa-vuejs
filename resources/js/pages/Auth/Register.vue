@@ -2,7 +2,11 @@
 import { Head, Link, useForm } from "@inertiajs/vue3";
 
 import Field from "../../components/Field.vue";
+import GoogleButton from "../../components/GoogleButton.vue";
+import PrimaryButton from "../../components/PrimaryButton.vue";
+import { useI18n } from "../../composables/useI18n";
 
+const { t } = useI18n();
 const form = useForm({ name: "", email: "", password: "", password_confirmation: "" });
 
 function submit(): void {
@@ -11,37 +15,44 @@ function submit(): void {
 </script>
 
 <template>
-  <Head title="Create an account" />
-  <h1 class="mb-4 text-2xl font-semibold">Create an account</h1>
-  <form class="space-y-4" @submit.prevent="submit">
-    <Field v-model="form.name" label="Name" autocomplete="name" required :error="form.errors.name" />
-    <Field v-model="form.email" label="Email" type="email" autocomplete="email" required :error="form.errors.email" />
-    <Field
-      v-model="form.password"
-      label="Password (at least 12 characters)"
-      type="password"
-      autocomplete="new-password"
-      minlength="12"
-      required
-      :error="form.errors.password"
-    />
-    <Field
-      v-model="form.password_confirmation"
-      label="Confirm password"
-      type="password"
-      autocomplete="new-password"
-      required
-      :error="form.errors.password_confirmation"
-    />
-    <button
-      type="submit"
-      :disabled="form.processing"
-      class="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
-    >
-      Create account
-    </button>
-  </form>
-  <p class="mt-6 text-sm">
-    <Link href="/login" class="text-indigo-600 hover:underline dark:text-indigo-400">Already registered?</Link>
-  </p>
+	<Head :title="t('auth.register.title')" />
+	<div class="mx-auto max-w-sm">
+		<h1 class="mb-4 text-2xl font-semibold">{{ t("auth.register.title") }}</h1>
+		<GoogleButton />
+		<p class="my-4 text-center text-sm text-zinc-500">{{ t("auth.or") }}</p>
+		<form class="space-y-4" @submit.prevent="submit">
+			<Field v-model="form.name" :label="t('auth.name')" autocomplete="name" required :error="form.errors.name" />
+			<Field
+				v-model="form.email"
+				:label="t('auth.email')"
+				type="email"
+				autocomplete="email"
+				required
+				:error="form.errors.email"
+			/>
+			<Field
+				v-model="form.password"
+				:label="t('auth.password_hint')"
+				type="password"
+				autocomplete="new-password"
+				minlength="12"
+				required
+				:error="form.errors.password"
+			/>
+			<Field
+				v-model="form.password_confirmation"
+				:label="t('auth.confirm_password')"
+				type="password"
+				autocomplete="new-password"
+				required
+				:error="form.errors.password_confirmation"
+			/>
+			<PrimaryButton :disabled="form.processing">{{ t("auth.register.submit") }}</PrimaryButton>
+		</form>
+		<p class="mt-6 text-sm">
+			<Link href="/login" class="text-brand-700 hover:underline dark:text-brand-500">
+				{{ t("auth.register.login") }}
+			</Link>
+		</p>
+	</div>
 </template>

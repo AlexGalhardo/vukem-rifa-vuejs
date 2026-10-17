@@ -2,7 +2,11 @@
 import { Head, Link, useForm } from "@inertiajs/vue3";
 
 import Field from "../../components/Field.vue";
+import GoogleButton from "../../components/GoogleButton.vue";
+import PrimaryButton from "../../components/PrimaryButton.vue";
+import { useI18n } from "../../composables/useI18n";
 
+const { t } = useI18n();
 const form = useForm({ email: "", password: "", remember: false });
 
 function submit(): void {
@@ -11,41 +15,41 @@ function submit(): void {
 </script>
 
 <template>
-  <Head title="Log in" />
-  <h1 class="mb-4 text-2xl font-semibold">Log in</h1>
-  <form class="space-y-4" @submit.prevent="submit">
-    <Field
-      v-model="form.email"
-      label="Email"
-      type="email"
-      autocomplete="username"
-      required
-      :error="form.errors.email"
-    />
-    <Field
-      v-model="form.password"
-      label="Password"
-      type="password"
-      autocomplete="current-password"
-      required
-      :error="form.errors.password"
-    />
-    <label class="flex items-center gap-2">
-      <input v-model="form.remember" type="checkbox" />
-      Remember me
-    </label>
-    <button
-      type="submit"
-      :disabled="form.processing"
-      class="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
-    >
-      Log in
-    </button>
-  </form>
-  <p class="mt-6 flex gap-4 text-sm">
-    <Link href="/forgot-password" class="text-indigo-600 hover:underline dark:text-indigo-400">
-      Forgot your password?
-    </Link>
-    <Link href="/register" class="text-indigo-600 hover:underline dark:text-indigo-400">Create an account</Link>
-  </p>
+	<Head :title="t('auth.login.title')" />
+	<div class="mx-auto max-w-sm">
+		<h1 class="mb-4 text-2xl font-semibold">{{ t("auth.login.title") }}</h1>
+		<GoogleButton />
+		<p class="my-4 text-center text-sm text-zinc-500">{{ t("auth.or") }}</p>
+		<form class="space-y-4" @submit.prevent="submit">
+			<Field
+				v-model="form.email"
+				:label="t('auth.email')"
+				type="email"
+				autocomplete="username"
+				required
+				:error="form.errors.email"
+			/>
+			<Field
+				v-model="form.password"
+				:label="t('auth.password')"
+				type="password"
+				autocomplete="current-password"
+				required
+				:error="form.errors.password"
+			/>
+			<label class="flex items-center gap-2">
+				<input v-model="form.remember" type="checkbox" />
+				{{ t("auth.remember") }}
+			</label>
+			<PrimaryButton :disabled="form.processing">{{ t("auth.login.submit") }}</PrimaryButton>
+		</form>
+		<p class="mt-6 flex gap-4 text-sm">
+			<Link href="/forgot-password" class="text-brand-700 hover:underline dark:text-brand-500">
+				{{ t("auth.login.forgot") }}
+			</Link>
+			<Link href="/register" class="text-brand-700 hover:underline dark:text-brand-500">
+				{{ t("auth.login.register") }}
+			</Link>
+		</p>
+	</div>
 </template>
