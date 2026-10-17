@@ -190,7 +190,7 @@
 			"empty": "Você ainda não criou nenhuma rifa.",
 			"counts": "{paid} pagos · {reserved} reservados · {available} disponíveis"
 		},
-		"price": "R$ {price} por número",
+		"price": "{price} por número",
 		"ends": "Termina em {date}",
 		"numbers": "Números",
 		"create_title": "Nova rifa",

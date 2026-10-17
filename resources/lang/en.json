@@ -190,7 +190,7 @@
 			"empty": "You have not created a raffle yet.",
 			"counts": "{paid} paid · {reserved} reserved · {available} available"
 		},
-		"price": "R$ {price} per number",
+		"price": "{price} per number",
 		"ends": "Ends on {date}",
 		"numbers": "Numbers",
 		"create_title": "New raffle",
