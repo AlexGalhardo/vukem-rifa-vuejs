@@ -88,7 +88,5 @@ test("API docs load under the CSP", async ({ page }) => {
 	expect(res?.headers()["content-security-policy"]).toMatch(/script-src 'self' 'nonce-/);
 	await expect(page.getByRole("link", { name: /Your balance/ }).first()).toBeVisible();
 	await expect(page.getByRole("link", { name: "raffles", exact: true })).toBeVisible();
-	// workaround(vukem v0.25.0): the apidocs CSP shim misses one inline style Scalar applies;
-	// it is blocked (no 'unsafe-inline') and the docs still render. Scripts must never be blocked.
-	expect(violations.filter((v) => !/^Applying inline style violates/.test(v))).toEqual([]);
+	expect(violations).toEqual([]);
 });
