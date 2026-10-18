@@ -1,76 +1,111 @@
-# Vukem Rifa
+<h1 align="center">Vukem Rifa</h1>
 
-Online raffles (rifas) with PIX payments for a Brazilian audience, running at <https://rifa.vukem.dev>.
+<p align="center">
+  <a href="https://github.com/AlexGalhardo/vukem-rifa-vuejs/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/AlexGalhardo/vukem-rifa-vuejs/ci.yml?branch=main&label=tests" alt="Tests"></a>
+  <a href="https://github.com/AlexGalhardo/vukem-rifa-vuejs/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/AlexGalhardo/vukem-rifa-vuejs/release.yml?label=ci%2Fcd" alt="CI/CD"></a>
+  <a href="https://github.com/AlexGalhardo/vukem-rifa-vuejs/releases"><img src="https://img.shields.io/github/v/release/AlexGalhardo/vukem-rifa-vuejs?include_prereleases&label=version" alt="Version"></a>
+  <a href="https://github.com/AlexGalhardo/vukem"><img src="https://img.shields.io/badge/built%20with-vukem-00ADD8" alt="Built with Vukem"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/AlexGalhardo/vukem-rifa-vuejs" alt="License"></a>
+</p>
 
-Built with [Vukem](https://vukem.dev) (Go) + Inertia v3 + Vue 3 + TypeScript + Tailwind CSS v4, on PostgreSQL. It also serves as a real-world test bed for the Vukem framework.
+## Introduction
 
-- Owners sign up (email/password or Google), create raffles (10–1000 numbers, whole-real prices, 7–60 days) and generate a payment link per number that reserves it for 10 minutes.
-- Buyers (no account) pay by PIX through AbacatePay; a verified, idempotent webhook marks the number as paid.
-- An auditable `crypto/rand` draw runs at the deadline, or as soon as every number is paid.
-- Exports (JSON/CSV), a REST API with personal API keys and OpenAPI/Scalar docs.
+Vukem Rifa is an open-source online raffle (rifa) platform with PIX payments for a Brazilian audience, built with the [Vukem](https://github.com/AlexGalhardo/vukem) Go framework, Inertia v3, Vue 3 and Tailwind CSS v4 on PostgreSQL. It runs in production at <https://rifa.vukem.dev> and is one of the real-world battle tests for Vukem 1.0.
 
-See [PLAN.md](PLAN.md) for the full design, data model, roadmap and owner to-do list.
+## Summary
 
-## Requirements
+| Area | What you get |
+| --- | --- |
+| **Raffles** | Owners create raffles with 10–1000 pre-created numbers, whole-real prices and 7–60 day durations; price, size and duration lock after the first paid number; raffles with sales are archived, never deleted. |
+| **Payment links** | One link per number reserves it for 10 minutes (256-bit token, hashed and sealed); owners see every live link and share it by copy or WhatsApp; expiry by queued job plus a sweeper. |
+| **Public checkout** | Anyone on `/r/{slug}` buys a free number (name, email, BR phone, LGPD consent) with per-IP, per-email and per-raffle caps; purchases join the buyer account at `/account/purchases`. |
+| **PIX payments** | AbacatePay v2 PIX with QR code and copy-paste, polling, a webhook checked by secret and HMAC, deduplicated and idempotent; late payments become tracked refunds. |
+| **Ledger and payouts** | Append-only ledger with a 90/10 owner/platform split, owner balance, admin payouts (`/admin/payouts`) and refunds (`/admin/refunds`) pages. |
+| **Auditable draw** | `crypto/rand` seed and rejection sampling at the deadline or when sold out; the public result shows seed, participant hash and algorithm so anyone can recompute it ([docs/draw-algorithm.md](docs/draw-algorithm.md)). |
+| **Organizer card** | Name, member since and raffle counts on the public page; email, WhatsApp and Telegram contacts only when opted in. |
+| **Auth** | Email/password and Google sign-in, email verification bound to the account's login, password reset, session rotation and brute-force limits. |
+| **Exports and API** | JSON/CSV exports with a formula-injection guard, REST `/api/v1` with personal API keys, idempotent payment links, OpenAPI with Scalar docs and generated TS/zod types. |
+| **Experience** | PT-BR and English from one shared catalog, dark/light theme without flash, axe accessibility checks. |
 
-- Go 1.27.2, Bun 1.4.3, Docker (Compose v2)
-- Optional: [vukem CLI](https://vukem.dev/docs/installation) v0.21.1 (`go install github.com/AlexGalhardo/vukem/cmd/vukem@v0.21.1`), golangci-lint v2.15
+## Why this project
 
-## Quick start (Docker)
+- **A real product, not a demo page.** Real money flows, abuse limits and an auditable draw exercise Vukem under real constraints.
+- **Money done carefully.** Integers only, an append-only ledger and one lock order (raffle row first) in every write path.
+- **Secure by default.** Every OWASP category maps to the tests that prove it ([docs/owasp-matrix.md](docs/owasp-matrix.md)), plus ZAP and nuclei scans in CI.
+- **Framework feedback loop.** Every Vukem bug or rough edge found here is reported upstream and fixed in the framework, not hidden in the app.
+- **PostgreSQL only.** Sessions, cache, queue, scheduler locks and rate limits all live in one managed database.
+
+## Stack
+
+| Layer | Choice |
+| --- | --- |
+| Backend | Go 1.27.2, Vukem v0.28.0, `drivers/postgres` v0.4.0 |
+| Frontend | Inertia 3.9.1, Vue 3.5.44, TypeScript 6.0.3, Tailwind CSS 4.3.3, Vite 8.3.4, zod 4.6.7 |
+| Data | PostgreSQL 18.6 (data, sessions, cache, queue, rate limits) |
+| Payments | AbacatePay PIX (API v2, dev mode) |
+| Email | Mailtrap (Email API in production, Email Sandbox in development and CI), Mailpit offline |
+| Tooling | Bun 1.4.3, Biome 2.5.15, Playwright 1.64.1, golangci-lint 2.15, lefthook, commitlint, markdownlint-cli2, git-cliff |
+| Hosting | Railway (Docker image on Alpine 3.24.2), images on GHCR |
+
+## Quick start
+
+Requirements: Go 1.27.2, Bun 1.4.3 and Docker (Compose v2). Optional: the Vukem CLI (`go install github.com/AlexGalhardo/vukem/cmd/vukem@v0.28.0`) and golangci-lint v2.15.
 
 ```sh
 cp .env.example .env
-go run ./cmd/app key:generate     # or: echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
+go run ./cmd/app key:generate     # writes APP_KEY to .env
 docker compose up -d --build      # app :3000, postgres :5432, mailpit :8025
 curl http://localhost:3000/up     # {"status":"ok"}
 ```
 
-## Local development (hot reload)
+Develop on the host with hot reload:
 
 ```sh
-bun install                       # also installs the git hooks (lefthook)
+bun install                       # JS deps + git hooks (lefthook)
 docker compose up -d postgres mailpit
 go run ./cmd/app migrate
-bun run dev                       # Vite dev server (writes resources/public/hot)
-go run ./cmd/app                  # Go app on http://localhost:3000
+bun run dev                       # Vite dev server
+go run ./cmd/app                  # http://localhost:3000
 ```
 
-## Commands
-
-| Task | Command |
+| Service | URL |
 | --- | --- |
-| Go unit tests (race) | `go test -race ./...` |
-| Go integration tests (Postgres) | `TEST_DATABASE_URL=postgres://rifa:rifa@localhost:5432/rifa?sslmode=disable go test -tags=integration -race ./...` |
-| Go lint / format | `golangci-lint run ./...` / `golangci-lint fmt` |
-| Vulnerabilities | `go tool govulncheck ./...`, `bun audit` |
-| Frontend lint / format | `bun run lint` / `bun run lint:fix` |
-| Typecheck | `bun run typecheck` |
-| Build assets | `bun run build` |
-| E2E (stack running) | `bun run test:e2e` |
-| Markdown lint | `bun run lint:md` |
-| Migrations | `go run ./cmd/app migrate`, `migrate:status`, `migrate:rollback` |
+| App | <http://localhost:3000> |
+| Mailpit | <http://localhost:8025> |
+| Postgres | `localhost:5432` (`rifa` / `rifa`) |
 
-## Email
+`ABACATEPAY_FAKE=true` (compose, e2e) uses an in-memory PIX gateway; `go run ./cmd/app make:admin <email>` grants the admin pages.
 
-Two transports. Production on Railway: `MAIL_MAILER=mailtrap` (Mailtrap Email API over HTTPS, vukem v0.26.0; `MAILTRAP_API_TOKEN`, `MAILTRAP_INBOX_ID` for the sandbox) because Railway blocks outgoing SMTP. Local and CI: SMTP (`MAIL_MAILER=smtp`, `SMTP_*`). Local: Mailpit at <http://localhost:8025> (`SMTP_INSECURE=true`, local only). Dev/staging/e2e: [Mailtrap Email Sandbox](https://mailtrap.io) (`sandbox.smtp.mailtrap.io:2525`); tests read delivered emails through the Mailtrap Sandbox API when `MAILTRAP_API_TOKEN`, `MAILTRAP_ACCOUNT_ID` and `MAILTRAP_SANDBOX_ID` are set. Optional Mailtrap MCP for agents: `claude mcp add mailtrap -e MAILTRAP_API_TOKEN=… -e MAILTRAP_ACCOUNT_ID=… -- npx -y mcp-mailtrap`.
+## Checks
 
-The free Mailtrap sandbox is shared with other projects: email tests use a unique random recipient, filter by it, run serially (`-p 1`, about one message per 10 s) and never clean the inbox.
+```sh
+golangci-lint run ./... && go test -race ./...
+bun run lint && bun run typecheck && bun run build && bun run lint:md
+bun run test:e2e                  # needs the compose stack and `bunx playwright install chromium`
+```
 
-### Production demo (no real delivery yet)
+Integration tests (Postgres), the security suite, the AbacatePay sandbox test and the email setup are listed in [AGENTS.md](AGENTS.md#commands).
 
-Until the `vukem.dev` sender domain is verified, production sends every email (verification, password reset, payment confirmations) to the Mailtrap **sandbox**, so nothing reaches the real inbox. Sign-up never logs in (it answers "check your email" for new and existing addresses alike) and the dashboard requires a verified email, so to try the demo either:
+## Documentation
 
-- open the verification link from the Mailtrap sandbox inbox (it is listed by recipient), then log in, or
-- verify the account by hand: `UPDATE users SET email_verified_at = now() WHERE email = '…';` (Railway Postgres console) and log in, or sign in with Google (Google accounts are verified).
+- [PLAN.md](PLAN.md): decisions, architecture, data model, money flow, routes, OWASP checklist, roadmap
+- [docs/operations.md](docs/operations.md): email transports, production demo, Railway settings
+- [docs/draw-algorithm.md](docs/draw-algorithm.md), [docs/owasp-matrix.md](docs/owasp-matrix.md), [docs/qa-checklist.md](docs/qa-checklist.md)
+- [CHANGELOG.md](CHANGELOG.md): every release, each entry linked to its commit
+- [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md): rules for coding agents
 
-Buyers receive no email in this mode either; owners share the payment link manually (copy or WhatsApp), which is the main flow anyway.
+## Agentic development
 
-## Contributing and security
+The project is developed with AI coding agents. [AGENTS.md](AGENTS.md), the path-scoped rules in `.claude/rules/` and the skills in `.claude/skills/` describe the conventions, the test-first workflow and the security contract every change follows.
 
-[CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [CHANGELOG.md](CHANGELOG.md) · [LICENSE](LICENSE) (MIT)
+## Contributing
 
-## Deploy notes (Railway)
+Thank you for considering contributing! Read the [contribution guide](CONTRIBUTING.md) to get started.
 
-- One service runs HTTP, the database queue worker (`QUEUE_IN_SERVE`) and the scheduler (`SCHEDULE_IN_SERVE`), both vukem defaults. If a separate `schedule:work` or `queue:work` service is ever added, set the matching flag to `false` on the web service, never both.
-- Client IP and HSTS (set on Railway 2026-10-17): the edge connects from `100.64.0.x` (vukem's request log `peer` field), so `TRUSTED_PROXIES=100.64.0.0/24`, `CLIENT_IP_HEADER=X-Real-IP` and `TRUST_FORWARDED_PROTO=true` give per-client `ip` for rate limits and logs; `HSTS_FORCE=true` sends HSTS. If Railway ever connects from outside that range, `c.IP()` falls back to the edge address (stricter limits, never spoofable): re-check `peer` in the logs. Never trust `0.0.0.0/0`.
-- vukem v0.24.0 refuses clear-text queued mail jobs from older releases: deploy when the `jobs` table has no pending `vukem.mail` rows, or set `QUEUE_ALLOW_LEGACY_MAIL=true` for one deploy.
+## Security vulnerabilities
+
+If you discover a security vulnerability, please follow the [security policy](SECURITY.md) instead of opening a public issue.
+
+## License
+
+Vukem Rifa is open-source software licensed under the [MIT license](LICENSE).

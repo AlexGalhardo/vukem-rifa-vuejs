@@ -51,6 +51,6 @@ Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go ba
 | `resources/js/` | Vue pages, layouts, components, composables |
 | `resources/lang/` | `pt-BR.json`, `en.json` shared by Go and Vue |
 | `tests/` | Go tests; `tests/pgtest` gives each integration test its own database |
-| `docs/` | specs such as `draw-algorithm.md` (how a published draw is recomputed) |
+| `docs/` | specs such as `draw-algorithm.md` (how a published draw is recomputed), `operations.md` (email transports, production demo, Railway settings) |
 | `e2e/` | Playwright specs |
 | `.claude/skills/`, `.claude/rules/` | agent skills and path-scoped rules |
