@@ -99,22 +99,16 @@ func MarkRefunded(ctx context.Context, db *database.DB, id int64, reference stri
 // PendingRefunds counts refund_due entries not yet marked refunded and the
 // age of the oldest, for the hourly warning.
 func PendingRefunds(ctx context.Context, ex database.Executor, now time.Time) (count int, oldest time.Duration, err error) {
-	const pending = ` FROM ledger_entries l LEFT JOIN refunds f ON f.ledger_entry_id = l.id
-		WHERE l.kind = '` + models.LedgerRefundDue + `' AND f.id IS NULL`
-
-	if err := ex.QueryRowContext(ctx, "SELECT COUNT(*)"+pending).Scan(&count); err != nil {
+	var first sql.NullTime
+	if err := ex.QueryRowContext(ctx, `SELECT COUNT(*), MIN(l.created_at) FROM ledger_entries l
+		LEFT JOIN refunds f ON f.ledger_entry_id = l.id
+		WHERE l.kind = '`+models.LedgerRefundDue+`' AND f.id IS NULL`).Scan(&count, database.ScanTime(&first)); err != nil {
 		return 0, 0, fmt.Errorf("count pending refunds: %w", err)
 	}
 
-	if count == 0 {
-		return 0, 0, nil
+	if first.Valid {
+		oldest = now.Sub(first.Time)
 	}
 
-	// No MIN(): SQLite returns aggregated timestamps as text.
-	var first time.Time
-	if err := ex.QueryRowContext(ctx, "SELECT l.created_at"+pending+" ORDER BY l.created_at LIMIT 1").Scan(&first); err != nil {
-		return 0, 0, fmt.Errorf("oldest pending refund: %w", err)
-	}
-
-	return count, now.Sub(first), nil
+	return count, oldest, nil
 }
