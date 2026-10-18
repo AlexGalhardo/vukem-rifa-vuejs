@@ -23,6 +23,7 @@ export default {
 				"repo",
 				"test",
 				"security",
+				"release",
 			],
 		],
 		"body-max-line-length": [0],

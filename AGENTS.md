@@ -26,10 +26,11 @@ Vukem Rifa: online raffles with PIX (AbacatePay) for a Brazilian audience. Go ba
 | AbacatePay sandbox | `ABACATEPAY_API_KEY=abc_dev_… go test -tags=abacatepay -p 1 -run AbacatePaySandbox ./...` (real dev mode, opt-in) |
 | Admin | `go run ./cmd/app make:admin <email>` grants the payouts and refunds pages (`/admin/payouts`, `/admin/refunds`) |
 | CI status | `gh run list --limit 5`, `gh run view <id> --log-failed` |
+| Release | `git cliff --tag vX.Y.Z -o CHANGELOG.md`, commit `chore(release): vX.Y.Z`, `git tag -a vX.Y.Z -m "vX.Y.Z: <title>"`, push commit + tag (`release.yml` publishes the image and the notes) |
 
 ## Rules
 
-- Test first; done = `→ verify:` passes + CI green + `CHANGELOG.md` `[Unreleased]` updated + PLAN.md box ticked.
+- Test first; done = `→ verify:` passes + CI green + PLAN.md box ticked. The commit message feeds `CHANGELOG.md` (git-cliff, never edited by hand; see `.claude/rules/commits-and-changelog.md`).
 - Validate every input/output with vukem `z` (Go) and zod (forms). Money as integers (see `.claude/rules/money-and-payments.md`).
 - Owner data always scoped by `user_id`; buyers never see other buyers' data; public pages show no personal data.
 - Conventional Commits in English; SemVer; Keep a Changelog. Bun only for JS; exact stable versions; pinned Docker tags.
