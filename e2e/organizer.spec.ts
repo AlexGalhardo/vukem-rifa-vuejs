@@ -51,8 +51,10 @@ test("organizer card with opt-in WhatsApp, Telegram and click-to-reveal email", 
 
 	// Turning a contact off removes it right away.
 	await page.getByTestId("contact-show-whatsapp").uncheck();
+	// The first save's toast may still be on screen: wait for this save itself.
+	const saved = page.waitForResponse((r) => r.url().endsWith("/settings/contact") && r.request().method() === "PUT");
 	await page.getByTestId("contact-submit").click();
-	await expect(page.getByText("Contato público salvo.")).toBeVisible();
+	await saved;
 	await visitor.reload();
 	await expect(visitor.getByTestId("organizer-whatsapp")).toHaveCount(0);
 	await visitorCtx.close();
