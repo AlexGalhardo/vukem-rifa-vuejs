@@ -44,7 +44,7 @@ func Raffles(r *router.Router, app *vukem.App) error {
 	}
 
 	r.Post("/r/{slug}/organizer-email", rc.OrganizerEmail).Name("raffles.organizer_email").
-		Use(ratelimit.Middleware(limiters("organizer-email", 10, 10*time.Minute), byClientIP))
+		Use(ratelimit.Middleware(limiters("organizer-email", 10, 10*time.Minute), ratelimit.ByIP))
 
 	return nil
 }
