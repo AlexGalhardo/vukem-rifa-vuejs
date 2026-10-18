@@ -462,5 +462,17 @@
 		"created_at": "This raffle was created on {date}",
 		"show_email": "Show email",
 		"email_failed": "Could not load the email now. Try again later."
+	},
+	"error_page": {
+		"home": "Back to the home page",
+		"s403": "You cannot access this page.",
+		"s404": "Page not found.",
+		"s405": "Method not allowed.",
+		"s409": "This action conflicts with the current state.",
+		"s410": "This page is no longer available.",
+		"s419": "Your session expired. Reload the page and try again.",
+		"s429": "Too many requests. Try again in a moment.",
+		"s500": "Something went wrong on our side.",
+		"s503": "Service unavailable. Try again in a moment."
 	}
 }

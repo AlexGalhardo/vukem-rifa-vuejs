@@ -3,7 +3,7 @@ module github.com/AlexGalhardo/vukem-rifa-vuejs
 go 1.27.2
 
 require (
-	github.com/AlexGalhardo/vukem v0.26.0
+	github.com/AlexGalhardo/vukem v0.27.0
 	github.com/AlexGalhardo/vukem/drivers/postgres v0.4.0
 )
 

@@ -462,5 +462,17 @@
 		"created_at": "Esta rifa foi criada em {date}",
 		"show_email": "Mostrar e-mail",
 		"email_failed": "Não foi possível carregar o e-mail agora. Tente mais tarde."
+	},
+	"error_page": {
+		"home": "Voltar para a página inicial",
+		"s403": "Você não pode acessar esta página.",
+		"s404": "Página não encontrada.",
+		"s405": "Método não permitido.",
+		"s409": "Esta ação conflita com o estado atual.",
+		"s410": "Esta página não está mais disponível.",
+		"s419": "Sua sessão expirou. Recarregue a página e tente de novo.",
+		"s429": "Muitas requisições. Tente de novo em instantes.",
+		"s500": "Algo deu errado do nosso lado.",
+		"s503": "Serviço indisponível. Tente de novo em instantes."
 	}
 }
