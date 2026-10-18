@@ -51,8 +51,9 @@ func Auth(r *router.Router, app *vukem.App) error {
 	r.Post("/reset-password", h.Reset).Name("password.update").Use(guest)
 
 	r.Get("/email/verify", h.Notice).Name("verification.notice").Use(required)
-	// The signed link works signed out too: sign-up no longer logs in.
-	r.Get("/email/verify/{id}", h.Verify).Name("verification.verify").Use(acc.Signer.Middleware())
+	// Needs the login of the link's account (signed out: login, then back
+	// here); Verify checks the signature itself to explain an expired link.
+	r.Get("/email/verify/{id}", h.Verify).Name("verification.verify").Use(required)
 	r.Post("/email/verification-notification", h.Resend).Name("verification.send").Use(required, mails)
 
 	return nil

@@ -66,7 +66,9 @@
 			"resend": "Send the link again",
 			"resent": "A new verification link was sent.",
 			"done": "Your email address is verified.",
-			"wrong_account": "This verification link belongs to another account."
+			"wrong_account": "This verification link belongs to another account.",
+			"expired": "This verification link expired. We can send you a new one.",
+			"invalid": "This verification link is invalid."
 		},
 		"social": {
 			"no_email": "Your {provider} account did not share an email address.",

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -76,17 +77,29 @@ func TestRegisterAndVerifyEmail(t *testing.T) {
 	vukemtest.AssertDatabaseHas(t, app, "users", map[string]any{"email": "ana@example.com", "email_verified_at": nil})
 
 	verify := link(t, app, "ana@example.com")
-	c.Get(verify + "x").AssertForbidden() // tampered signature
+	c.Get(verify + "x").AssertRedirect("/login") // signed out: the login comes first
 
 	stranger := app.Client(t).Inertia("")
 	register(t, stranger, "someone-else@example.com")
 	stranger.Get(verify).AssertForbidden() // signed in as another account
 
-	// Signed out, the link verifies and sends to the login page.
+	// Signed out, the link verifies nothing (vukem v0.27.0, A20): whoever
+	// signed up with someone else's address cannot get it verified by the
+	// owner's click. The login comes back to the link and verifies it.
 	c.Get(verify).AssertRedirect("/login")
+	vukemtest.AssertDatabaseHas(t, app, "users", map[string]any{"email": "ana@example.com", "email_verified_at": nil})
+
+	back := c.PostJSON("/login", map[string]any{"email": "ana@example.com", "password": "correct horse battery"})
+	if loc := back.Header("Location"); !strings.Contains(loc, "/email/verify/") {
+		t.Fatalf("login went to %q, want back to the verification link", loc)
+	}
+
+	c.Get(verify + "x").AssertForbidden() // tampered signature, now signed in
+	c.Get(back.Header("Location")).AssertRedirect("/dashboard")
 	vukemtest.AssertDatabaseMissing(t, app, "users", map[string]any{"email": "ana@example.com", "email_verified_at": nil})
 
-	c.PostJSON("/login", map[string]any{"email": "ana@example.com", "password": "correct horse battery"}).AssertRedirect("/dashboard")
+	// Opening it again is harmless.
+	c.Get(verify).AssertRedirect("/dashboard")
 	c.Get("/dashboard").AssertOK().
 		AssertInertia("Dashboard").
 		PropEquals("auth.user.name", "Ana Silva").
@@ -271,4 +284,39 @@ func deliverQueuedMail(t *testing.T, app *vukemtest.App, email string) {
 
 	cancel()
 	<-done
+}
+
+// An expired verification link (signed in) explains itself and offers a
+// new one instead of a bare 403.
+func TestVerifyEmail_ExpiredLinkOffersANewOne(t *testing.T) {
+	t.Parallel()
+
+	app := vukemtest.New(t, bootstrap.New)
+	c := app.Client(t).Inertia("")
+	register(t, c, "eva@example.com")
+
+	acc, err := accounts.New(app.App)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var id int64
+	if err := acc.DB.QueryRowContext(t.Context(), "SELECT id FROM users WHERE email = ?", "eva@example.com").Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+
+	// signed.Signer reads the wall clock (not the app clock): a 1 s link.
+	verify, err := acc.Signer.Sign(fmt.Sprintf("/email/verify/%d", id), time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	time.Sleep(2100 * time.Millisecond)
+
+	c.Get(verify).AssertRedirect("/email/verify")
+	page := c.Get("/email/verify").AssertInertia("Auth/VerifyEmail").Page()
+	if flash, _ := page["flash"].(map[string]any); flash["status"] != "This verification link expired. We can send you a new one." {
+		t.Fatalf("flash = %v", page["flash"])
+	}
+	vukemtest.AssertDatabaseHas(t, app, "users", map[string]any{"email": "eva@example.com", "email_verified_at": nil})
 }
