@@ -55,7 +55,8 @@ func Webhooks(r *router.Router, app *vukem.App) error {
 		ratelimit.Middleware(limiters("webhook-abacatepay", 120, time.Minute), ratelimit.ByIP),
 		webhookSecret(app.Source.Get("ABACATEPAY_WEBHOOK_SECRET")),
 		webhook.Middleware(abacatepay.SignatureHeader, []byte(key), 1<<20),
-		webhook.Dedupe(c.Store(), eventID, webhook.DedupeOptions{}),
+		// A fixed namespace keeps dedupe keys stable if the route is renamed.
+		webhook.Dedupe(c.Store(), eventID, webhook.DedupeOptions{Namespace: payments.Provider}),
 	)
 
 	return nil

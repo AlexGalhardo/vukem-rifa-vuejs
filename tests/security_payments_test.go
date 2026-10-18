@@ -96,7 +96,9 @@ func TestSecurity_WebhookReplayAfterCacheLossIsANoOp(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := c.Store().Delete(t.Context(), "webhook:event:log_replay_2"); err != nil {
+	// workaround(vukem v0.28.0): webhook has no exported dedupe key or Forget, so
+	// the test spells the key format (length-prefixed namespace) by hand.
+	if err := c.Store().Delete(t.Context(), "webhook:event:10:abacatepay:log_replay_2"); err != nil {
 		t.Fatal(err)
 	}
 
