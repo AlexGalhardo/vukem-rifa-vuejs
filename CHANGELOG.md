@@ -1,83 +1,130 @@
 # Changelog
 
-All notable changes to this project are documented here. The format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Security
-
-- Email verification needs the login of the account (ported from vukem v0.27.0, A20): a signed-out click no longer verifies, so a squatter's account cannot be verified by the address owner's click (and linked to their public purchases); the login returns to the link; an expired link explains itself.
-
-- Security review fixes (191bf94..cba34e7):
-  - Public reservations record LGPD consent (`consent_at`, `consent_version`); the notice says the organizer sees name, email and phone.
-  - Raffle edits lock the raffle row first (same order as webhook and draw) and check the paid-number lock on that row: no deadlock, no price change racing a payment.
-  - Reserving uses the raffle read under lock (status, deadline, size, price); a number past a reduced size is 404.
-  - A raffle holds at most max(5, 20% of numbers) live public links; per-email caps and limits fold `+tags` and Gmail dots; IPv6 clients are limited per /64; every refusal shows one generic message.
-  - Tests prove spoofed `X-Forwarded-For`/`X-Real-IP` from untrusted peers are ignored.
-  - The sealed link token is erased when the link ends (expiry, cancel, edit, draw, payment).
-  - The organizer email is no longer in the page props; a click POSTs `/r/{slug}/organizer-email` (rate limited, no-store, 404 unless opted in).
+## [0.8.0] - 2026-10-18
 
 ### Changed
 
-- vukem v0.27.0: errors on Inertia visits render `resources/js/pages/Error.vue` inside the app layout (translated); per-IP limits use `ratelimit.ByIP` (IPv6 /64 built in, `routes/ipkey.go` removed); pending refunds use `MIN()` with `database.ScanTime`; the API docs e2e fails on any CSP violation (Scalar inline style fixed upstream). Cookies stay far below the new 64 KiB header cap (353 bytes at sign-in).
+- **deps:** Bump vukem to v0.28.0 and namespace the abacatepay webhook dedupe keys ([f418cf7](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/f418cf70ab776eefab8e81f1df585ca8eb65c59f))
 
-- `/account/purchases` loads raffles in one query (was one per reservation).
-
-### Added
-
-- Admin refunds page `/admin/refunds`: late payments (`refund_due`) with a mark-refunded action (reference, audit event `refund.recorded`) and an hourly `refunds:pending` warning. AbacatePay has no refund API, so the PIX is returned in its dashboard.
-
-- Organizer card on the public raffle page (owner request): name, member since and raffle counts; opt-in email (click to reveal), WhatsApp and Telegram contacts from `/settings/contact`, all off by default.
-- Public checkout (owner request): visitors pick a free number on `/r/{slug}`, give name, email, phone and LGPD consent, and pay on the same PIX page; rate limits, honeypot, a cap of 5 live links per email; the owner sees the origin; signed-in (or verified-email) buyers get `/account/purchases` with paid and unpaid numbers. The navbar collapses into a menu on phones.
-- Owner requests (2026-10-17): the navbar uses the vukem docs container (sticky, 90rem, same gutters); the theme toggle is a light/dark/system radiogroup with sun, moon and monitor icons; the buyer page shows the PIX QR code inline (no modal) with a "Copiar código" button (clipboard.js 2.0.11) and a toast; every live payment link stays listed for the owner for its 10 minutes (token sealed with APP_KEY in `reservations.token_sealed`).
-- Security tests: argon2id password hashes, production HSTS and http `APP_URL` refusal, failed-login and payout security events without secrets, enumeration-safe sign-up (`docs/owasp-matrix.md`).
-- Consolidated OWASP Top 10 suite (`docs/owasp-matrix.md`): new tests for mass assignment, session cookie flags, injection payloads, security headers, security-event logging without secrets, gateway URL hardening, logout killing copied session cookies and reset-mail timing; `e2e/security.spec.ts` (no CSP violations, cancelled link reuse).
-- QA checklist (`docs/qa-checklist.md`, run 1) and tuned ZAP baseline: security headers, cookie flags, version leaks and error disclosure now fail CI.
-- Admin payouts page under the axe suite, with an env-gated e2e admin seeder (`E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD`, CI only).
-- Accessibility e2e (`e2e/a11y.spec.ts`, `@axe-core/playwright` 4.14.0): every page and state (guest, owner, link form/result, buyer card, checkout, PIX modal, confirmation, expired and cancelled links, public and drawn raffles) in light/dark, pt-BR/en, desktop/mobile; fails on serious or critical violations.
-- Payment links: owners fill buyer name, email and BR phone (normalized to E.164) per number; a 256-bit link (stored as SHA-256) reserves the number for 10 minutes, shown once with copy, WhatsApp share and countdown; owner cancel; 30/min per owner. Expiry by a delayed job plus an every-minute sweeper; concurrent reservations of one number yield exactly one link.
-- Buyer checkout `/pay/{token}`: masked buyer data, countdown, PIX QR modal with copy-paste code, status polling, and the expired-link page ("Link expirado. Peça ao dono da rifa…", HTTP 410).
-- AbacatePay v2 PIX client (create, check, simulate; z-validated, timeouts) and a fake gateway for local/CI that production refuses.
-- Verified AbacatePay webhook (`webhookSecret` + HMAC, dedupe, `payment_events`): number paid, raffle locked, 90/10 ledger, `refund_due` for late or mismatched payments, queued pt-BR/en emails to buyer and owner, sold-out draw.
-- Append-only ledger (Postgres trigger), owner balance on the dashboard, admin payouts page and `make:admin` command.
-- Auditable draw v1 (crypto/rand seed, HMAC-SHA256 rejection sampling, participants hash) at the deadline or when sold out, exactly once; public result with "how to verify" and in-browser check; `docs/draw-algorithm.md`.
-- Raffle audit export (JSON/CSV with formula-injection guard), API keys page (token shown once, read/write abilities, owner-checked revoke) and REST API `/api/v1` (bearer keys, problem+json, pagination, per-key rate limits, idempotent payment links scoped by key) with OpenAPI at `/api/openapi.json` and Scalar at `/api/docs`; generated TS types and zod schemas.
-- Background: `serve` runs the queue worker and scheduler in-process (session/cache prune, reservation expiry, due draws).
-- Security tests for numbers, payments and API (IDOR, CSRF, webhook forgery/replay, concurrent deliveries and payouts, rate limits, CSV injection).
-- Foundation: Vukem v0.21.1 app scaffolded with Inertia v3 + Vue 3 + TypeScript + Tailwind CSS v4, switched to PostgreSQL (`drivers/postgres` v0.3.0).
-- Home page with dark/light theme toggle and PT-BR/EN locale switcher; shared JSON catalogs in `resources/lang` for Go and Vue.
-- Health endpoint `/up` and Go tests (unit + Postgres integration with one database per test).
-- Docker multi-stage image and Compose stack (app, PostgreSQL 18.6, Mailpit).
-- Tooling: Biome, golangci-lint v2, commitlint, markdownlint-cli2, lefthook hooks, `.editorconfig`.
-- CI (lint, unit + race, integration, govulncheck, frontend checks, Playwright e2e, smoke, ZAP baseline, nuclei), release workflow and Dependabot.
-- Auth from `vukem install:auth --social google`: registration, login with throttling, password reset, email verification and Google sign-in; the dashboard requires a verified email. Auth pages, flashes and errors are translated (pt-BR/en); users have an `is_admin` flag.
-- E2E auth flow: register, verify through Mailpit, dashboard, logout and login.
-- Mailtrap Email Sandbox test client (`tests/mailtrap`) and an opt-in real-delivery test (`-tags=mailtrap`, CI job when secrets exist).
-- Localized validation messages and auth emails (pt-BR/en); auth abuse tests (cross-site POST, forgot-password rate limit, session rotation).
-- Raffles: create (numbers 1..N pre-created), dashboard list, owner page with number grid, edit with lock after the first paid number, delete or archive, public page `/r/{slug}` without personal data; Postgres CHECK constraints; zod client validation.
-- Project docs: PLAN.md, README, AGENTS.md, CLAUDE.md, CONTRIBUTING, SECURITY, MIT license; project-specific `.claude` skills and rules.
+## [0.7.0] - 2026-10-18
 
 ### Changed
 
-- Bumped vukem to v0.26.0: API keys are soft revoked (`access_tokens.revoked_at`, revoked keys hidden from the settings page), payouts and edit-cancelled links are audit events (`web.AuditEvent`), the sign-up notice path never answers differently when the cache fails, `MAIL_MAILER=mailtrap` (Mailtrap Email API) is documented for production; new tests for APP_KEY rotation and Mailtrap HTTP delivery.
-- Editing a raffle cancels its live payment links in the same transaction (numbers released, audit event `raffle.links_cancelled`, flash with the count); paid numbers still lock price, size and duration.
-- Production moved to <https://rifa.vukem.dev> (docs: <https://vukem.dev>); every repository reference to the Railway and `rifa.vukem.com` URLs now points there.
-- Production on Railway sends HSTS (`HSTS_FORCE`) and sees real client IPs (`TRUSTED_PROXIES=100.64.0.0/24`, `CLIENT_IP_HEADER=X-Real-IP`), so per-IP rate limits no longer share one bucket.
-- Bumped vukem to v0.25.0: the database queue worker runs in `serve` by vukem (`QUEUE_IN_SERVE`; `bootstrap.Background` removed), the queue follows `app.Now`, buyer error pages use `inertia.RenderStatus`, the REST API registers with `api.Register` + `ValidateResponse` and authenticates with `auth.Required` (APIGuard, 401 problem+json), API tokens use the app clock, generated types are zod 4, CSV downloads stream through vukem `export` (stronger formula guard; plain numbers such as E.164 phones and negative amounts are no longer prefixed).
-- Sign-up no longer reveals existing accounts: every attempt answers "check your email" (`/register/check-email`) without logging in; a new address gets the verification link, an existing one an "account exists" notice (at most one per hour) and nothing is created. The verification link now works signed out and leads to the login page. Verification and reset mails are queued.
-- Production refuses to boot with a non-HTTPS `APP_URL`.
-- Production refuses a non-HTTPS `ABACATEPAY_BASE_URL` (the API key never travels in clear text).
-- Bumped vukem to v0.24.0: the scheduler runs in `serve` by vukem itself (`SCHEDULE_IN_SERVE`; `bootstrap.Background` keeps only the database queue worker), job handlers are registered with `WithJobsFunc`, `DispatchTx` replaces the after-commit fallbacks (delayed jobs on the sync driver fall back to the sweepers), the buyer phone uses `z.Preprocess`, payment locks use `orm.LockForUpdate`.
-- Bumped vukem to v0.23.0 and drivers/postgres to v0.4.0: rate limits go through `app.RateLimiters()` with `RATE_LIMIT_STORE=cache` (counters shared in the database cache), `tests/pgtest` delegates to the driver's `pgtest.Database`, `key:generate` runs from the app binary.
-- The Mailtrap sandbox is never cleaned by tests (shared free sandbox); CI runs the Mailtrap and AbacatePay sandbox jobs when their secrets exist.
-- Bumped vukem to v0.22.0: `auth.Verified` replaces the local redirect middleware, `inertia.I18n` shares the catalogs (the Vue composable no longer bundles the JSON), tests use `Inertia("")`.
-- `serve` runs the database queue worker and the scheduler in-process (`BACKGROUND_IN_SERVE`).
+- **deps:** Bump vukem to v0.27.0 with an Inertia Error page ([931b32a](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/931b32a58aef01f3b86750936fff5cfbad5410a9))
+- **security:** Use ratelimit.ByIP now that it groups IPv6 by /64 ([4b8ec25](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/4b8ec25c4f0f87da447fbd395075f8c5abdeb3ee))
+- **payments:** Count pending refunds with MIN and database.ScanTime ([dc09052](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/dc09052193be91034c29fbf994bc439afeb32759))
 
 ### Fixed
 
-- Password reset mail is queued instead of sent during the request, so known and unknown emails answer in the same time (no enumeration by timing).
+- **auth:** Require the account's login to verify its email ([8c537e5](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/8c537e59cccd767d7aaccad9b71af95a9f4c9b85))
 
-- A password reset now signs the account out of every other browser session (database sessions).
-- The password-confirmation mismatch message is translated (pt-BR/en).
-- Accessibility: brand buttons and secondary text meet WCAG AA contrast in light and dark, the theme toggle's accessible name includes its visible text, the generated payment link field has a label.
-- Raffle price no longer shows "R$" twice; closed raffles cannot be edited.
+## [0.6.0] - 2026-10-17
+
+### Added
+
+- **raffle:** Let visitors buy free numbers from the public page ([3e249f4](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/3e249f4a754a79139c47ad086065876add011d09))
+- **raffle:** Show the organizer and opt-in contacts on the public page ([cba34e7](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/cba34e7d37b77b8af5192559f0c1b4fafd3a89ac))
+- **payments:** Admin list of refunds due with mark-refunded action ([8dc6328](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/8dc6328a75a2a497d801432e859f1662a9e2cb79))
+
+### Changed
+
+- **numbers:** Load purchase raffles in one query ([9b3a873](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/9b3a873ecc84cb2503a82c8fbc5e721cd0175963))
+
+### Fixed
+
+- **ui:** Collapse the navbar links into a menu on phones ([1c0e53b](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/1c0e53bb44ab6fcd79c3ffe4fc4bdad8095739fb))
+- **security:** Record LGPD consent on public reservations ([1fbab1f](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/1fbab1fe6bb85ffbebf3e21cf791a5310faecbcd))
+- **raffle:** Lock the raffle row before editing it ([06f68b6](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/06f68b6ba329f3bdcd4c72eb480b0388b6c577a8))
+- **numbers:** Reserve against the locked raffle row, not the caller's copy ([cbbed30](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/cbbed3013fd765613febcb1db88a8d2cf27636c2))
+- **security:** Cap live public links per raffle and fold email aliases ([edbd0c3](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/edbd0c3badc48e0a4391d026c1e9ade2f6d67bc7))
+- **security:** Erase the sealed link token when the link ends ([8fe2182](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/8fe21823d5b5a9876eca034421df19d47aaacf90))
+- **security:** Reveal the organizer email only through a limited endpoint ([e758df7](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/e758df7a37f51d4363901334097b19cd685090fd))
+
+## [0.5.0] - 2026-10-17
+
+### Added
+
+- **ui:** Match the navbar container to the vukem docs site ([437155c](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/437155caa1e877baedd510ea02953824ed264691))
+- **ui:** Theme toggle with sun, moon and system icons like the docs ([f3d74e2](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/f3d74e2a42b72eaa197ed079b4a6a0383ea3447f))
+- **raffle:** Cancel live payment links when the owner edits a raffle ([862c721](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/862c72195f3940efc4a37b6c1fe0aa46d02c3b4a))
+- **numbers:** Keep live payment links visible to the owner for 10 minutes ([5d4650b](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/5d4650b1e9a7593e700daa7b41300e6b9eb09285))
+- **payments:** Show the PIX QR inline and copy the code with clipboard.js ([1e7c130](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/1e7c1303acdc5503569b8118671f1db40ec41cfd))
+
+### Changed
+
+- **deps:** Bump vukem to v0.26.0 ([191bf94](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/191bf94290ec2291168a57fb82cf9efc354ebc71))
+
+## [0.4.0] - 2026-10-17
+
+### Changed
+
+- **deps:** Bump vukem to v0.25.0 ([7794ae8](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/7794ae8bdb518cb8b4350294aef81b7311f942ae))
+
+## [0.3.0] - 2026-10-17
+
+### Changed
+
+- **deps:** Bump vukem to v0.24.0 ([86c7df5](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/86c7df59e89722021ff642a7b065d6d623f0b4d2))
+
+### Security
+
+- **security:** Make sign-up enumeration-safe and close A02/A05/A09 gaps ([271cd2b](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/271cd2b9d8a7219d5a0460b2ac910d1b8b332807))
+
+## [0.2.0] - 2026-10-17
+
+### Added
+
+- **raffle:** Add raffle management and public page ([b9c5107](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/b9c5107d65f43b0207972ea15b4443476ae498da))
+- **db:** Add reservations, payments, ledger and draws schema ([a0bd558](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/a0bd5583272d2b5ed4ab9e1c17e5edd539dd5d68))
+- **numbers:** Reserve numbers with hashed payment links ([c44edf6](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/c44edf652954a8b5a28c2a2fef50798d88e86e5a))
+- **api:** Add raffle audit export as JSON and CSV ([2e30078](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/2e300784b245259698f17e4fb73128a6b747d197))
+- **api:** Add API keys and REST API v1 with OpenAPI and Scalar docs ([6febf33](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/6febf3321c0923c3d9a9bf8ae6cdb544ceca1b8c))
+- **api:** Generate TypeScript types and zod schemas from the OpenAPI document ([106a572](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/106a5729623a2717ea04646976961e2f9b5c4651))
+- **ui:** Add API keys settings page and raffle export links ([066921b](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/066921b6d49dd8b1c35253216425f14b8ccf757b))
+- **draw:** Add auditable v1 draw algorithm ([4b161f8](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/4b161f88668652f295a243e95f07eee0f71f61d9))
+- **draw:** Run draws at the deadline and when sold out ([35dbbef](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/35dbbef5dd32e3332bb0e3a5923306871805f94b))
+- **numbers:** Generate and cancel payment links from the manage page ([c4e0901](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/c4e09017c2d1033a6ad8154c1656d12782152ac0))
+- **ui:** Payment-link panel on the manage page and auditable draw result ([3314728](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/3314728dd8c513161c418dcc553e4efad7fe23c2))
+- **payments:** Add AbacatePay v2 PIX client, webhook parser and fake gateway ([88eb4f5](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/88eb4f59edac3d5c38059b76f817b62c2d2f2b2b))
+- **payments:** Buyer checkout, PIX confirm and verified AbacatePay webhook with ledger and emails ([5fa43e3](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/5fa43e3c094e89cc9ef3d4427bf58090c25d2d47))
+- **ledger:** Owner balance on dashboard, admin payouts and make:admin command ([78556f4](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/78556f4f6f70be74dcd52f5975ece3b495a15b89))
+- **ui:** Buyer checkout with PIX modal and polling, owner balance and admin payouts pages ([b99df81](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/b99df815da76bc5323213ca0bfe11946671f2d76))
+
+### Changed
+
+- **deps:** Bump vukem to v0.22.0 ([7137e30](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/7137e306fcdce38465a297339393f62f006b2660))
+- **deps:** Bump vukem to v0.23.0 ([8dd7818](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/8dd78181795ffd7bb2ea135b9d3589eb2157176a))
+- **numbers:** Build the payment-link limiter from app.RateLimiters ([48f4518](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/48f4518654dc64346b6bd917e6b702fe6d506b4e))
+
+### Fixed
+
+- **security:** Build API and key-creation rate limiters from app.RateLimiters ([8f93f1d](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/8f93f1d90b11ed05bb41b13f259c07b56fd1d65e))
+- **i18n:** Stop repeating the currency symbol in the raffle price ([74e112b](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/74e112bf70a15bd7bf7fe1e225c9ad1c284fb920))
+- **raffle:** Treat closed raffles as finished ([7165faf](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/7165faf95cc5adcc88ca93f51c902c9544a78444))
+- **payments:** Lock raffle on payment, refuse closed raffles, cap PIX at ends_at ([423ff07](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/423ff07a59c76ee71c019a1138d1114929f5e947))
+
+## [0.1.0] - 2026-10-17
+
+### Added
+
+- **repo:** Scaffold vukem inertia vue app on postgres ([824eb38](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/824eb3806d4fcf33c2607c231ddd7fc276b80b79))
+- **auth:** Install vukem auth with google login ([cb0a30c](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/cb0a30c7d7de4edc5079971a15bb853601ab53e0))
+- **auth:** Require a verified email for the dashboard ([21d18fb](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/21d18fb06be71ce0a310afdba17585f2065fb63a))
+- **db:** Add is_admin flag to users ([825a266](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/825a2660a51d918dc90ab0b2e4ca50afcb20f12e))
+- **i18n:** Translate auth pages, flashes and errors ([31173fe](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/31173fe385975c420ad04147d92414fb756da024))
+- **i18n:** Localize validation messages in pt-BR and en ([e1e968b](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/e1e968bad853979aa57630e15c2871ce9dbaca55))
+- **mail:** Send auth emails in the request locale ([fa00f06](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/fa00f066effd09301d15f85c9f0c71ab6c0590da))
+
+[0.8.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/releases/tag/v0.1.0
