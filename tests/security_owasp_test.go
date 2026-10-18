@@ -419,3 +419,31 @@ func TestOWASP_A07_TrustedProxyHeaderSeparatesClients(t *testing.T) {
 		}
 	}
 }
+
+// vukem v0.27.0 caps request headers at 64 KiB (431 above): the cookies
+// this app sets (the largest set is at sign-in) stay far below it.
+func TestOWASP_A05_CookiesStayFarBelowTheHeaderCap(t *testing.T) {
+	t.Parallel()
+
+	f := newNumbersFixture(t)
+	c := f.app.Client(t).Inertia("")
+	signIn := c.PostJSON("/login", map[string]any{"email": "dono@example.com", "password": "correct horse battery", "remember": true})
+
+	// Sign-in sets the most (session and remember-me); guests get none.
+	for name, res := range map[string]*vukemtest.Response{"sign-in": signIn} {
+		total := 0
+		for _, v := range res.Recorder().Result().Header.Values("Set-Cookie") {
+			total += len(v)
+		}
+
+		if total == 0 {
+			t.Fatalf("%s set no cookie: the check measures nothing", name)
+		}
+
+		t.Logf("%s: %d bytes of Set-Cookie", name, total)
+
+		if total > 4096 {
+			t.Errorf("%s: Set-Cookie headers are %d bytes, want ≤ 4096 (cap is 64 KiB)", name, total)
+		}
+	}
+}
