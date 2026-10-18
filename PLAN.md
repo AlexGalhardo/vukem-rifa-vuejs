@@ -38,6 +38,7 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | D22 | Public checkout (owner request): anyone with `/r/{slug}` buys one free number per checkout (name, email, BR phone, LGPD consent, honeypot) on the same `/pay/{token}` flow (`reservations.origin=public`); 10 per 10 min per IP and per email hash, at most 5 live links per email per raffle (raffle row lock); purchases join the buyer account when signed in, or by email once verified (`buyer_user_id`); `/account/purchases` lists paid and unpaid numbers. | One number per checkout keeps one PIX per reservation (multi-number cart would need a checkout entity). |
 | D23 | Organizer card on `/r/{slug}` (owner request): name, member since, raffles created/finished and the raffle date always; email, WhatsApp (E.164 → wa.me) and Telegram (→ t.me) only when opted in at `/settings/contact` (all off by default, audit event `contact.updated` with field names only); the email is fetched on a click from `POST /r/{slug}/organizer-email` (rate limited; never in the page props). | Buyers confirm the organizer without exposing data by default (LGPD). |
 | D24 | Security review fixes: raffle row locked first in every write path (edit, reserve, webhook, draw); global cap of max(5, 20%) live public links per raffle; limiter keys fold email aliases and IPv6 /64; LGPD consent stored with a version; refunds of late payments are manual (AbacatePay has no refund API) and tracked at `/admin/refunds`. | One lock order prevents deadlocks and stale reads; caps stop one actor from holding the grid; consent must be provable. |
+| D25 | vukem v0.27.0: Inertia errors render `pages/Error.vue`; email verification needs the account's login (A20 ported: the app links public purchases on verification, so a squatter must not get verified by the owner's click). | Upstream fixes replace local workarounds; verification proves both mailbox and password. |
 | D17 | Local `.claude/settings.local.json` (`disableAllHooks: true`) is owner-managed and git-ignored. | Owner. |
 
 ## 3. Versions (verified 2026-10-17, exact pins)
@@ -45,7 +46,7 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 | Tool | Version | Where |
 | --- | --- | --- |
 | Go | 1.27.2 | `go.mod`, Docker `golang:1.27.2-alpine3.24` |
-| vukem | v0.25.0 (started on v0.21.1) | `go.mod` |
+| vukem | v0.27.0 (started on v0.21.1) | `go.mod` |
 | vukem drivers/postgres | v0.4.0 (pgx v5.11.0, `pgtest.Database`) | `go.mod` |
 | golangci-lint | v2.15.0 (CI), action v9.3.0 | `.golangci.yml` |
 | govulncheck | v1.9.0 (`go tool`) | `go.mod` tool directive |

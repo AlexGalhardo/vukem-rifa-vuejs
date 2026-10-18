@@ -86,6 +86,8 @@ CI: `govulncheck`, `bun audit --audit-level=high`, Dependabot (Go, npm, Actions,
 | Reset enumeration: same answer for unknown emails; mail queued so timing does not differ | `TestPasswordReset`, `TestPostgres_OWASP_A07_ResetMailIsQueuedNotSentInline` |
 | Sign-up enumeration: same status, redirect and cookies for new and existing emails; existing owner gets a throttled notice, nothing is created; one queued mail either way | `TestRegister_ExistingEmailIsNotRevealed`, `TestPostgres_OWASP_A07_SignupIsEnumerationSafe` |
 | Unverified email cannot use the dashboard; Google cannot take over unverified accounts | `TestDashboard_RequiresVerifiedEmail`, `TestSocialDoesNotTakeOverUnverifiedEmails` |
+| Email squatting: the verification link needs the account's login (a signed-out click verifies nothing); expired links explain themselves | `TestRegisterAndVerifyEmail`, `TestVerifyEmail_ExpiredLinkOffersANewOne` |
+| Request headers capped at 64 KiB; cookies stay far below | `TestOWASP_A05_CookiesStayFarBelowTheHeaderCap` |
 | CSRF on login and every browser mutation | `TestSecurity_CrossSiteLoginBlocked`, `TestSecurity_NumbersCrossSitePostBlocked`, `TestSecurity_CrossSiteConfirmBlocked` |
 | Cookie session is not ambient authority on the API | `TestSecurityAPI_CookieSessionIsNotAmbientAuthority` |
 | Spoofed `X-Forwarded-For` / `X-Real-IP` from untrusted peers ignored; trusted proxy header honoured; IPv6 limited by /64 | `TestOWASP_A07_SpoofedClientIPHeadersAreIgnored`, `TestOWASP_A07_TrustedProxyHeaderSeparatesClients`, `TestLimitKeys_IPv6GroupsBySlash64` |

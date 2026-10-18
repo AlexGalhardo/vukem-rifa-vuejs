@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Security
 
+- Email verification needs the login of the account (ported from vukem v0.27.0, A20): a signed-out click no longer verifies, so a squatter's account cannot be verified by the address owner's click (and linked to their public purchases); the login returns to the link; an expired link explains itself.
+
 - Security review fixes (191bf94..cba34e7):
   - Public reservations record LGPD consent (`consent_at`, `consent_version`); the notice says the organizer sees name, email and phone.
   - Raffle edits lock the raffle row first (same order as webhook and draw) and check the paid-number lock on that row: no deadlock, no price change racing a payment.
@@ -16,6 +18,8 @@ All notable changes to this project are documented here. The format follows [Kee
   - The organizer email is no longer in the page props; a click POSTs `/r/{slug}/organizer-email` (rate limited, no-store, 404 unless opted in).
 
 ### Changed
+
+- vukem v0.27.0: errors on Inertia visits render `resources/js/pages/Error.vue` inside the app layout (translated); per-IP limits use `ratelimit.ByIP` (IPv6 /64 built in, `routes/ipkey.go` removed); pending refunds use `MIN()` with `database.ScanTime`; the API docs e2e fails on any CSP violation (Scalar inline style fixed upstream). Cookies stay far below the new 64 KiB header cap (353 bytes at sign-in).
 
 - `/account/purchases` loads raffles in one query (was one per reservation).
 

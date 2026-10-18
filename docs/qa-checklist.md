@@ -51,7 +51,7 @@ Legend: ✅ checked by hand (curl) in this run · 🤖 exercised by the named au
 
 ### Notes
 
-- ⚠️ Per-IP rate limits share one bucket on Railway until `TRUSTED_PROXIES` is set to a verified edge range (README "Deploy notes"); vukem v0.25.0 will log the peer address needed to verify it.
+- ✅ Per-IP rate limits are per client on Railway (`TRUSTED_PROXIES=100.64.0.0/24`, README "Deploy notes"); vukem v0.27.0 warns at boot if the trusted range is missing behind a proxy.
 - ⚠️ `/api/docs` (bundled Scalar) has third-party axe findings; excluded from the a11y suite and reported in `framework-feedback/rifa.md`.
 - ⚠️ Production emails go to the Mailtrap sandbox until the `vukem.dev` sender is verified (README "Production demo").
 - The owner "number sold" email uses the app default locale (owners have no stored locale).
