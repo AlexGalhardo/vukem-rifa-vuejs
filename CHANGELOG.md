@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-10-24
+
+### Changed
+
+- **deps:** Upgrade vukem to v0.30.0 ([c96347e](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/c96347eb6bce8c381eca582c1bffb3b033e7dedd))
+- **deps:** Bump Go to 1.27.3 to fix GO-2026-6809 ([38c2fa5](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/38c2fa57da8424f73763ac332630b4f7fba55b67))
+- **deps:** Override markdown-it to 15.0.3 to fix high advisories ([12278ec](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/12278ecfb6a2ec2548e9ecfa6b71a619e981d3d2))
+
 ## [0.8.0] - 2026-10-18
 
 ### Changed
@@ -120,6 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **i18n:** Localize validation messages in pt-BR and en ([e1e968b](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/e1e968bad853979aa57630e15c2871ce9dbaca55))
 - **mail:** Send auth emails in the request locale ([fa00f06](https://github.com/AlexGalhardo/vukem-rifa-vuejs/commit/fa00f066effd09301d15f85c9f0c71ab6c0590da))
 
+[0.8.1]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/AlexGalhardo/vukem-rifa-vuejs/compare/v0.5.0...v0.6.0
