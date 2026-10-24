@@ -81,7 +81,7 @@ All GIFs are recorded against the local Docker stack (`docker compose up`) with 
 
 | Layer | Choice |
 | --- | --- |
-| Backend | Go 1.27.2, Vukem v0.28.0, `drivers/postgres` v0.4.0 |
+| Backend | Go 1.27.3, Vukem v0.28.0, `drivers/postgres` v0.4.0 |
 | Frontend | Inertia 3.9.1, Vue 3.5.44, TypeScript 6.0.3, Tailwind CSS 4.3.3, Vite 8.3.4, zod 4.6.7 |
 | Data | PostgreSQL 18.6 (data, sessions, cache, queue, rate limits) |
 | Payments | AbacatePay PIX (API v2, dev mode) |
@@ -91,7 +91,7 @@ All GIFs are recorded against the local Docker stack (`docker compose up`) with 
 
 ## Quick start
 
-Requirements: Go 1.27.2, Bun 1.4.3 and Docker (Compose v2). Optional: the Vukem CLI (`go install github.com/AlexGalhardo/vukem/cmd/vukem@v0.28.0`) and golangci-lint v2.15.
+Requirements: Go 1.27.3, Bun 1.4.3 and Docker (Compose v2). Optional: the Vukem CLI (`go install github.com/AlexGalhardo/vukem/cmd/vukem@v0.28.0`) and golangci-lint v2.15.
 
 ```sh
 cp .env.example .env

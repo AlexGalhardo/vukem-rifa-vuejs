@@ -46,7 +46,7 @@ The project also exists to **battle-test the vukem framework** before its 1.0: e
 
 | Tool | Version | Where |
 | --- | --- | --- |
-| Go | 1.27.2 | `go.mod`, Docker `golang:1.27.2-alpine3.24` |
+| Go | 1.27.3 | `go.mod`, Docker `golang:1.27.3-alpine3.24` |
 | vukem | v0.28.0 (started on v0.21.1) | `go.mod` |
 | vukem drivers/postgres | v0.4.0 (pgx v5.11.0, `pgtest.Database`) | `go.mod` |
 | golangci-lint | v2.15.0 (CI), action v9.3.0 | `.golangci.yml` |

@@ -10,7 +10,7 @@ COPY resources ./resources
 RUN bun run build
 
 # 2) Go binary with views, translations and the Vite build embedded.
-FROM golang:1.27.2-alpine3.24 AS build
+FROM golang:1.27.3-alpine3.24 AS build
 WORKDIR /src
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local
 COPY go.mod go.sum ./
