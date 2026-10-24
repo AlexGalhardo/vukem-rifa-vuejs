@@ -8,9 +8,51 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/AlexGalhardo/vukem-rifa-vuejs" alt="License"></a>
 </p>
 
+<p align="center">
+  <img src="docs/media/public-checkout.gif" alt="A visitor picks a free number on the public raffle page and goes to the PIX payment step" width="720">
+</p>
+
 ## Introduction
 
 Vukem Rifa is an open-source online raffle (rifa) platform with PIX payments for a Brazilian audience, built with the [Vukem](https://github.com/AlexGalhardo/vukem) Go framework, Inertia v3, Vue 3 and Tailwind CSS v4 on PostgreSQL. It runs in production at <https://rifa.vukem.dev> and is one of the real-world battle tests for Vukem 1.0.
+
+## See it working
+
+### Create a raffle
+
+Title, 10–1000 numbers, whole-real price and a 7–60 day duration; the numbers are created with the raffle.
+
+![Creating a raffle from the dashboard](docs/media/create-raffle.gif)
+
+### Payment link
+
+The owner picks a free number and gets a link that reserves it for 10 minutes, ready to copy or send by WhatsApp.
+
+![Owner generating a payment link for a number](docs/media/payment-link.gif)
+
+### Public checkout
+
+Anyone on `/r/{slug}` buys a free number with name, email, phone and LGPD consent, no account needed.
+
+![Visitor buying a number on the public raffle page](docs/media/public-checkout.gif)
+
+### PIX payment
+
+QR code and copy-paste code, then the confirmation. The recording uses the local fake gateway (`ABACATEPAY_FAKE=true`) to simulate the payment.
+
+![PIX payment screen turning into the payment confirmed screen](docs/media/pix-payment.gif)
+
+### Auditable draw
+
+The public result shows seed, participant hash and algorithm, and the page recomputes the draw in the browser.
+
+![Public draw result with the in-browser verification](docs/media/auditable-draw.gif)
+
+### Dark and light themes
+
+![Theme toggle on the public raffle page](docs/media/dark-theme.gif)
+
+All GIFs are recorded against the local Docker stack (`docker compose up`) with throwaway demo data.
 
 ## Summary
 
