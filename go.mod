@@ -4,7 +4,7 @@ go 1.27.2
 
 require (
 	github.com/AlexGalhardo/vukem v0.30.0
-	github.com/AlexGalhardo/vukem/drivers/postgres v0.4.0
+	github.com/AlexGalhardo/vukem/drivers/postgres v0.5.0
 )
 
 require (
