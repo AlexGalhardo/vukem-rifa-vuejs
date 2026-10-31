@@ -20,7 +20,7 @@ COPY --from=assets /src/resources/public/build ./resources/public/build
 RUN go build -trimpath -ldflags "-s -w" -o /out/rifa ./cmd/app
 
 # 3) Runtime: no resources/ directory on disk, so the embedded copies are served.
-FROM alpine:3.24.2
+FROM alpine:3.24.3
 RUN apk add --no-cache ca-certificates tzdata && adduser -D -H -u 10001 rifa
 WORKDIR /app
 COPY --from=build /out/rifa /app/rifa
